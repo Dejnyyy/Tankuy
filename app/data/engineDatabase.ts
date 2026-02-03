@@ -1,0 +1,126 @@
+// Universal engine database - all engines available for all cars
+export const ALL_ENGINES: { name: string; power: string; fuel: string }[] = [
+  // Benzín - MPI (atmosféra)
+  { name: '1.0 MPI', power: '44 kW', fuel: 'natural' },
+  { name: '1.0 MPI', power: '55 kW', fuel: 'natural' },
+  { name: '1.2 MPI', power: '51 kW', fuel: 'natural' },
+  { name: '1.2 MPI', power: '55 kW', fuel: 'natural' },
+  { name: '1.4 MPI', power: '55 kW', fuel: 'natural' },
+  { name: '1.4 MPI', power: '59 kW', fuel: 'natural' },
+  { name: '1.6 MPI', power: '75 kW', fuel: 'natural' },
+  { name: '1.6 MPI', power: '81 kW', fuel: 'natural' },
+  { name: '2.0 MPI', power: '85 kW', fuel: 'natural' },
+  
+  // Benzín - FSI (přímé vstřikování)
+  { name: '1.4 FSI', power: '66 kW', fuel: 'natural' },
+  { name: '1.6 FSI', power: '85 kW', fuel: 'natural' },
+  { name: '2.0 FSI', power: '110 kW', fuel: 'natural' },
+  { name: '2.0 FSI', power: '147 kW', fuel: 'natural' },
+  
+  // Benzín - TSI/TFSI (turbo)
+  { name: '1.0 TSI', power: '66 kW', fuel: 'natural' },
+  { name: '1.0 TSI', power: '81 kW', fuel: 'natural' },
+  { name: '1.0 TSI', power: '85 kW', fuel: 'natural' },
+  { name: '1.2 TSI', power: '63 kW', fuel: 'natural' },
+  { name: '1.2 TSI', power: '77 kW', fuel: 'natural' },
+  { name: '1.2 TSI', power: '81 kW', fuel: 'natural' },
+  { name: '1.4 TSI', power: '90 kW', fuel: 'natural' },
+  { name: '1.4 TSI', power: '103 kW', fuel: 'natural' },
+  { name: '1.4 TSI', power: '110 kW', fuel: 'natural' },
+  { name: '1.4 TSI', power: '118 kW', fuel: 'natural' },
+  { name: '1.5 TSI', power: '96 kW', fuel: 'natural' },
+  { name: '1.5 TSI', power: '110 kW', fuel: 'natural' },
+  { name: '1.8 TSI', power: '118 kW', fuel: 'natural' },
+  { name: '1.8 TSI', power: '132 kW', fuel: 'natural' },
+  { name: '2.0 TSI', power: '140 kW', fuel: 'natural' },
+  { name: '2.0 TSI', power: '147 kW', fuel: 'natural' },
+  { name: '2.0 TSI', power: '162 kW', fuel: 'natural' },
+  { name: '2.0 TSI', power: '180 kW', fuel: 'natural' },
+  { name: '2.0 TSI', power: '206 kW', fuel: 'natural' },
+  { name: '2.0 TSI GTI', power: '147 kW', fuel: 'natural' },
+  { name: '2.0 TSI GTI', power: '169 kW', fuel: 'natural' },
+  { name: '2.0 TSI GTI', power: '180 kW', fuel: 'natural' },
+  { name: '2.0 TSI GTI', power: '195 kW', fuel: 'natural' },
+  { name: '2.0 TSI R/RS', power: '221 kW', fuel: 'natural' },
+  { name: '2.0 TSI R/RS', power: '228 kW', fuel: 'natural' },
+  { name: '2.0 TSI R/RS', power: '235 kW', fuel: 'natural' },
+  { name: '2.0 TSI R/RS', power: '245 kW', fuel: 'natural' },
+  
+  // Benzín - TFSI (Audi)
+  { name: '1.0 TFSI', power: '70 kW', fuel: 'natural' },
+  { name: '1.0 TFSI', power: '81 kW', fuel: 'natural' },
+  { name: '1.4 TFSI', power: '92 kW', fuel: 'natural' },
+  { name: '1.4 TFSI', power: '110 kW', fuel: 'natural' },
+  { name: '1.5 TFSI', power: '110 kW', fuel: 'natural' },
+  { name: '2.0 TFSI', power: '140 kW', fuel: 'natural' },
+  { name: '2.0 TFSI', power: '185 kW', fuel: 'natural' },
+  { name: '2.0 TFSI', power: '195 kW', fuel: 'natural' },
+  { name: '2.0 TFSI S', power: '228 kW', fuel: 'natural' },
+  { name: '2.5 TFSI RS', power: '294 kW', fuel: 'natural' },
+  { name: '2.5 TFSI RS', power: '331 kW', fuel: 'natural' },
+  
+  // Diesel - TDI
+  { name: '1.4 TDI', power: '55 kW', fuel: 'diesel' },
+  { name: '1.4 TDI', power: '66 kW', fuel: 'diesel' },
+  { name: '1.6 TDI', power: '66 kW', fuel: 'diesel' },
+  { name: '1.6 TDI', power: '77 kW', fuel: 'diesel' },
+  { name: '1.6 TDI', power: '85 kW', fuel: 'diesel' },
+  { name: '1.6 TDI', power: '88 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '66 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '74 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '77 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '85 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '96 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '110 kW', fuel: 'diesel' },
+  { name: '1.9 TDI', power: '118 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '81 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '85 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '90 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '100 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '103 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '110 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '120 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '125 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '140 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '147 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '150 kW', fuel: 'diesel' },
+  { name: '2.0 TDI', power: '176 kW', fuel: 'diesel' },
+  { name: '2.0 TDI GTD', power: '135 kW', fuel: 'diesel' },
+  { name: '2.0 TDI GTD', power: '147 kW', fuel: 'diesel' },
+  { name: '3.0 TDI', power: '150 kW', fuel: 'diesel' },
+  { name: '3.0 TDI', power: '176 kW', fuel: 'diesel' },
+  { name: '3.0 TDI', power: '200 kW', fuel: 'diesel' },
+  { name: '3.0 TDI', power: '210 kW', fuel: 'diesel' },
+  { name: '3.0 TDI', power: '240 kW', fuel: 'diesel' },
+  
+  // LPG
+  { name: '1.4 LPG', power: '55 kW', fuel: 'lpg' },
+  { name: '1.6 LPG', power: '75 kW', fuel: 'lpg' },
+  { name: '2.0 LPG', power: '85 kW', fuel: 'lpg' },
+  
+  // Hybrid
+  { name: '1.4 TSI eHybrid', power: '150 kW', fuel: 'hybrid' },
+  { name: '1.4 TSI eHybrid', power: '180 kW', fuel: 'hybrid' },
+  { name: '1.4 TSI GTE', power: '150 kW', fuel: 'hybrid' },
+  { name: '1.5 TSI eHybrid', power: '110 kW', fuel: 'hybrid' },
+  { name: '1.5 TSI eHybrid', power: '150 kW', fuel: 'hybrid' },
+  
+  // Electric
+  { name: 'e-motor', power: '100 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '110 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '150 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '170 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '195 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '210 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '220 kW', fuel: 'electric' },
+  { name: 'e-motor', power: '250 kW', fuel: 'electric' },
+  { name: 'e-motor AWD', power: '220 kW', fuel: 'electric' },
+  { name: 'e-motor AWD', power: '250 kW', fuel: 'electric' },
+  { name: 'e-motor AWD', power: '299 kW', fuel: 'electric' },
+];
+
+// Get all engines (universal for all cars)
+export function getEngineSuggestions(brand: string, model: string): { name: string; power: string; fuel: string }[] {
+  // Return all engines regardless of brand/model
+  return ALL_ENGINES;
+}
