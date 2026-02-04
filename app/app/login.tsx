@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   StatusBar,
 } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function LoginScreen() {
   const { signInWithGoogle, signInAsGuest, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -40,7 +42,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
       {/* Background gradient */}
       <View style={styles.backgroundContainer}>
@@ -51,7 +53,7 @@ export default function LoginScreen() {
         {/* Logo and branding */}
         <View style={styles.brandingContainer}>
           <View style={styles.logoContainer}>
-            <FontAwesome name="tint" size={64} color="#FF9500" />
+            <FontAwesome name="tint" size={64} color={colors.tint} />
           </View>
           <Text style={styles.appName}>Tankuy</Text>
           <Text style={styles.tagline}>Track your fuel expenses{'\n'}with ease</Text>
@@ -59,9 +61,9 @@ export default function LoginScreen() {
 
         {/* Features highlight */}
         <View style={styles.featuresContainer}>
-          <FeatureItem icon="camera" text="Scan receipts instantly" />
-          <FeatureItem icon="line-chart" text="Track spending over time" />
-          <FeatureItem icon="map-marker" text="Find nearby gas stations" />
+          <FeatureItem icon="camera" text="Scan receipts instantly" colors={colors} styles={styles} />
+          <FeatureItem icon="line-chart" text="Track spending over time" colors={colors} styles={styles} />
+          <FeatureItem icon="map-marker" text="Find nearby gas stations" colors={colors} styles={styles} />
         </View>
 
         {/* Sign in section */}
@@ -79,7 +81,7 @@ export default function LoginScreen() {
             activeOpacity={0.8}
           >
             {isLoading ? (
-              <ActivityIndicator color="#1F1F1F" size="small" />
+              <ActivityIndicator color={isDark ? "#1F1F1F" : "#FFFFFF"} size="small" />
             ) : (
               <>
                 <Image
@@ -92,12 +94,12 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.googleButton, { backgroundColor: '#333333', marginTop: 12 }]}
+            style={[styles.guestButton, { marginTop: 12 }]}
             onPress={handleGuestSignIn}
             disabled={isLoading}
           >
-            <FontAwesome name="user-secret" size={20} color="#FFFFFF" />
-            <Text style={[styles.googleButtonText, { color: '#FFFFFF' }]}>Continue as Guest</Text>
+            <FontAwesome name="user-secret" size={20} color={colors.text} />
+            <Text style={[styles.googleButtonText, { color: colors.text }]}>Continue as Guest</Text>
           </TouchableOpacity>
 
           <Text style={styles.termsText}>
@@ -109,28 +111,28 @@ export default function LoginScreen() {
   );
 }
 
-function FeatureItem({ icon, text }: { icon: string; text: string }) {
+function FeatureItem({ icon, text, colors, styles }: { icon: string; text: string; colors: any; styles: any }) {
   return (
     <View style={styles.featureItem}>
       <View style={styles.featureIconContainer}>
-        <FontAwesome name={icon as any} size={18} color="#FF9500" />
+        <FontAwesome name={icon as any} size={18} color={colors.tint} />
       </View>
       <Text style={styles.featureText}>{text}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },
   gradientOverlay: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 30,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -154,12 +156,12 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 42,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
     letterSpacing: 1,
   },
   tagline: {
     fontSize: 18,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 26,
@@ -176,13 +178,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   featureText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: '500',
   },
   signInContainer: {
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   googleButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.text, // Reverse for contrast (White on Dark, Black on Light)
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -217,11 +219,21 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#1F1F1F',
+    color: colors.background, // Reverse contrast
+  },
+  guestButton: {
+    backgroundColor: colors.elevated,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    gap: 12,
   },
   termsText: {
     fontSize: 12,
-    color: '#6E6E73',
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },

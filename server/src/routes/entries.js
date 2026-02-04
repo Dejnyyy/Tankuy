@@ -119,6 +119,12 @@ router.get('/stats', async (req, res) => {
       
       groupByFormat = "DATE_FORMAT(date, '%Y-%m')"; // Group by month
       labelFormat = "%b"; // Jan, Feb...
+    } else if (period === 'all') {
+      startDate = new Date('2020-01-01'); // Start of app usage/decade
+      endDate = new Date(); // Today
+
+      groupByFormat = "DATE_FORMAT(date, '%Y-%m')"; // Group by month
+      labelFormat = "%m/%y"; // 01/24
     } else {
       // Month (default)
       startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,16 +12,19 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Location from 'expo-location';
 import api, { GasStation } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 
 import StationMap from '@/components/StationMap';
 
 const { width, height } = Dimensions.get('window');
 
 export default function FindScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [stations, setStations] = useState<GasStation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,13 +146,13 @@ export default function FindScreen() {
             style={[styles.toggleButton, viewMode === 'map' && styles.toggleButtonActive]}
             onPress={() => setViewMode('map')}
           >
-            <FontAwesome name="map" size={16} color={viewMode === 'map' ? '#FFFFFF' : '#8E8E93'} />
+            <FontAwesome name="map" size={16} color={viewMode === 'map' ? '#FFFFFF' : colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.toggleButton, viewMode === 'list' && styles.toggleButtonActive]}
             onPress={() => setViewMode('list')}
           >
-            <FontAwesome name="list" size={16} color={viewMode === 'list' ? '#FFFFFF' : '#8E8E93'} />
+            <FontAwesome name="list" size={16} color={viewMode === 'list' ? '#FFFFFF' : colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -157,11 +160,11 @@ export default function FindScreen() {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <FontAwesome name="search" size={16} color="#8E8E93" />
+          <FontAwesome name="search" size={16} color={colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search gas stations..."
-            placeholderTextColor="#6E6E73"
+            placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -169,7 +172,7 @@ export default function FindScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => { setSearchQuery(''); refreshNearby(); }}>
-              <FontAwesome name="times-circle" size={18} color="#8E8E93" />
+              <FontAwesome name="times-circle" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -190,10 +193,10 @@ export default function FindScreen() {
           ) : (
             <View style={styles.loadingContainer}>
               {loading ? (
-                <ActivityIndicator size="large" color="#FF9500" />
+                <ActivityIndicator size="large" color={colors.tint} />
               ) : (
                 <>
-                  <FontAwesome name="location-arrow" size={48} color="#3A3A3C" />
+                  <FontAwesome name="location-arrow" size={48} color={colors.textMuted} />
                   <Text style={styles.emptyText}>Location access required</Text>
                   <Text style={styles.emptySubtext}>Enable location to find nearby stations</Text>
                 </>
@@ -206,7 +209,7 @@ export default function FindScreen() {
             <View style={styles.stationCard}>
               <View style={styles.stationCardHeader}>
                 <View style={styles.stationIconContainer}>
-                  <FontAwesome name="tint" size={20} color="#FF9500" />
+                  <FontAwesome name="tint" size={20} color={colors.tint} />
                 </View>
                 <View style={styles.stationInfo}>
                   <Text style={styles.stationName}>{selectedStation.name}</Text>
@@ -215,7 +218,7 @@ export default function FindScreen() {
                   )}
                 </View>
                 <TouchableOpacity onPress={() => setSelectedStation(null)}>
-                  <FontAwesome name="times" size={20} color="#8E8E93" />
+                  <FontAwesome name="times" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
               {selectedStation.address && (
@@ -224,7 +227,7 @@ export default function FindScreen() {
               <View style={[styles.stationMeta, { justifyContent: 'space-between', alignItems: 'center' }]}>
                 {selectedStation.distance !== undefined && (
                   <View style={styles.distanceBadge}>
-                    <FontAwesome name="location-arrow" size={12} color="#FF9500" />
+                    <FontAwesome name="location-arrow" size={12} color={colors.tint} />
                     <Text style={styles.distanceText}>
                       {(selectedStation.distance / 1000).toFixed(1)} km
                     </Text>
@@ -257,7 +260,7 @@ export default function FindScreen() {
               onPress={() => { setSelectedStation(item); setViewMode('map'); }}
             >
               <View style={styles.listItemIcon}>
-                <FontAwesome name="tint" size={18} color="#FF9500" />
+                <FontAwesome name="tint" size={18} color={colors.tint} />
               </View>
               <View style={styles.listItemInfo}>
                 <Text style={styles.listItemName}>{item.name}</Text>
@@ -283,10 +286,10 @@ export default function FindScreen() {
           ListEmptyComponent={
             <View style={styles.emptyList}>
               {loading ? (
-                <ActivityIndicator size="large" color="#FF9500" />
+                <ActivityIndicator size="large" color={colors.tint} />
               ) : (
                 <>
-                  <FontAwesome name="map-marker" size={48} color="#3A3A3C" />
+                  <FontAwesome name="map-marker" size={48} color={colors.textMuted} />
                   <Text style={styles.emptyText}>No stations found</Text>
                   <Text style={styles.emptySubtext}>Try searching or enable location</Text>
                 </>
@@ -299,10 +302,10 @@ export default function FindScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -314,11 +317,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   viewToggle: {
     flexDirection: 'row',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 10,
     padding: 4,
   },
@@ -328,7 +331,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   toggleButtonActive: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -337,7 +340,7 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   mapContainer: {
     flex: 1,
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   markerContainer: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     padding: 8,
     borderRadius: 20,
     borderWidth: 2,
@@ -372,7 +375,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
@@ -389,7 +392,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -400,16 +403,16 @@ const styles = StyleSheet.create({
   stationName: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   stationBrand: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   stationAddress: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 12,
   },
   stationMeta: {
@@ -419,7 +422,7 @@ const styles = StyleSheet.create({
   distanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -428,7 +431,7 @@ const styles = StyleSheet.create({
   distanceText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FF9500',
+    color: colors.tint,
   },
   listContainer: {
     padding: 20,
@@ -437,7 +440,7 @@ const styles = StyleSheet.create({
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
@@ -446,7 +449,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -457,11 +460,11 @@ const styles = StyleSheet.create({
   listItemName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   listItemAddress: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   fuelTypes: {
@@ -470,14 +473,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   fuelBadge: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.elevated,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   fuelBadgeText: {
     fontSize: 11,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   listItemDistance: {
@@ -486,11 +489,11 @@ const styles = StyleSheet.create({
   distanceValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FF9500',
+    color: colors.tint,
   },
   distanceUnit: {
     fontSize: 11,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   emptyList: {
     flex: 1,
@@ -501,16 +504,16 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#6E6E73',
+    color: colors.textMuted,
     marginTop: 4,
   },
   switchToListButton: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import api, { FuelEntry, Vehicle } from '@/services/api';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTheme } from '@/context/ThemeContext';
 
 // Helper to safely format numbers
 const formatCurrency = (val: any) => {
@@ -30,12 +31,15 @@ const formatDecimal = (val: any, decimals: number = 2) => {
 
 export default function HistoryScreen() {
   const params = useLocalSearchParams();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
   const [entries, setEntries] = useState<FuelEntry[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
-  const [filterDate, setFilterDate] = useState<string | null>(null); // New filter state
+  const [filterDate, setFilterDate] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   
@@ -64,8 +68,8 @@ export default function HistoryScreen() {
       const [entriesData, vehiclesData] = await Promise.all([
         api.getEntries({ 
           vehicleId: selectedVehicle || undefined,
-          startDate: filterDate || undefined, // Use filter
-          endDate: filterDate || undefined,   // Exact match
+          startDate: filterDate || undefined, 
+          endDate: filterDate || undefined,
           limit: 20,
           offset: reset ? 0 : entries.length,
           sortBy,
@@ -132,17 +136,15 @@ export default function HistoryScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-             // Close modal first to avoid UI glitch
              setModalVisible(false);
              setLoading(true);
              try {
                 await api.deleteEntry(selectedEntry.id);
-                // Reload data
                 await loadData(true);
              } catch (err) {
                 console.error('Failed to delete:', err);
                 Alert.alert('Error', 'Failed to delete entry');
-                setLoading(false); // only if failed, success loadData handles loading
+                setLoading(false); 
              } finally {
                setSelectedEntry(null);
              }
@@ -158,11 +160,9 @@ export default function HistoryScreen() {
         weekday: 'short',
         day: 'numeric',
         month: 'numeric',
-        year: 'numeric', // Added year
+        year: 'numeric',
     });
 
-    // Smart Station Display
-    // Prioritize Name. If Name is missing, use Address. If both, show Name (Address in subtitle).
     const displayStation = item.stationName || item.stationAddress || 'Unknown Station';
     const subtext = [
       formattedDate,
@@ -178,7 +178,7 @@ export default function HistoryScreen() {
       >
         <View style={styles.entryLeft}>
           <View style={styles.entryIconContainer}>
-            <FontAwesome name="tint" size={18} color="#FF9500" />
+            <FontAwesome name="tint" size={18} color={colors.tint} />
           </View>
         </View>
         
@@ -200,7 +200,7 @@ export default function HistoryScreen() {
           <Text style={styles.entryAmount}>{formatCurrency(item.totalCost)} Kč</Text>
           {item.receiptImageUrl && (
             <View style={styles.receiptBadge}>
-              <FontAwesome name="image" size={10} color="#8E8E93" />
+              <FontAwesome name="image" size={10} color={colors.textSecondary} />
             </View>
           )}
         </View>
@@ -214,7 +214,7 @@ export default function HistoryScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>History</Text>
         <TouchableOpacity onPress={() => setSortModalVisible(true)} style={styles.sortButton}>
-           <FontAwesome name="sort" size={16} color="#FF9500" />
+           <FontAwesome name="sort" size={16} color={colors.tint} />
            <Text style={styles.sortButtonText}>Sort</Text>
         </TouchableOpacity>
       </View>
@@ -228,6 +228,8 @@ export default function HistoryScreen() {
           ]}
           selected={selectedVehicle}
           onSelect={setSelectedVehicle}
+          styles={styles}
+          colors={colors}
         />
       </View>
 
@@ -238,7 +240,7 @@ export default function HistoryScreen() {
             Showing entries for {new Date(filterDate).toLocaleDateString('cs-CZ')}
           </Text>
           <TouchableOpacity onPress={clearDateFilter} style={styles.clearFilterButton}>
-            <FontAwesome name="times-circle" size={20} color="#FF375F" />
+            <FontAwesome name="times-circle" size={20} color={colors.error} />
           </TouchableOpacity>
         </View>
       )}
@@ -246,7 +248,7 @@ export default function HistoryScreen() {
       {/* Entries List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF9500" />
+          <ActivityIndicator size="large" color={colors.tint} />
         </View>
       ) : (
         <FlatList
@@ -258,7 +260,7 @@ export default function HistoryScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#FF9500"
+              tintColor={colors.tint}
             />
           }
           onEndReached={loadMore}
@@ -266,13 +268,13 @@ export default function HistoryScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color="#FF9500" />
+                <ActivityIndicator size="small" color={colors.tint} />
               </View>
             ) : null
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <FontAwesome name="history" size={48} color="#3A3A3C" />
+              <FontAwesome name="history" size={48} color={colors.textMuted} />
               <Text style={styles.emptyText}>No entries yet</Text>
               <Text style={styles.emptySubtext}>
                 Scan a receipt to add your first fuel entry
@@ -299,7 +301,7 @@ export default function HistoryScreen() {
             <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Entry Details</Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                    <FontAwesome name="times" size={24} color="#8E8E93" />
+                    <FontAwesome name="times" size={24} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
             
@@ -315,41 +317,48 @@ export default function HistoryScreen() {
                             icon="building" 
                             label="Station" 
                             value={selectedEntry.stationName || 'Unknown Station'} 
+                            styles={styles} colors={colors}
                         />
                          {selectedEntry.stationAddress && (
                             <DetailRow 
                                 icon="map-marker" 
                                 label="Address" 
                                 value={selectedEntry.stationAddress} 
+                                styles={styles} colors={colors}
                             />
                         )}
                         <DetailRow 
                             icon="calendar" 
                             label="Date" 
                             value={new Date(selectedEntry.date).toLocaleDateString()} 
+                            styles={styles} colors={colors}
                         />
                         {selectedEntry.time && (
                              <DetailRow 
                                 icon="clock-o" 
                                 label="Time" 
                                 value={selectedEntry.time} 
+                                styles={styles} colors={colors}
                             />
                         )}
                         <DetailRow 
                             icon="car" 
                             label="Vehicle" 
                             value={selectedEntry.vehicleName || 'Unknown Vehicle'} 
+                            styles={styles} colors={colors}
                         />
                         <DetailRow 
                             icon="euro" 
                             label="Price per Liter" 
                             value={`${formatDecimal(selectedEntry.pricePerLiter, 2)} Kč`} 
+                            styles={styles} colors={colors}
                         />
                          {selectedEntry.mileage && (
                             <DetailRow 
                                 icon="tachometer" 
                                 label="Mileage" 
                                 value={`${selectedEntry.mileage} km`} 
+                                styles={styles} colors={colors}
                             />
                         )}
                          {selectedEntry.notes && (
@@ -377,7 +386,7 @@ export default function HistoryScreen() {
                       style={styles.deleteButton} 
                       onPress={handleDeleteEntry}
                     >
-                      <FontAwesome name="trash" size={18} color="#FF3B30" />
+                      <FontAwesome name="trash" size={18} color={colors.error} />
                       <Text style={styles.deleteButtonText}>Delete Entry</Text>
                     </TouchableOpacity>
                     
@@ -405,7 +414,7 @@ export default function HistoryScreen() {
               onPress={() => { setSortBy('date'); setSortOrder('DESC'); setSortModalVisible(false); }}
             >
               <Text style={[styles.sortOptionText, sortBy === 'date' && sortOrder === 'DESC' && styles.activeSortText]}>Newest Date</Text>
-              {sortBy === 'date' && sortOrder === 'DESC' && <FontAwesome name="check" size={14} color="#FF9500" />}
+              {sortBy === 'date' && sortOrder === 'DESC' && <FontAwesome name="check" size={14} color={colors.tint} />}
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -413,7 +422,7 @@ export default function HistoryScreen() {
               onPress={() => { setSortBy('date'); setSortOrder('ASC'); setSortModalVisible(false); }}
             >
               <Text style={[styles.sortOptionText, sortBy === 'date' && sortOrder === 'ASC' && styles.activeSortText]}>Oldest Date</Text>
-              {sortBy === 'date' && sortOrder === 'ASC' && <FontAwesome name="check" size={14} color="#FF9500" />}
+              {sortBy === 'date' && sortOrder === 'ASC' && <FontAwesome name="check" size={14} color={colors.tint} />}
             </TouchableOpacity>
 
             <View style={styles.sortDivider} />
@@ -423,7 +432,7 @@ export default function HistoryScreen() {
               onPress={() => { setSortBy('price'); setSortOrder('DESC'); setSortModalVisible(false); }}
             >
               <Text style={[styles.sortOptionText, sortBy === 'price' && sortOrder === 'DESC' && styles.activeSortText]}>Highest Price</Text>
-              {sortBy === 'price' && sortOrder === 'DESC' && <FontAwesome name="check" size={14} color="#FF9500" />}
+              {sortBy === 'price' && sortOrder === 'DESC' && <FontAwesome name="check" size={14} color={colors.tint} />}
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -431,7 +440,7 @@ export default function HistoryScreen() {
               onPress={() => { setSortBy('price'); setSortOrder('ASC'); setSortModalVisible(false); }}
             >
               <Text style={[styles.sortOptionText, sortBy === 'price' && sortOrder === 'ASC' && styles.activeSortText]}>Lowest Price</Text>
-              {sortBy === 'price' && sortOrder === 'ASC' && <FontAwesome name="check" size={14} color="#FF9500" />}
+              {sortBy === 'price' && sortOrder === 'ASC' && <FontAwesome name="check" size={14} color={colors.tint} />}
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -440,11 +449,11 @@ export default function HistoryScreen() {
   );
 }
 
-function DetailRow({ icon, label, value }: { icon: any, label: string, value: string }) {
+function DetailRow({ icon, label, value, styles, colors }: { icon: any, label: string, value: string, styles: any, colors: any }) {
     return (
         <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
-                <FontAwesome name={icon} size={20} color="#FF9500" />
+                <FontAwesome name={icon} size={20} color={colors.tint} />
             </View>
             <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{label}</Text>
@@ -457,11 +466,15 @@ function DetailRow({ icon, label, value }: { icon: any, label: string, value: st
 function ScrollableFilter({ 
   options, 
   selected, 
-  onSelect 
+  onSelect,
+  styles,
+  colors
 }: { 
   options: { id: string | null; label: string }[];
   selected: string | null;
   onSelect: (id: string | null) => void;
+  styles: any;
+  colors: any;
 }) {
   return (
     <FlatList
@@ -490,10 +503,10 @@ function ScrollableFilter({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -505,19 +518,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   sortButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 6,
   },
   sortButtonText: {
-    color: '#FF9500',
+    color: colors.tint,
     fontWeight: '600',
     fontSize: 14,
   },
@@ -529,19 +542,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
     marginRight: 8,
   },
   filterChipActive: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
   },
   filterChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   filterChipTextActive: {
     color: '#FFFFFF',
@@ -557,7 +570,7 @@ const styles = StyleSheet.create({
   },
   entryCard: {
     flexDirection: 'row',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
@@ -567,7 +580,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -579,16 +592,16 @@ const styles = StyleSheet.create({
   entryStation: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   entryMeta: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 3,
   },
   entryDetails: {
     fontSize: 12,
-    color: '#6E6E73',
+    color: colors.textMuted,
     marginTop: 3,
   },
   entryRight: {
@@ -598,11 +611,11 @@ const styles = StyleSheet.create({
   entryAmount: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   receiptBadge: {
     marginTop: 6,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.elevated, // Was #2C2C2E
     padding: 4,
     borderRadius: 4,
   },
@@ -617,18 +630,18 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#6E6E73',
+    color: colors.textMuted,
     marginTop: 4,
     textAlign: 'center',
     marginBottom: 20,
   },
   scanButton: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -640,7 +653,7 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card, // Was #1C1C1E
   },
   modalHeader: {
       flexDirection: 'row',
@@ -648,12 +661,12 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: '#2C2C2E',
+      borderBottomColor: colors.border,
   },
   modalTitle: {
       fontSize: 20,
       fontWeight: '700',
-      color: '#FFFFFF',
+      color: colors.text,
   },
   closeButton: {
       padding: 5,
@@ -665,16 +678,16 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       paddingVertical: 30,
       borderBottomWidth: 1,
-      borderBottomColor: '#2C2C2E',
+      borderBottomColor: colors.border,
   },
   bigAmount: {
       fontSize: 42,
       fontWeight: '700',
-      color: '#FF9500',
+      color: colors.tint,
   },
   volumeText: {
       fontSize: 16,
-      color: '#8E8E93',
+      color: colors.textSecondary,
       marginTop: 5,
   },
   detailSection: {
@@ -694,27 +707,27 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
       fontSize: 13,
-      color: '#8E8E93',
+      color: colors.textSecondary,
   },
   detailValue: {
       fontSize: 16,
-      color: '#FFFFFF',
+      color: colors.text,
       marginTop: 2,
   },
   noteContainer: {
       marginTop: 10,
-      backgroundColor: '#2C2C2E',
+      backgroundColor: colors.elevated,
       padding: 15,
       borderRadius: 10,
   },
   noteLabel: {
       fontSize: 13,
-      color: '#8E8E93',
+      color: colors.textSecondary,
       marginBottom: 5,
   },
   noteText: {
       fontSize: 15,
-      color: '#FFFFFF',
+      color: colors.text,
   },
   receiptSection: {
       padding: 20,
@@ -723,7 +736,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
       fontSize: 18,
       fontWeight: '600',
-      color: '#FFFFFF',
+      color: colors.text,
       marginBottom: 15,
   },
   receiptImage: {
@@ -742,7 +755,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   deleteButtonText: {
-    color: '#FF3B30',
+    color: colors.error,
     fontWeight: '600',
     marginLeft: 8,
     fontSize: 16,
@@ -754,7 +767,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sortModalContent: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     width: '80%',
     borderRadius: 16,
     padding: 20,
@@ -767,7 +780,7 @@ const styles = StyleSheet.create({
   sortModalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -780,19 +793,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   activeSortOption: {
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
+    backgroundColor: colors.primaryLight,
   },
   sortOptionText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   activeSortText: {
-    color: '#FF9500',
+    color: colors.tint,
     fontWeight: '600',
   },
   sortDivider: {
     height: 1,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.border,
     marginVertical: 8,
   },
   dateFilterContainer: {
@@ -801,14 +814,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 20,
     marginTop: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 149, 0, 0.3)',
   },
   dateFilterText: {
-    color: '#FF9500',
+    color: colors.tint,
     fontSize: 14,
     fontWeight: '600',
   },

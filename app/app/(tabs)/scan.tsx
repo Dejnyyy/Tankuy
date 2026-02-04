@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,12 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import api, { ReceiptScanResult, Vehicle } from '@/services/api';
+import { useTheme } from '@/context/ThemeContext';
 
 // Conditionally import Camera (not available on web)
 let CameraView: any = null;
@@ -60,6 +61,9 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function ScanScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
   const [scanState, setScanState] = useState<ScanState>('camera');
   const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -171,8 +175,6 @@ export default function ScanScreen() {
         Alert.alert('Error', 'Failed to save the entry. Please try again.');
       }
     } finally {
-      // Only set saving false if NOT showing alert (alert handles its own flow roughly, but actually alert is async UI, so we stop spinning)
-      // Actually we should stop spinning to show alert
       setSaving(false);
     }
   };
@@ -408,7 +410,6 @@ export default function ScanScreen() {
                   ]);
                 } catch (retryError) {
                   console.error('Retry save failed:', retryError);
-                  Alert.alert('Error', 'Failed to save entry even with force option.');
                 } finally {
                   setSaving(false);
                 }
@@ -417,14 +418,12 @@ export default function ScanScreen() {
           ]
         );
       } else {
-        Alert.alert('Error', 'Failed to save the entry. Please try again.');
+        Alert.alert('Error', 'Failed to save entry: ' + error.message);
       }
     } finally {
       setSaving(false);
     }
   };
-
-
 
   // Calculate price per liter or total cost automatically
   const updateManualForm = (field: string, value: string) => {
@@ -480,7 +479,7 @@ export default function ScanScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#FF9500" />
+          <ActivityIndicator size="large" color={colors.tint} />
           <Text style={styles.processingText}>Scanning receipt...</Text>
           <Text style={styles.processingSubtext}>Extracting data with OCR</Text>
         </View>
@@ -499,7 +498,7 @@ export default function ScanScreen() {
           <ScrollView style={styles.formContainer} keyboardShouldPersistTaps="handled">
             <View style={styles.reviewHeader}>
               <TouchableOpacity onPress={resetScan}>
-                <FontAwesome name="arrow-left" size={20} color="#FF9500" />
+                <FontAwesome name="arrow-left" size={20} color={colors.tint} />
               </TouchableOpacity>
               <Text style={styles.reviewTitle}>Manual Entry</Text>
               <View style={{ width: 20 }} />
@@ -512,11 +511,11 @@ export default function ScanScreen() {
               </Text>
               <View style={styles.autocompleteContainer}>
                 <View style={styles.inputContainer}>
-                  <FontAwesome name="building" size={18} color="#8E8E93" />
+                  <FontAwesome name="building" size={18} color={colors.textSecondary} />
                   <TextInput
                     style={styles.textInput}
                     placeholder="e.g. Shell, Benzina, OMV..."
-                    placeholderTextColor="#6E6E73"
+                    placeholderTextColor={colors.textMuted}
                     value={stationQuery}
                     onChangeText={(v) => {
                       setStationQuery(v);
@@ -525,7 +524,7 @@ export default function ScanScreen() {
                     onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   />
                   {loadingSuggestions && (
-                    <ActivityIndicator size="small" color="#FF9500" />
+                    <ActivityIndicator size="small" color={colors.tint} />
                   )}
                 </View>
                 
@@ -538,7 +537,7 @@ export default function ScanScreen() {
                         style={styles.suggestionItem}
                         onPress={() => selectSuggestion(item)}
                       >
-                        <FontAwesome name="tint" size={16} color="#FF9500" />
+                        <FontAwesome name="tint" size={16} color={colors.tint} />
                         <View style={styles.suggestionText}>
                           <Text style={styles.suggestionName}>{item.name}</Text>
                         </View>
@@ -556,11 +555,11 @@ export default function ScanScreen() {
                 {userLocation && <Text style={styles.locationBadge}> 📍 Using your location</Text>}
               </Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="map-marker" size={18} color="#8E8E93" />
+                <FontAwesome name="map-marker" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.textInput}
                   placeholder="e.g. Teplice, Severní terasa..."
-                  placeholderTextColor="#6E6E73"
+                  placeholderTextColor={colors.textMuted}
                   value={manualForm.stationAddress || ''}
                   onChangeText={(v) => setManualForm(prev => ({ ...prev, stationAddress: v }))}
                 />
@@ -571,11 +570,11 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Date</Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="calendar" size={18} color="#8E8E93" />
+                <FontAwesome name="calendar" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.textInput}
                   placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#6E6E73"
+                  placeholderTextColor={colors.textMuted}
                   value={manualForm.date}
                   onChangeText={(v) => updateManualForm('date', v)}
                 />
@@ -588,11 +587,11 @@ export default function ScanScreen() {
               
               <View style={styles.inputRow}>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <FontAwesome name="tint" size={18} color="#8E8E93" />
+                  <FontAwesome name="tint" size={18} color={colors.textSecondary} />
                   <TextInput
                     style={styles.textInput}
                     placeholder="Liters"
-                    placeholderTextColor="#6E6E73"
+                    placeholderTextColor={colors.textMuted}
                     keyboardType="decimal-pad"
                     value={manualForm.totalLiters}
                     onChangeText={(v) => updateManualForm('totalLiters', v)}
@@ -602,11 +601,11 @@ export default function ScanScreen() {
               </View>
 
               <View style={[styles.inputContainer, { marginTop: 10 }]}>
-                <FontAwesome name="euro" size={18} color="#8E8E93" />
+                <FontAwesome name="euro" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.textInput}
                   placeholder="Price per liter"
-                  placeholderTextColor="#6E6E73"
+                  placeholderTextColor={colors.textMuted}
                   keyboardType="decimal-pad"
                   value={manualForm.pricePerLiter}
                   onChangeText={(v) => updateManualForm('pricePerLiter', v)}
@@ -615,16 +614,16 @@ export default function ScanScreen() {
               </View>
 
               <View style={[styles.inputContainer, styles.highlightedInput, { marginTop: 10 }]}>
-                <FontAwesome name="credit-card" size={18} color="#FF9500" />
+                <FontAwesome name="credit-card" size={18} color={colors.tint} />
                 <TextInput
-                  style={[styles.textInput, { color: '#FF9500', fontWeight: '600' }]}
+                  style={[styles.textInput, { color: colors.tint, fontWeight: '600' }]}
                   placeholder="Total cost *"
-                  placeholderTextColor="#FF9500"
+                  placeholderTextColor={colors.tint}
                   keyboardType="decimal-pad"
                   value={manualForm.totalCost}
                   onChangeText={(v) => updateManualForm('totalCost', v)}
                 />
-                <Text style={[styles.inputUnit, { color: '#FF9500' }]}>Kč</Text>
+                <Text style={[styles.inputUnit, { color: colors.tint }]}>Kč</Text>
               </View>
             </View>
 
@@ -646,7 +645,7 @@ export default function ScanScreen() {
                         <FontAwesome 
                           name="car" 
                           size={14} 
-                          color={selectedVehicle === vehicle.id ? '#FFFFFF' : '#8E8E93'} 
+                          color={selectedVehicle === vehicle.id ? '#FFFFFF' : colors.textSecondary} 
                         />
                         <Text style={[
                           styles.vehicleChipText,
@@ -667,11 +666,11 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Mileage (Optional)</Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="tachometer" size={18} color="#8E8E93" />
+                <FontAwesome name="tachometer" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.textInput}
                   placeholder="Current odometer reading"
-                  placeholderTextColor="#6E6E73"
+                  placeholderTextColor={colors.textMuted}
                   keyboardType="numeric"
                   value={manualForm.mileage}
                   onChangeText={(v) => updateManualForm('mileage', v)}
@@ -710,7 +709,7 @@ export default function ScanScreen() {
         <ScrollView style={styles.reviewContainer}>
           <View style={styles.reviewHeader}>
             <TouchableOpacity onPress={resetScan}>
-              <FontAwesome name="arrow-left" size={20} color="#FF9500" />
+              <FontAwesome name="arrow-left" size={20} color={colors.tint} />
             </TouchableOpacity>
             <Text style={styles.reviewTitle}>Scan Result</Text>
             <View style={{ width: 20 }} />
@@ -723,6 +722,7 @@ export default function ScanScreen() {
               label="Station" 
               value={scanResult.parsed.stationName || 'Not detected'} 
               icon="building"
+              styles={styles} colors={colors}
             />
             <DataRow 
               label="Date" 
@@ -730,6 +730,7 @@ export default function ScanScreen() {
               icon="calendar"
               editable
               onChangeText={(v: string) => updateManualForm('date', v)}
+              styles={styles} colors={colors}
             />
             <DataRow 
               label="Time" 
@@ -737,6 +738,7 @@ export default function ScanScreen() {
               icon="clock-o"
               editable
               onChangeText={(v: string) => updateManualForm('time', v)}
+              styles={styles} colors={colors}
             />
             <DataRow 
               label="Price/Liter" 
@@ -745,6 +747,7 @@ export default function ScanScreen() {
               editable
               onChangeText={(v: string) => updateManualForm('pricePerLiter', v)}
               placeholder="0.00"
+              styles={styles} colors={colors}
             />
             <DataRow 
               label="Total Liters" 
@@ -753,6 +756,7 @@ export default function ScanScreen() {
               editable
               onChangeText={(v: string) => updateManualForm('totalLiters', v)}
               placeholder="0.00"
+              styles={styles} colors={colors}
             />
             <DataRow 
               label="Total Cost" 
@@ -762,12 +766,13 @@ export default function ScanScreen() {
               editable
               onChangeText={(v: string) => updateManualForm('totalCost', v)}
               placeholder="0"
+              styles={styles} colors={colors}
             />
           </View>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.secondaryButton} onPress={resetScan}>
-              <FontAwesome name="refresh" size={18} color="#FF9500" />
+              <FontAwesome name="refresh" size={18} color={colors.tint} />
               <Text style={styles.secondaryButtonText}>Rescan</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmScan}>
@@ -791,7 +796,7 @@ export default function ScanScreen() {
           <ScrollView style={styles.formContainer}>
             <View style={styles.reviewHeader}>
               <TouchableOpacity onPress={() => setScanState('review')}>
-                <FontAwesome name="arrow-left" size={20} color="#FF9500" />
+                <FontAwesome name="arrow-left" size={20} color={colors.tint} />
               </TouchableOpacity>
               <Text style={styles.reviewTitle}>Complete Entry</Text>
               <View style={{ width: 20 }} />
@@ -814,7 +819,7 @@ export default function ScanScreen() {
                         <FontAwesome 
                           name="car" 
                           size={14} 
-                          color={selectedVehicle === vehicle.id ? '#FFFFFF' : '#8E8E93'} 
+                          color={selectedVehicle === vehicle.id ? '#FFFFFF' : colors.textSecondary} 
                         />
                         <Text style={[
                           styles.vehicleChipText,
@@ -834,11 +839,11 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Mileage (Optional)</Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="tachometer" size={18} color="#8E8E93" />
+                <FontAwesome name="tachometer" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.textInput}
                   placeholder="Enter current mileage"
-                  placeholderTextColor="#6E6E73"
+                  placeholderTextColor={colors.textMuted}
                   keyboardType="numeric"
                   value={manualForm.mileage}
                   onChangeText={(v) => updateManualForm('mileage', v)}
@@ -856,6 +861,7 @@ export default function ScanScreen() {
                 icon="calendar"
                 editable
                 onChangeText={(v: string) => updateManualForm('date', v)}
+                styles={styles} colors={colors}
               />
               <DataRow 
                 label="Time" 
@@ -863,6 +869,7 @@ export default function ScanScreen() {
                 icon="clock-o"
                 editable
                 onChangeText={(v: string) => updateManualForm('time', v)}
+                styles={styles} colors={colors}
               />
               <DataRow 
                 label="Price/Liter" 
@@ -871,6 +878,7 @@ export default function ScanScreen() {
                 editable
                 onChangeText={(v: string) => updateManualForm('pricePerLiter', v)}
                 placeholder="0.00"
+                styles={styles} colors={colors}
               />
               <DataRow 
                 label="Total Liters" 
@@ -879,6 +887,7 @@ export default function ScanScreen() {
                 editable
                 onChangeText={(v: string) => updateManualForm('totalLiters', v)}
                 placeholder="0.00"
+                styles={styles} colors={colors}
               />
               <DataRow 
                 label="Total Cost" 
@@ -888,10 +897,9 @@ export default function ScanScreen() {
                 editable
                 onChangeText={(v: string) => updateManualForm('totalCost', v)}
                 placeholder="0"
+                styles={styles} colors={colors}
               />
             </View>
-
-
 
             <TouchableOpacity 
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
@@ -925,7 +933,7 @@ export default function ScanScreen() {
 
         <View style={styles.webContainer}>
           <View style={styles.webPlaceholder}>
-            <FontAwesome name="camera" size={64} color="#3A3A3C" />
+            <FontAwesome name="camera" size={64} color={colors.textMuted} />
             <Text style={styles.webPlaceholderText}>Camera not available on web</Text>
           </View>
 
@@ -940,7 +948,7 @@ export default function ScanScreen() {
           style={styles.manualEntryLink}
           onPress={() => setScanState('manual')}
         >
-          <FontAwesome name="pencil" size={14} color="#8E8E93" />
+          <FontAwesome name="pencil" size={14} color={colors.textSecondary} />
           <Text style={styles.manualEntryText}>Or enter details manually</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -952,7 +960,7 @@ export default function ScanScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centerContainer}>
-          <FontAwesome name="camera" size={64} color="#3A3A3C" />
+          <FontAwesome name="camera" size={64} color={colors.textMuted} />
           <Text style={styles.permissionTitle}>Camera Access Required</Text>
           <Text style={styles.permissionText}>
             We need camera access to scan your fuel receipts
@@ -965,7 +973,7 @@ export default function ScanScreen() {
             style={styles.manualEntryLink}
             onPress={() => setScanState('manual')}
           >
-            <FontAwesome name="pencil" size={14} color="#8E8E93" />
+            <FontAwesome name="pencil" size={14} color={colors.textSecondary} />
             <Text style={styles.manualEntryText}>Or enter details manually</Text>
           </TouchableOpacity>
         </View>
@@ -986,17 +994,16 @@ export default function ScanScreen() {
             ref={cameraRef}
             style={styles.camera}
             facing="back"
-          >
-            <View style={styles.cameraOverlay}>
-              <View style={styles.frameLine} />
-            </View>
-          </CameraView>
+          />
         )}
+        <View style={[styles.cameraOverlay, StyleSheet.absoluteFill]}>
+          <View style={styles.frameLine} />
+        </View>
       </View>
 
       <View style={styles.cameraControls}>
         <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
-          <FontAwesome name="image" size={22} color="#FFFFFF" />
+          <FontAwesome name="image" size={22} color={colors.text} />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
@@ -1007,14 +1014,14 @@ export default function ScanScreen() {
           style={styles.manualButton} 
           onPress={() => setScanState('manual')}
         >
-          <FontAwesome name="pencil" size={18} color="#FFFFFF" />
+          <FontAwesome name="pencil" size={18} color={colors.text} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-function DataRow({ label, value, icon, highlighted, editable, onChangeText, placeholder }: { 
+function DataRow({ label, value, icon, highlighted, editable, onChangeText, placeholder, styles, colors }: { 
   label: string; 
   value: string; 
   icon: string;
@@ -1022,11 +1029,13 @@ function DataRow({ label, value, icon, highlighted, editable, onChangeText, plac
   editable?: boolean;
   onChangeText?: (text: string) => void;
   placeholder?: string;
+  styles: any;
+  colors: any;
 }) {
   return (
     <View style={[styles.dataRow, highlighted && styles.dataRowHighlighted]}>
       <View style={styles.dataRowIcon}>
-        <FontAwesome name={icon as any} size={16} color={highlighted ? '#FF9500' : '#8E8E93'} />
+        <FontAwesome name={icon as any} size={16} color={highlighted ? colors.tint : colors.textSecondary} />
       </View>
       <Text style={styles.dataRowLabel}>{label}</Text>
       {editable ? (
@@ -1039,7 +1048,7 @@ function DataRow({ label, value, icon, highlighted, editable, onChangeText, plac
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder || 'Not detected'}
-          placeholderTextColor="#666"
+          placeholderTextColor={colors.textMuted}
           keyboardType={label.includes('Date') || label.includes('Time') ? 'default' : 'numeric'}
         />
       ) : (
@@ -1051,10 +1060,10 @@ function DataRow({ label, value, icon, highlighted, editable, onChangeText, plac
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -1065,17 +1074,17 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginTop: 20,
   },
   permissionText: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 8,
   },
   permissionButton: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -1089,12 +1098,12 @@ const styles = StyleSheet.create({
   processingText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginTop: 20,
   },
   processingSubtext: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 8,
   },
   cameraHeader: {
@@ -1104,11 +1113,11 @@ const styles = StyleSheet.create({
   cameraTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   cameraSubtitle: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   cameraContainer: {
@@ -1130,7 +1139,7 @@ const styles = StyleSheet.create({
     width: '85%',
     height: '70%',
     borderWidth: 2,
-    borderColor: '#FF9500',
+    borderColor: colors.tint,
     borderRadius: 16,
     borderStyle: 'dashed',
   },
@@ -1145,7 +1154,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1153,7 +1162,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1161,7 +1170,7 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 31,
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     borderWidth: 3,
     borderColor: '#FFFFFF',
   },
@@ -1169,7 +1178,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1182,7 +1191,7 @@ const styles = StyleSheet.create({
   },
   manualEntryText: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   webContainer: {
     flex: 1,
@@ -1196,13 +1205,13 @@ const styles = StyleSheet.create({
   },
   webPlaceholderText: {
     fontSize: 16,
-    color: '#6E6E73',
+    color: colors.textMuted,
     marginTop: 16,
   },
   uploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 14,
@@ -1226,17 +1235,17 @@ const styles = StyleSheet.create({
   reviewTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   resultCard: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
   },
   resultCardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 16,
   },
   dataRow: {
@@ -1244,10 +1253,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: colors.border,
   },
   dataRowHighlighted: {
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
+    backgroundColor: colors.primaryLight,
     marginHorizontal: -16,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -1260,16 +1269,16 @@ const styles = StyleSheet.create({
   dataRowLabel: {
     flex: 1,
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   dataRowValue: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   dataRowValueHighlighted: {
     fontSize: 18,
-    color: '#FF9500',
+    color: colors.tint,
     fontWeight: '700',
   },
   buttonContainer: {
@@ -1282,7 +1291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.card,
     paddingVertical: 16,
     borderRadius: 14,
     gap: 8,
@@ -1290,14 +1299,14 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF9500',
+    color: colors.tint,
   },
   primaryButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     paddingVertical: 16,
     borderRadius: 14,
     gap: 8,
@@ -1317,7 +1326,7 @@ const styles = StyleSheet.create({
   formSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 12,
   },
   locationBadge: {
@@ -1330,7 +1339,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   suggestionsContainer: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.elevated,
     borderRadius: 12,
     marginTop: 8,
     overflow: 'hidden',
@@ -1340,7 +1349,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#3A3A3C',
+    borderBottomColor: colors.border,
     gap: 12,
   },
   suggestionText: {
@@ -1349,16 +1358,16 @@ const styles = StyleSheet.create({
   suggestionName: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   suggestionAddress: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   suggestionDistance: {
     fontSize: 12,
-    color: '#FF9500',
+    color: colors.tint,
     marginTop: 2,
   },
   inputRow: {
@@ -1368,7 +1377,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -1377,16 +1386,16 @@ const styles = StyleSheet.create({
   highlightedInput: {
     borderWidth: 1,
     borderColor: 'rgba(255, 149, 0, 0.3)',
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
+    backgroundColor: colors.primaryLight,
   },
   textInput: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   inputUnit: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   vehicleListHorizontal: {
     flexDirection: 'row',
@@ -1395,18 +1404,18 @@ const styles = StyleSheet.create({
   vehicleChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
     gap: 8,
   },
   vehicleChipSelected: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
   },
   vehicleChipText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: '500',
   },
   vehicleChipTextSelected: {
@@ -1414,10 +1423,10 @@ const styles = StyleSheet.create({
   },
   noVehiclesText: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   summaryCard: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -1425,7 +1434,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 16,
   },
   summaryRow: {
@@ -1436,23 +1445,23 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   summaryValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#FF9500',
+    color: colors.tint,
   },
   summaryValueSmall: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
     paddingVertical: 18,
     borderRadius: 14,
     gap: 10,

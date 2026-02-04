@@ -1,43 +1,46 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import { useTheme } from '@/context/ThemeContext';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
-  focused?: boolean;
 }) {
   return (
-    <View style={[styles.iconContainer, props.focused && styles.iconContainerActive]}>
-      <FontAwesome size={22} style={{ marginBottom: -3 }} {...props} />
+    <View style={styles.iconContainer}>
+      <FontAwesome size={22} {...props} />
     </View>
   );
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme() ?? 'dark';
+  const { colors } = useTheme();
+  const dynamicStyles = useMemo(() => getStyles(colors), [colors]);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        tabBarInactiveTintColor: Colors[colorScheme].tabIconDefault,
-        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarStyle: dynamicStyles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
-        headerStyle: styles.header,
-        headerTitleStyle: styles.headerTitle,
-        headerTintColor: '#FFFFFF',
+        headerShown: false,
+        headerStyle: dynamicStyles.header,
+        headerTitleStyle: dynamicStyles.headerTitle,
+        headerTintColor: colors.text,
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="home" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon 
+              name="home" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -45,8 +48,11 @@ export default function TabLayout() {
         name="find"
         options={{
           title: 'Find',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="map-marker" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon 
+              name="map-marker" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -54,8 +60,11 @@ export default function TabLayout() {
         name="scan"
         options={{
           title: 'Scan',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="camera" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon 
+              name="camera" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -63,8 +72,11 @@ export default function TabLayout() {
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="list" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon 
+              name="list" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -72,8 +84,11 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="user" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon 
+              name="user" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -88,36 +103,38 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   tabBar: {
-    backgroundColor: '#1C1C1E',
-    borderTopColor: '#2C2C2E',
+    backgroundColor: colors.card,
+    borderTopColor: colors.border,
     borderTopWidth: 1,
     paddingTop: 8,
     paddingBottom: 8,
     height: 65,
   },
+  header: {
+    backgroundColor: colors.card,
+    shadowColor: 'transparent',
+    elevation: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});
+
+const styles = StyleSheet.create({
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '500',
     marginTop: 4,
   },
-  header: {
-    backgroundColor: '#1C1C1E',
-    shadowColor: 'transparent',
-    elevation: 0,
-  },
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-  },
   iconContainer: {
     padding: 4,
-  },
-  iconContainerActive: {
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

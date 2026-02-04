@@ -240,7 +240,7 @@ class ApiService {
     return this.request<FuelEntry[]>(`/api/entries${query ? `?${query}` : ''}`);
   }
 
-  async getStats(period: 'week' | 'month' | 'year' = 'month', date?: string) {
+  async getStats(period: 'week' | 'month' | 'year' | 'all' = 'month', date?: string) {
     return this.request<Stats>(`/api/entries/stats?period=${period}${date ? `&date=${date}` : ''}`);
   }
 

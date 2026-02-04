@@ -103,7 +103,8 @@ router.get('/search', async (req, res) => {
       return res.status(400).json({ error: 'Search query too short for global search' });
     }
 
-    let overpassQuery;
+    // Sanitize search query to prevent Overpass QL injection/errors
+    const sanitizedQuery = searchQuery ? searchQuery.replace(/"/g, '\\"') : '';
 
     if (bounds) {
       // Search within specific bounds (south,west,north,east)
@@ -122,10 +123,10 @@ router.get('/search', async (req, res) => {
       overpassQuery = `
         [out:json][timeout:8];
         (
-          node["amenity"="fuel"]["name"~"${searchQuery}",i](around:${radius},${lat},${lng});
-          node["amenity"="fuel"]["brand"~"${searchQuery}",i](around:${radius},${lat},${lng});
-          way["amenity"="fuel"]["name"~"${searchQuery}",i](around:${radius},${lat},${lng});
-          way["amenity"="fuel"]["brand"~"${searchQuery}",i](around:${radius},${lat},${lng});
+          node["amenity"="fuel"]["name"~"${sanitizedQuery}",i](around:${radius},${lat},${lng});
+          node["amenity"="fuel"]["brand"~"${sanitizedQuery}",i](around:${radius},${lat},${lng});
+          way["amenity"="fuel"]["name"~"${sanitizedQuery}",i](around:${radius},${lat},${lng});
+          way["amenity"="fuel"]["brand"~"${sanitizedQuery}",i](around:${radius},${lat},${lng});
         );
         out center;
       `;
@@ -136,10 +137,10 @@ router.get('/search', async (req, res) => {
         [out:json][timeout:8];
         area["ISO3166-1"="CZ"]->.cz;
         (
-          node["amenity"="fuel"]["name"~"${searchQuery}",i](area.cz);
-          node["amenity"="fuel"]["brand"~"${searchQuery}",i](area.cz);
-          way["amenity"="fuel"]["name"~"${searchQuery}",i](area.cz);
-          way["amenity"="fuel"]["brand"~"${searchQuery}",i](area.cz);
+          node["amenity"="fuel"]["name"~"${sanitizedQuery}",i](area.cz);
+          node["amenity"="fuel"]["brand"~"${sanitizedQuery}",i](area.cz);
+          way["amenity"="fuel"]["name"~"${sanitizedQuery}",i](area.cz);
+          way["amenity"="fuel"]["brand"~"${sanitizedQuery}",i](area.cz);
         );
         out center 20;
       `;
@@ -195,11 +196,15 @@ router.get('/search', async (req, res) => {
       stations,
     });
   } catch (error) {
-    console.error('Search error:', error);
+    console.error('Search error:', error.message);
+    if (error.response) {
+      console.error('Overpass API error:', error.response.data);
+    }
+    
     if (error.code === 'ECONNABORTED') {
       return res.status(504).json({ error: 'Search timeout - try refining your query' });
     }
-    res.status(500).json({ error: 'Failed to search stations' });
+    res.status(500).json({ error: 'Failed to search stations', details: error.message });
   }
 });
 

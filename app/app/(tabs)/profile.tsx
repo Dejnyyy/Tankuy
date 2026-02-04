@@ -13,10 +13,12 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import api, { Vehicle } from '@/services/api';
 import { getBrandSuggestions, getModelSuggestions, parseCarInput } from '@/data/carDatabase';
 import { getEngineSuggestions } from '@/data/engineDatabase';
@@ -32,6 +34,8 @@ const FUEL_TYPES: { value: FuelType; label: string; icon: string }[] = [
 ];
 
 export default function ProfileScreen() {
+  const { colors, toggleTheme, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const { user, signOut, isLoading: authLoading } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -366,9 +370,23 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Settings</Text>
           
           <View style={styles.settingsGroup}>
-            <SettingsItem icon="bell" label="Notifications" value="On" />
-            <SettingsItem icon="money" label="Currency" value="CZK" />
-            <SettingsItem icon="tachometer" label="Unit System" value="Metric" />
+            <View style={styles.settingsItem}>
+              <View style={styles.settingsItemLeft}>
+                <View style={styles.settingsIconContainer}>
+                   <FontAwesome name={isDark ? "moon-o" : "sun-o"} size={16} color={colors.textSecondary} />
+                </View>
+                <Text style={styles.settingsLabel}>Dark Mode</Text>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#767577', true: colors.tint }}
+                thumbColor={isDark ? '#FFFFFF' : '#f4f3f4'}
+              />
+            </View>
+            <SettingsItem icon="bell" label="Notifications" value="On" styles={styles} colors={colors} />
+            <SettingsItem icon="money" label="Currency" value="CZK" styles={styles} colors={colors} />
+            <SettingsItem icon="tachometer" label="Unit System" value="Metric" styles={styles} colors={colors} />
           </View>
         </View>
 
@@ -377,9 +395,9 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>About</Text>
           
           <View style={styles.settingsGroup}>
-            <SettingsItem icon="info-circle" label="Version" value="1.0.0" />
-            <SettingsItem icon="file-text-o" label="Terms of Service" showArrow />
-            <SettingsItem icon="lock" label="Privacy Policy" showArrow />
+            <SettingsItem icon="info-circle" label="Version" value="1.0.0" styles={styles} colors={colors} />
+            <SettingsItem icon="file-text-o" label="Terms of Service" showArrow styles={styles} colors={colors} />
+            <SettingsItem icon="lock" label="Privacy Policy" showArrow styles={styles} colors={colors} />
           </View>
         </View>
 
@@ -390,10 +408,10 @@ export default function ProfileScreen() {
           disabled={authLoading}
         >
           {authLoading ? (
-            <ActivityIndicator size="small" color="#FF453A" />
+            <ActivityIndicator size="small" color={colors.error} />
           ) : (
             <>
-              <FontAwesome name="sign-out" size={18} color="#FF453A" />
+              <FontAwesome name="sign-out" size={18} color={colors.error} />
               <Text style={styles.signOutText}>Sign Out</Text>
             </>
           )}
@@ -424,7 +442,7 @@ export default function ProfileScreen() {
               </Text>
               <TouchableOpacity onPress={handleSaveVehicle} disabled={saving}>
                 {saving ? (
-                  <ActivityIndicator size="small" color="#FF9500" />
+                  <ActivityIndicator size="small" color={colors.tint} />
                 ) : (
                   <Text style={styles.modalSave}>Save</Text>
                 )}
@@ -436,11 +454,11 @@ export default function ProfileScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Vehicle Name *</Text>
                 <View style={styles.inputContainer}>
-                  <FontAwesome name="car" size={18} color="#8E8E93" />
+                  <FontAwesome name="car" size={18} color={colors.textSecondary} />
                   <TextInput
                     style={styles.textInput}
                     placeholder="e.g. My Car, Family SUV..."
-                    placeholderTextColor="#6E6E73"
+                    placeholderTextColor={colors.textMuted}
                     value={vehicleForm.name}
                     onChangeText={(v) => setVehicleForm(prev => ({ ...prev, name: v }))}
                   />
@@ -463,7 +481,7 @@ export default function ProfileScreen() {
                       <FontAwesome 
                         name={fuel.icon as any} 
                         size={16} 
-                        color={vehicleForm.fuelType === fuel.value ? '#FFFFFF' : '#8E8E93'} 
+                        color={vehicleForm.fuelType === fuel.value ? '#FFFFFF' : colors.textSecondary} 
                       />
                       <Text style={[
                         styles.fuelTypeText,
@@ -481,11 +499,11 @@ export default function ProfileScreen() {
                 <Text style={styles.formLabel}>Brand</Text>
                 <View style={styles.autocompleteContainer}>
                   <View style={styles.inputContainer}>
-                    <FontAwesome name="industry" size={18} color="#8E8E93" />
+                    <FontAwesome name="industry" size={18} color={colors.textSecondary} />
                     <TextInput
                       style={styles.textInput}
                       placeholder="Type brand or 'vw golf'..."
-                      placeholderTextColor="#6E6E73"
+                      placeholderTextColor={colors.textMuted}
                       value={vehicleForm.brand}
                       onChangeText={handleBrandChange}
                       onFocus={() => {
@@ -506,7 +524,7 @@ export default function ProfileScreen() {
                           ]}
                           onPress={() => selectBrand(brand)}
                         >
-                          <FontAwesome name="car" size={14} color="#FF9500" />
+                          <FontAwesome name="car" size={14} color={colors.tint} />
                           <Text style={styles.suggestionText}>{brand}</Text>
                         </TouchableOpacity>
                       ))}
@@ -520,11 +538,11 @@ export default function ProfileScreen() {
                 <Text style={styles.formLabel}>Model</Text>
                 <View style={styles.autocompleteContainer}>
                   <View style={styles.inputContainer}>
-                    <FontAwesome name="tag" size={18} color="#8E8E93" />
+                    <FontAwesome name="tag" size={18} color={colors.textSecondary} />
                     <TextInput
                       style={styles.textInput}
                       placeholder={vehicleForm.brand ? `Models for ${vehicleForm.brand}...` : "Select brand first..."}
-                      placeholderTextColor="#6E6E73"
+                      placeholderTextColor={colors.textMuted}
                       value={vehicleForm.model}
                       onChangeText={handleModelChange}
                       onFocus={() => {
@@ -550,7 +568,7 @@ export default function ProfileScreen() {
                             ]}
                             onPress={() => selectModel(model)}
                           >
-                            <FontAwesome name="tag" size={14} color="#FF9500" />
+                            <FontAwesome name="tag" size={14} color={colors.tint} />
                             <Text style={styles.suggestionText}>{model}</Text>
                           </TouchableOpacity>
                         ))}
@@ -565,11 +583,11 @@ export default function ProfileScreen() {
                 <Text style={styles.formLabel}>Engine</Text>
                 <View style={styles.autocompleteContainer}>
                   <View style={styles.inputContainer}>
-                    <FontAwesome name="cog" size={18} color="#8E8E93" />
+                    <FontAwesome name="cog" size={18} color={colors.textSecondary} />
                     <TextInput
                       style={styles.textInput}
                       placeholder={vehicleForm.model ? "Select engine..." : "Select model first..."}
-                      placeholderTextColor="#6E6E73"
+                      placeholderTextColor={colors.textMuted}
                       value={vehicleForm.engine ? `${vehicleForm.engine} (${vehicleForm.enginePower})` : ''}
                       onFocus={() => {
                         if (vehicleForm.brand && vehicleForm.model) {
@@ -595,10 +613,10 @@ export default function ProfileScreen() {
                             ]}
                             onPress={() => selectEngine(engine)}
                           >
-                            <FontAwesome name="cog" size={14} color="#FF9500" />
+                            <FontAwesome name="cog" size={14} color={colors.tint} />
                             <View style={{ flex: 1 }}>
                               <Text style={styles.suggestionText}>{engine.name}</Text>
-                              <Text style={{ fontSize: 12, color: '#8E8E93' }}>{engine.power} • {engine.fuel === 'natural' ? 'Natural' : engine.fuel.charAt(0).toUpperCase() + engine.fuel.slice(1)}</Text>
+                              <Text style={{ fontSize: 12, color: colors.textSecondary }}>{engine.power} • {engine.fuel === 'natural' ? 'Natural' : engine.fuel.charAt(0).toUpperCase() + engine.fuel.slice(1)}</Text>
                             </View>
                           </TouchableOpacity>
                         ))}
@@ -612,11 +630,11 @@ export default function ProfileScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Year (Optional)</Text>
                 <View style={styles.inputContainer}>
-                  <FontAwesome name="calendar" size={18} color="#8E8E93" />
+                  <FontAwesome name="calendar" size={18} color={colors.textSecondary} />
                   <TextInput
                     style={styles.textInput}
                     placeholder="e.g. 2020"
-                    placeholderTextColor="#6E6E73"
+                    placeholderTextColor={colors.textMuted}
                     keyboardType="numeric"
                     maxLength={4}
                     value={vehicleForm.year}
@@ -629,11 +647,11 @@ export default function ProfileScreen() {
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>License Plate (Optional)</Text>
                 <View style={styles.inputContainer}>
-                  <FontAwesome name="id-card" size={18} color="#8E8E93" />
+                  <FontAwesome name="id-card" size={18} color={colors.textSecondary} />
                   <TextInput
                     style={styles.textInput}
                     placeholder="e.g. ABC 1234"
-                    placeholderTextColor="#6E6E73"
+                    placeholderTextColor={colors.textMuted}
                     autoCapitalize="characters"
                     value={vehicleForm.licensePlate}
                     onChangeText={(v) => setVehicleForm(prev => ({ ...prev, licensePlate: v }))}
@@ -654,33 +672,37 @@ function SettingsItem({
   icon, 
   label, 
   value, 
-  showArrow 
+  showArrow,
+  styles,
+  colors
 }: { 
   icon: string; 
   label: string; 
   value?: string;
   showArrow?: boolean;
+  styles: any;
+  colors: any;
 }) {
   return (
     <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
       <View style={styles.settingsItemLeft}>
         <View style={styles.settingsIconContainer}>
-          <FontAwesome name={icon as any} size={16} color="#8E8E93" />
+          <FontAwesome name={icon as any} size={16} color={colors.textSecondary} />
         </View>
         <Text style={styles.settingsLabel}>{label}</Text>
       </View>
       <View style={styles.settingsItemRight}>
         {value && <Text style={styles.settingsValue}>{value}</Text>}
-        {showArrow && <FontAwesome name="chevron-right" size={12} color="#6E6E73" />}
+        {showArrow && <FontAwesome name="chevron-right" size={12} color={colors.textMuted} />}
       </View>
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -689,13 +711,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   userCard: {
     alignItems: 'center',
     paddingVertical: 24,
     marginHorizontal: 20,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 20,
   },
   avatarContainer: {
@@ -706,24 +728,24 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 3,
-    borderColor: '#FF9500',
+    borderColor: colors.tint,
   },
   avatarPlaceholder: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.elevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
   userName: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   userEmail: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   section: {
@@ -739,7 +761,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   addButton: {
     flexDirection: 'row',
@@ -749,7 +771,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FF9500',
+    color: colors.tint,
   },
   loadingContainer: {
     padding: 20,
@@ -761,7 +783,7 @@ const styles = StyleSheet.create({
   vehicleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
   },
@@ -769,7 +791,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -780,18 +802,18 @@ const styles = StyleSheet.create({
   vehicleName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   vehicleMeta: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   vehicleAction: {
     padding: 8,
   },
   emptyVehicles: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 32,
     alignItems: 'center',
@@ -799,16 +821,16 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 12,
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#6E6E73',
+    color: colors.textMuted,
     marginTop: 4,
   },
   settingsGroup: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 14,
     marginTop: 12,
     overflow: 'hidden',
@@ -819,7 +841,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: colors.border,
   },
   settingsItemLeft: {
     flexDirection: 'row',
@@ -830,7 +852,7 @@ const styles = StyleSheet.create({
   },
   settingsLabel: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   settingsItemRight: {
     flexDirection: 'row',
@@ -839,7 +861,7 @@ const styles = StyleSheet.create({
   },
   settingsValue: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   signOutButton: {
     flexDirection: 'row',
@@ -847,7 +869,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 20,
     marginTop: 32,
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+    backgroundColor: 'rgba(255, 69, 58, 0.15)', // Keep red tint for destructive act
     paddingVertical: 16,
     borderRadius: 14,
     gap: 10,
@@ -855,7 +877,7 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF453A',
+    color: colors.error,
   },
   footer: {
     height: 100,
@@ -863,7 +885,7 @@ const styles = StyleSheet.create({
   // Modal styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -872,21 +894,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: colors.border,
   },
   modalCancel: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: colors.textSecondary,
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   modalSave: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FF9500',
+    color: colors.tint,
   },
   modalContent: {
     flex: 1,
@@ -898,13 +920,13 @@ const styles = StyleSheet.create({
   formLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.inputBackground,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -913,7 +935,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   fuelTypeGrid: {
     flexDirection: 'row',
@@ -923,28 +945,28 @@ const styles = StyleSheet.create({
   fuelTypeOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.inputBackground,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 10,
     gap: 8,
   },
   fuelTypeOptionSelected: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
   },
   fuelTypeText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: '500',
   },
   fuelTypeTextSelected: {
-    color: '#FFFFFF',
+    color: '#FFFFFF', // Always white when selected
   },
   autocompleteContainer: {
     position: 'relative',
   },
   suggestionsContainer: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: colors.elevated,
     borderRadius: 12,
     marginTop: 8,
     overflow: 'hidden',
@@ -955,11 +977,11 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#3A3A3C',
+    borderBottomColor: colors.border,
   },
   suggestionText: {
     fontSize: 15,
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: '500',
   },
 });

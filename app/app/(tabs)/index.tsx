@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import api, { Stats, FuelEntry } from '@/services/api';
 import { router } from 'expo-router';
 
@@ -28,11 +29,14 @@ const formatNumber = (value: any, decimals: number = 2): string => {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+  
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentEntries, setRecentEntries] = useState<FuelEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [period, setPeriod] = useState<'week' | 'month' | 'year' | 'all'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedPoint, setSelectedPoint] = useState<any>(null); // For chart tooltip
 
@@ -74,7 +78,9 @@ export default function HomeScreen() {
   };
 
   const formattedPeriod = () => {
-    if (period === 'year') {
+    if (period === 'all') {
+      return 'All Time';
+    } else if (period === 'year') {
       return currentDate.getFullYear().toString();
     } else if (period === 'month') {
       return currentDate.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
@@ -137,7 +143,7 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#FF9500"
+            tintColor={colors.tint}
           />
         }
       >
@@ -152,7 +158,7 @@ export default function HomeScreen() {
         {/* Period Selector */}
         <View style={styles.periodSelectorContainer}>
           <View style={styles.periodSwitcher}>
-            {(['week', 'month', 'year'] as const).map((p) => (
+            {(['week', 'month', 'year', 'all'] as const).map((p) => (
               <TouchableOpacity
                 key={p}
                 style={[styles.periodButton, period === p && styles.periodButtonActive]}
@@ -166,14 +172,18 @@ export default function HomeScreen() {
           </View>
 
           {/* Date Navigation */}
-          <View style={styles.dateNavigation}>
-             <TouchableOpacity style={styles.navButton} onPress={() => changeDate(-1)}>
-               <FontAwesome name="chevron-left" size={16} color="#FF9500" />
-             </TouchableOpacity>
+           <View style={styles.dateNavigation}>
+             {period !== 'all' && (
+               <TouchableOpacity style={styles.navButton} onPress={() => changeDate(-1)}>
+                 <FontAwesome name="chevron-left" size={16} color={colors.tint} />
+               </TouchableOpacity>
+             )}
              <Text style={styles.dateLabel}>{formattedPeriod()}</Text>
-             <TouchableOpacity style={styles.navButton} onPress={() => changeDate(1)}>
-               <FontAwesome name="chevron-right" size={16} color="#FF9500" />
-             </TouchableOpacity>
+             {period !== 'all' && (
+               <TouchableOpacity style={styles.navButton} onPress={() => changeDate(1)}>
+                 <FontAwesome name="chevron-right" size={16} color={colors.tint} />
+               </TouchableOpacity>
+             )}
           </View>
         </View>
 
@@ -183,37 +193,43 @@ export default function HomeScreen() {
             icon="credit-card"
             label="Total Spent"
             value={`${formatNumber(stats?.summary?.total_spent, 0)} Kč`}
-            color="#FF9500"
+            color={colors.tint}
+            styles={styles}
           />
           <StatsCard
             icon="tint"
             label="Total Liters"
             value={`${formatNumber(stats?.summary?.total_liters, 1)}L`}
             color="#30D158"
+            styles={styles}
           />
           <StatsCard
             icon="tag"
             label="Avg Price/L"
             value={`${formatNumber(stats?.summary?.avg_price_per_liter, 2)} Kč`}
             color="#32ADE6"
+            styles={styles}
           />
           <StatsCard
             icon="dashboard"
             label="Avg Liters"
             value={`${formatNumber(stats?.summary?.avg_liters_per_tank, 1)}L`}
             color="#5AC8FA"
+            styles={styles}
           />
           <StatsCard
             icon="bar-chart"
             label="Avg/Tank"
             value={`${formatNumber(stats?.summary?.avg_per_tank, 0)} Kč`}
             color="#5E5CE6"
+            styles={styles}
           />
           <StatsCard
             icon="hashtag"
             label="Fill-ups"
             value={`${stats?.summary?.total_tanks || 0}`}
             color="#FF375F"
+            styles={styles}
           />
         </View>
 
@@ -221,74 +237,90 @@ export default function HomeScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Spending Overview</Text>
           {hasData ? (
-            <LineChart
-              data={chartData}
-              width={screenWidth} // Set to exact screen width
-              height={220}
-              segments={4}
-              onDataPointClick={handleDataPointClick}
-              decorator={() => {
-                return selectedPoint ? (
-                  <View>
-                    <View style={{
-                        position: 'absolute',
-                        left: selectedPoint.x - 40,
-                        top: selectedPoint.y - 50,
-                        backgroundColor: '#FF9500',
-                        padding: 8,
-                        borderRadius: 8,
-                        width: 80,
-                        alignItems: 'center',
-                        zIndex: 10,
-                    }}>
-                      <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>
-                        {selectedPoint.text}
-                      </Text>
-                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10 }}>
-                        Tap to open
-                      </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <LineChart
+                data={{
+                  ...chartData,
+                  labels: chartData.labels.map((label, index) => {
+                    // Show fewer labels for 'all' mode or if there are too many points
+                    if (period === 'all' || chartData.labels.length > 12) {
+                      // Show every 3rd or 4th label depending on length, but always show first and last
+                      const step = Math.ceil(chartData.labels.length / 6);
+                      if (index === 0 || index === chartData.labels.length - 1 || index % step === 0) {
+                        return label;
+                      }
+                      return '';
+                    }
+                    return label;
+                  })
+                }}
+                width={Math.max(screenWidth, chartData.labels.length * 40)} 
+                height={220}
+                segments={4}
+                onDataPointClick={handleDataPointClick}
+                decorator={() => {
+                  return selectedPoint ? (
+                    <View>
+                      <View style={{
+                          position: 'absolute',
+                          left: selectedPoint.x - 40,
+                          top: selectedPoint.y - 50,
+                          backgroundColor: colors.tint,
+                          padding: 8,
+                          borderRadius: 8,
+                          width: 80,
+                          alignItems: 'center',
+                          zIndex: 10,
+                      }}>
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>
+                          {selectedPoint.text}
+                        </Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10 }}>
+                          Tap to open
+                        </Text>
+                      </View>
+                      {/* Arrow */}
+                      <View style={{
+                          position: 'absolute',
+                          left: selectedPoint.x - 6,
+                          top: selectedPoint.y - 18,
+                          width: 0, 
+                          height: 0, 
+                          borderLeftWidth: 6,
+                          borderRightWidth: 6,
+                          borderTopWidth: 6,
+                          borderLeftColor: 'transparent',
+                          borderRightColor: 'transparent',
+                          borderTopColor: colors.tint,
+                      }}/>
                     </View>
-                    {/* Arrow */}
-                    <View style={{
-                        position: 'absolute',
-                        left: selectedPoint.x - 6,
-                        top: selectedPoint.y - 18,
-                        width: 0, 
-                        height: 0, 
-                        borderLeftWidth: 6,
-                        borderRightWidth: 6,
-                        borderTopWidth: 6,
-                        borderLeftColor: 'transparent',
-                        borderRightColor: 'transparent',
-                        borderTopColor: '#FF9500',
-                    }}/>
-                  </View>
-                ) : null;
-              }}
-              chartConfig={{
-                backgroundColor: '#1C1C1E',
-                backgroundGradientFrom: '#1C1C1E',
-                backgroundGradientTo: '#1C1C1E',
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(255, 149, 0, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(142, 142, 147, ${opacity})`,
-                style: { borderRadius: 16 },
-                propsForDots: {
-                  r: '4',
-                  strokeWidth: '2',
-                  stroke: '#FF9500',
-                },
-              }}
-              bezier
-              style={{
-                ...styles.chart,
-                marginLeft: 4, // Pull chart to left to reduce label gap
-              }}
-              fromZero
-            />
+                  ) : null;
+                }}
+                chartConfig={{
+                  backgroundColor: colors.card,
+                  backgroundGradientFrom: colors.card,
+                  backgroundGradientTo: colors.card,
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(255, 149, 0, ${opacity})`,
+                  labelColor: (opacity = 1) => isDark ? `rgba(142, 142, 147, ${opacity})` : `rgba(60, 60, 67, ${opacity})`,
+                  style: { borderRadius: 16 },
+                  propsForDots: {
+                    r: '4',
+                    strokeWidth: '2',
+                    stroke: '#FF9500',
+                  },
+                }}
+                bezier
+                style={{
+                  ...styles.chart,
+                  marginLeft: 0, 
+                }}
+                fromZero
+              />
+            </ScrollView>
           ) : (
             <View style={styles.emptyChart}>
-              <FontAwesome name="line-chart" size={48} color="#3A3A3C" />
+              <FontAwesome name="line-chart" size={48} color={colors.textMuted} />
               <Text style={styles.emptyText}>No data yet</Text>
               <Text style={styles.emptySubtext}>Start tracking to see your spending</Text>
             </View>
@@ -300,11 +332,11 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Recent Entries</Text>
           {recentEntries.length > 0 ? (
             recentEntries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
+              <EntryCard key={entry.id} entry={entry} styles={styles} colors={colors} />
             ))
           ) : (
             <View style={styles.emptyCard}>
-              <FontAwesome name="tint" size={32} color="#3A3A3C" />
+              <FontAwesome name="tint" size={32} color={colors.textMuted} />
               <Text style={styles.emptyText}>No entries yet</Text>
               <Text style={styles.emptySubtext}>Scan a receipt to add your first entry</Text>
             </View>
@@ -315,11 +347,12 @@ export default function HomeScreen() {
   );
 }
 
-function StatsCard({ icon, label, value, color }: { 
+function StatsCard({ icon, label, value, color, styles }: { 
   icon: string; 
   label: string; 
   value: string; 
   color: string;
+  styles: any;
 }) {
   return (
     <View style={styles.statsCard}>
@@ -332,7 +365,7 @@ function StatsCard({ icon, label, value, color }: {
   );
 }
 
-function EntryCard({ entry }: { entry: FuelEntry }) {
+function EntryCard({ entry, styles, colors }: { entry: FuelEntry; styles: any; colors: any }) {
   const date = new Date(entry.date);
   const formattedDate = date.toLocaleDateString('en-US', { 
     month: 'short', 
@@ -342,7 +375,7 @@ function EntryCard({ entry }: { entry: FuelEntry }) {
   return (
     <TouchableOpacity style={styles.entryCard} activeOpacity={0.7}>
       <View style={styles.entryIconContainer}>
-        <FontAwesome name="tint" size={18} color="#FF9500" />
+        <FontAwesome name="tint" size={18} color={colors.tint} />
       </View>
       <View style={styles.entryInfo}>
         <Text style={styles.entryStation} numberOfLines={1}>
@@ -360,10 +393,10 @@ function EntryCard({ entry }: { entry: FuelEntry }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0D',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -376,11 +409,11 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   subGreeting: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   periodSelectorContainer: {
@@ -390,7 +423,7 @@ const styles = StyleSheet.create({
   },
   periodSwitcher: {
     flexDirection: 'row',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 4,
   },
@@ -398,7 +431,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -409,7 +442,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateLabel: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: '600',
     fontSize: 16,
   },
@@ -420,10 +453,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   periodButtonActive: {
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.tint,
   },
   periodButtonText: {
-    color: '#8E8E93',
+    color: colors.textSecondary,
     fontWeight: '600',
     fontSize: 14,
   },
@@ -439,7 +472,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     width: (screenWidth - 32) / 2,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
   },
@@ -454,25 +487,25 @@ const styles = StyleSheet.create({
   statsValue: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   statsLabel: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   chartCard: {
     marginHorizontal: 20,
     marginTop: 20,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingVertical: 16,
-    overflow: 'hidden', // Ensure chart doesn't bleed
+    overflow: 'hidden', 
   },
   chartTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 16,
     paddingHorizontal: 16,
   },
@@ -493,13 +526,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 16,
   },
   entryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
@@ -508,7 +541,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -519,11 +552,11 @@ const styles = StyleSheet.create({
   entryStation: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   entryDate: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   entryAmount: {
@@ -532,15 +565,15 @@ const styles = StyleSheet.create({
   entryAmountText: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   entryLiters: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   emptyCard: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 32,
     alignItems: 'center',
@@ -548,12 +581,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     marginTop: 12,
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#6E6E73',
+    color: colors.textMuted,
     marginTop: 4,
     textAlign: 'center',
   },

@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { GasStation } from '@/services/api';
 import { LocationObject } from 'expo-location';
+import { useTheme } from '@/context/ThemeContext';
 
 interface StationMapProps {
   location: LocationObject | null;
@@ -24,6 +25,8 @@ export default function StationMap({
   style,
   onSwitchToList,
 }: StationMapProps) {
+  const { colors, isDark } = useTheme();
+
   if (!location) return null;
 
   return (
@@ -38,7 +41,7 @@ export default function StationMap({
       onRegionChangeComplete={onRegionChange}
       showsUserLocation
       showsMyLocationButton
-      userInterfaceStyle="dark"
+      userInterfaceStyle={isDark ? 'dark' : 'light'}
     >
       {stations.map((station) => (
         <Marker
@@ -50,12 +53,17 @@ export default function StationMap({
         >
           <View style={[
             styles.markerContainer,
-            selectedStation?.id === station.id && styles.markerActive
+            { backgroundColor: colors.tint, borderColor: '#FFFFFF' },
+            selectedStation?.id === station.id && {
+              backgroundColor: '#FFFFFF',
+              borderColor: colors.tint,
+              transform: [{ scale: 1.2 }]
+            }
           ]}>
             <FontAwesome 
               name="tint" 
               size={16} 
-              color={selectedStation?.id === station.id ? '#000000' : '#FFFFFF'} 
+              color={selectedStation?.id === station.id ? colors.tint : '#FFFFFF'} 
             />
           </View>
         </Marker>
@@ -72,19 +80,12 @@ const styles = StyleSheet.create({
   },
   markerContainer: {
     padding: 8,
-    backgroundColor: '#FF9500',
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  markerActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FF9500',
-    transform: [{ scale: 1.2 }],
   },
 });
