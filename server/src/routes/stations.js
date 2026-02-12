@@ -1,10 +1,10 @@
-import express from 'express';
-import axios from 'axios';
+import express from "express";
+import axios from "axios";
 
 const router = express.Router();
 
 // Overpass API endpoint
-const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_API = "https://overpass-api.de/api/interpreter";
 
 // Build Overpass query for gas stations
 const buildOverpassQuery = (lat, lng, radius) => {
@@ -19,46 +19,55 @@ const buildOverpassQuery = (lat, lng, radius) => {
 };
 
 // GET /api/stations/nearby - Find nearby gas stations
-router.get('/nearby', async (req, res) => {
+router.get("/nearby", async (req, res) => {
   try {
     const { lat, lng, radius = 5000 } = req.query;
 
     if (!lat || !lng) {
-      return res.status(400).json({ error: 'Latitude and longitude are required' });
+      return res
+        .status(400)
+        .json({ error: "Latitude and longitude are required" });
     }
 
-    const query = buildOverpassQuery(parseFloat(lat), parseFloat(lng), parseInt(radius));
+    const query = buildOverpassQuery(
+      parseFloat(lat),
+      parseFloat(lng),
+      parseInt(radius),
+    );
 
     const response = await axios.post(OVERPASS_API, query, {
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { "Content-Type": "text/plain" },
       timeout: 10000,
     });
 
-    const stations = response.data.elements.map((element) => {
-      // Handle both nodes and ways
-      const coords = element.type === 'node'
-        ? { lat: element.lat, lng: element.lon }
-        : { lat: element.center?.lat, lng: element.center?.lon };
+    const stations = response.data.elements
+      .map((element) => {
+        // Handle both nodes and ways
+        const coords =
+          element.type === "node"
+            ? { lat: element.lat, lng: element.lon }
+            : { lat: element.center?.lat, lng: element.center?.lon };
 
-      const tags = element.tags || {};
+        const tags = element.tags || {};
 
-      return {
-        id: element.id,
-        type: element.type,
-        lat: coords.lat,
-        lng: coords.lng,
-        name: tags.name || tags.brand || 'Gas Station',
-        brand: tags.brand || null,
-        operator: tags.operator || null,
-        address: formatAddress(tags),
-        fuelTypes: extractFuelTypes(tags),
-        openingHours: tags.opening_hours || null,
-        phone: tags.phone || tags['contact:phone'] || null,
-        website: tags.website || tags['contact:website'] || null,
-        selfService: tags.self_service === 'yes',
-        payment: extractPaymentMethods(tags),
-      };
-    }).filter(s => s.lat && s.lng);
+        return {
+          id: element.id,
+          type: element.type,
+          lat: coords.lat,
+          lng: coords.lng,
+          name: tags.name || tags.brand || "Gas Station",
+          brand: tags.brand || null,
+          operator: tags.operator || null,
+          address: formatAddress(tags),
+          fuelTypes: extractFuelTypes(tags),
+          openingHours: tags.opening_hours || null,
+          phone: tags.phone || tags["contact:phone"] || null,
+          website: tags.website || tags["contact:website"] || null,
+          selfService: tags.self_service === "yes",
+          payment: extractPaymentMethods(tags),
+        };
+      })
+      .filter((s) => s.lat && s.lng);
 
     // Calculate distance from user location
     const stationsWithDistance = stations.map((station) => ({
@@ -67,7 +76,7 @@ router.get('/nearby', async (req, res) => {
         parseFloat(lat),
         parseFloat(lng),
         station.lat,
-        station.lng
+        station.lng,
       ),
     }));
 
@@ -79,36 +88,42 @@ router.get('/nearby', async (req, res) => {
       stations: stationsWithDistance,
     });
   } catch (error) {
-    console.error('Stations error:', error);
-    
-    if (error.code === 'ECONNABORTED') {
-      return res.status(504).json({ error: 'Request timeout - try a smaller radius' });
+    console.error("Stations error:", error);
+
+    if (error.code === "ECONNABORTED") {
+      return res
+        .status(504)
+        .json({ error: "Request timeout - try a smaller radius" });
     }
-    
-    res.status(500).json({ error: 'Failed to fetch nearby stations' });
+
+    res.status(500).json({ error: "Failed to fetch nearby stations" });
   }
 });
 
 // GET /api/stations/search - Search for gas stations by name or location
-router.get('/search', async (req, res) => {
+router.get("/search", async (req, res) => {
   try {
     const { query: searchQuery, bounds, lat, lng } = req.query;
 
     if (!searchQuery && !bounds) {
-      return res.status(400).json({ error: 'Search query or bounds required' });
+      return res.status(400).json({ error: "Search query or bounds required" });
     }
 
     // Block short global searches to prevent timeout
     if (!bounds && !lat && (!searchQuery || searchQuery.length < 3)) {
-      return res.status(400).json({ error: 'Search query too short for global search' });
+      return res
+        .status(400)
+        .json({ error: "Search query too short for global search" });
     }
 
     // Sanitize search query to prevent Overpass QL injection/errors
-    const sanitizedQuery = searchQuery ? searchQuery.replace(/"/g, '\\"') : '';
+    const sanitizedQuery = searchQuery ? searchQuery.replace(/"/g, '\\"') : "";
+
+    let overpassQuery;
 
     if (bounds) {
       // Search within specific bounds (south,west,north,east)
-      const [south, west, north, east] = bounds.split(',').map(parseFloat);
+      const [south, west, north, east] = bounds.split(",").map(parseFloat);
       overpassQuery = `
         [out:json][timeout:8];
         (
@@ -147,44 +162,47 @@ router.get('/search', async (req, res) => {
     }
 
     const response = await axios.post(OVERPASS_API, overpassQuery, {
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { "Content-Type": "text/plain" },
       timeout: 10000,
     });
 
-    const stations = response.data.elements.map((element) => {
-      const coords = element.type === 'node'
-        ? { lat: element.lat, lng: element.lon }
-        : { lat: element.center?.lat, lng: element.center?.lon };
+    const stations = response.data.elements
+      .map((element) => {
+        const coords =
+          element.type === "node"
+            ? { lat: element.lat, lng: element.lon }
+            : { lat: element.center?.lat, lng: element.center?.lon };
 
-      const tags = element.tags || {};
+        const tags = element.tags || {};
 
-      const station = {
-        id: element.id,
-        lat: coords.lat,
-        lng: coords.lng,
-        name: tags.name || tags.brand || 'Gas Station',
-        brand: tags.brand || null,
-        operator: tags.operator || null,
-        address: formatAddress(tags),
-        fuelTypes: extractFuelTypes(tags),
-        openingHours: tags.opening_hours || null,
-        phone: tags.phone || tags['contact:phone'] || null,
-        website: tags.website || tags['contact:website'] || null,
-        selfService: tags.self_service === 'yes',
-        payment: extractPaymentMethods(tags),
-      };
+        const station = {
+          id: element.id,
+          lat: coords.lat,
+          lng: coords.lng,
+          name: tags.name || tags.brand || "Gas Station",
+          brand: tags.brand || null,
+          operator: tags.operator || null,
+          address: formatAddress(tags),
+          fuelTypes: extractFuelTypes(tags),
+          openingHours: tags.opening_hours || null,
+          phone: tags.phone || tags["contact:phone"] || null,
+          website: tags.website || tags["contact:website"] || null,
+          selfService: tags.self_service === "yes",
+          payment: extractPaymentMethods(tags),
+        };
 
-      if (lat && lng) {
-        station.distance = calculateDistance(
-          parseFloat(lat),
-          parseFloat(lng),
-          station.lat,
-          station.lng
-        );
-      }
+        if (lat && lng) {
+          station.distance = calculateDistance(
+            parseFloat(lat),
+            parseFloat(lng),
+            station.lat,
+            station.lng,
+          );
+        }
 
-      return station;
-    }).filter(s => s.lat && s.lng);
+        return station;
+      })
+      .filter((s) => s.lat && s.lng);
 
     // Sort by distance if location provided
     if (lat && lng) {
@@ -196,58 +214,62 @@ router.get('/search', async (req, res) => {
       stations,
     });
   } catch (error) {
-    console.error('Search error:', error.message);
+    console.error("Search error:", error.message);
     if (error.response) {
-      console.error('Overpass API error:', error.response.data);
+      console.error("Overpass API error:", error.response.data);
     }
-    
-    if (error.code === 'ECONNABORTED') {
-      return res.status(504).json({ error: 'Search timeout - try refining your query' });
+
+    if (error.code === "ECONNABORTED") {
+      return res
+        .status(504)
+        .json({ error: "Search timeout - try refining your query" });
     }
-    res.status(500).json({ error: 'Failed to search stations', details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to search stations", details: error.message });
   }
 });
 
 // Helper: Format address from OSM tags
 function formatAddress(tags) {
   const parts = [];
-  
-  if (tags['addr:street']) {
-    let street = tags['addr:street'];
-    if (tags['addr:housenumber']) {
-      street += ' ' + tags['addr:housenumber'];
+
+  if (tags["addr:street"]) {
+    let street = tags["addr:street"];
+    if (tags["addr:housenumber"]) {
+      street += " " + tags["addr:housenumber"];
     }
     parts.push(street);
   }
-  
-  if (tags['addr:city']) {
-    parts.push(tags['addr:city']);
-  }
-  
-  if (tags['addr:postcode']) {
-    parts.push(tags['addr:postcode']);
+
+  if (tags["addr:city"]) {
+    parts.push(tags["addr:city"]);
   }
 
-  return parts.length > 0 ? parts.join(', ') : null;
+  if (tags["addr:postcode"]) {
+    parts.push(tags["addr:postcode"]);
+  }
+
+  return parts.length > 0 ? parts.join(", ") : null;
 }
 
 // Helper: Extract fuel types from OSM tags
 function extractFuelTypes(tags) {
   const fuelTypes = [];
-  
+
   const fuelMappings = {
-    'fuel:diesel': 'Diesel',
-    'fuel:octane_95': 'Natural 95',
-    'fuel:octane_98': 'Natural 98',
-    'fuel:lpg': 'LPG',
-    'fuel:cng': 'CNG',
-    'fuel:e85': 'E85',
-    'fuel:adblue': 'AdBlue',
-    'fuel:electric': 'Electric',
+    "fuel:diesel": "Diesel",
+    "fuel:octane_95": "Natural 95",
+    "fuel:octane_98": "Natural 98",
+    "fuel:lpg": "LPG",
+    "fuel:cng": "CNG",
+    "fuel:e85": "E85",
+    "fuel:adblue": "AdBlue",
+    "fuel:electric": "Electric",
   };
 
   for (const [tag, name] of Object.entries(fuelMappings)) {
-    if (tags[tag] === 'yes') {
+    if (tags[tag] === "yes") {
       fuelTypes.push(name);
     }
   }
@@ -258,18 +280,18 @@ function extractFuelTypes(tags) {
 // Helper: Extract payment methods from OSM tags
 function extractPaymentMethods(tags) {
   const payments = [];
-  
+
   const paymentMappings = {
-    'payment:cash': 'Cash',
-    'payment:credit_cards': 'Credit Cards',
-    'payment:debit_cards': 'Debit Cards',
-    'payment:contactless': 'Contactless',
-    'payment:apple_pay': 'Apple Pay',
-    'payment:google_pay': 'Google Pay',
+    "payment:cash": "Cash",
+    "payment:credit_cards": "Credit Cards",
+    "payment:debit_cards": "Debit Cards",
+    "payment:contactless": "Contactless",
+    "payment:apple_pay": "Apple Pay",
+    "payment:google_pay": "Google Pay",
   };
 
   for (const [tag, name] of Object.entries(paymentMappings)) {
-    if (tags[tag] === 'yes') {
+    if (tags[tag] === "yes") {
       payments.push(name);
     }
   }
@@ -280,21 +302,21 @@ function extractPaymentMethods(tags) {
 // Helper: Calculate distance between two points using Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371e3; // Earth's radius in meters
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return Math.round(R * c); // Distance in meters
 }
 
 // GET /api/stations/autocomplete - Autocomplete for station names using Foursquare
-router.get('/autocomplete', async (req, res) => {
+router.get("/autocomplete", async (req, res) => {
   try {
     const { query, lat, lng } = req.query;
 
@@ -303,59 +325,83 @@ router.get('/autocomplete', async (req, res) => {
     }
 
     const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY;
-    
+
     if (!FOURSQUARE_API_KEY) {
+      console.log(
+        "⚠️  FOURSQUARE_API_KEY not configured, using local fallback",
+      );
       // Fallback to local search without Foursquare
-      return res.json({ 
-        suggestions: getLocalSuggestions(query)
+      return res.json({
+        suggestions: getLocalSuggestions(query),
       });
     }
 
-    // Foursquare Places API - Autocomplete
+    // Foursquare Places API - Search endpoint (more reliable than autocomplete)
     const params = new URLSearchParams({
       query: query,
-      types: 'place',
-      categories: '19007', // Gas stations category in Foursquare
-      limit: '8',
+      categories: "17069", // Gas/Service Station category in Foursquare v3
+      limit: "8",
+      fields: "fsq_id,name,location,distance,geocodes",
     });
 
     if (lat && lng) {
-      params.append('ll', `${lat},${lng}`);
-      params.append('radius', '50000'); // 50km radius
+      params.append("ll", `${lat},${lng}`);
+      params.append("radius", "50000"); // 50km radius
+    } else {
+      // Default to Czech Republic if no location provided
+      params.append("near", "Czech Republic");
     }
 
-    const response = await axios.get(
-      `https://api.foursquare.com/v3/autocomplete?${params}`,
-      {
-        headers: {
-          'Authorization': `${FOURSQUARE_API_KEY}`,
-          'Accept': 'application/json',
-        },
-        timeout: 5000,
-      }
+    console.log(
+      "🔍 Foursquare API request:",
+      `https://api.foursquare.com/v3/places/search?${params}`,
     );
 
-    console.log('Foursquare response:', JSON.stringify(response.data, null, 2));
+    const response = await axios.get(
+      `https://api.foursquare.com/v3/places/search?${params}`,
+      {
+        headers: {
+          Authorization: FOURSQUARE_API_KEY,
+          Accept: "application/json",
+        },
+        timeout: 5000,
+      },
+    );
 
-    const suggestions = response.data.results
-      .filter(r => r.type === 'place')
-      .map(r => ({
-        id: r.place?.fsq_id,
-        name: r.place?.name || r.text?.primary,
-        address: r.place?.location?.formatted_address || null,
-        lat: r.place?.geocodes?.main?.latitude,
-        lng: r.place?.geocodes?.main?.longitude,
-        distance: r.place?.distance,
-      }));
+    console.log(
+      "✅ Foursquare response received:",
+      response.data.results?.length || 0,
+      "suggestions",
+    );
+
+    const suggestions = (response.data.results || []).map((place) => ({
+      id: place.fsq_id,
+      name: place.name,
+      address:
+        place.location?.formatted_address ||
+        [place.location?.address, place.location?.locality]
+          .filter(Boolean)
+          .join(", ") ||
+        null,
+      lat: place.geocodes?.main?.latitude,
+      lng: place.geocodes?.main?.longitude,
+      distance: place.distance,
+    }));
 
     res.json({ suggestions });
   } catch (error) {
-    console.error('Autocomplete error:', error.message);
-    
+    console.error("❌ Autocomplete error:", error.message);
+    if (error.response) {
+      console.error("Foursquare API error details:", {
+        status: error.response.status,
+        data: error.response.data,
+      });
+    }
+
     // Return local suggestions on error
     const { query } = req.query;
-    res.json({ 
-      suggestions: getLocalSuggestions(query || '')
+    res.json({
+      suggestions: getLocalSuggestions(query || ""),
     });
   }
 });
@@ -363,16 +409,30 @@ router.get('/autocomplete', async (req, res) => {
 // Local fallback suggestions (common gas station brands)
 function getLocalSuggestions(query) {
   const brands = [
-    'Shell', 'MOL', 'OMV', 'Benzina', 'EuroOil', 'Tank Ono', 
-    'Tesco', 'Globus', 'Robin Oil', 'Prim', 'Orlen',
-    'Circle K', 'Lukoil', 'Agip', 'Eni', 'BP', 'Total',
+    "Shell",
+    "MOL",
+    "OMV",
+    "Benzina",
+    "EuroOil",
+    "Tank Ono",
+    "Tesco",
+    "Globus",
+    "Robin Oil",
+    "Prim",
+    "Orlen",
+    "Circle K",
+    "Lukoil",
+    "Agip",
+    "Eni",
+    "BP",
+    "Total",
   ];
-  
+
   const lowerQuery = query.toLowerCase();
   return brands
-    .filter(b => b.toLowerCase().includes(lowerQuery))
+    .filter((b) => b.toLowerCase().includes(lowerQuery))
     .slice(0, 6)
-    .map(name => ({ id: name.toLowerCase(), name, address: null }));
+    .map((name) => ({ id: name.toLowerCase(), name, address: null }));
 }
 
 export default router;

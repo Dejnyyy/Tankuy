@@ -71,11 +71,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Web OAuth configuration - uses Expo auth proxy automatically when logged into Expo
+  // Web OAuth configuration - uses Expo auth proxy
+  const redirectUri = isExpoGo
+    ? "https://auth.expo.io/@dejny/tankuy"
+    : makeRedirectUri({ scheme: "com.tankuy.app" });
+
+  console.log("OAuth redirect URI:", redirectUri);
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    redirectUri,
   });
 
   // Handle web OAuth response
@@ -233,7 +240,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading(true);
       setError(null);
 
-      if (Platform.OS === "web" || isExpoGo) {
+      if (isExpoGo) {
+        // Expo Go: use server-side OAuth flow via WebBrowser
+        const deviceId = await getDeviceId();
+        const deviceName = getDeviceName();
+        const API_URL =
+          process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+        const authUrl = `${API_URL}/api/auth/google/start?deviceId=${encodeURIComponent(deviceId)}&deviceName=${encodeURIComponent(deviceName)}`;
+
+        const result = await WebBrowser.openAuthSessionAsync(
+          authUrl,
+          "tankuy://auth",
+        );
+
+        if (result.type === "success" && result.url) {
+          // Parse tokens from the redirect URL
+          const url = new URL(result.url);
+          const data = url.searchParams.get("data");
+          if (data) {
+            const authData = JSON.parse(decodeURIComponent(data));
+            api.setAccessToken(authData.accessToken);
+            setUser(authData.user);
+            await AsyncStorage.multiSet([
+              [STORAGE_KEYS.ACCESS_TOKEN, authData.accessToken],
+              [STORAGE_KEYS.REFRESH_TOKEN, authData.refreshToken],
+              [STORAGE_KEYS.USER, JSON.stringify(authData.user)],
+            ]);
+          }
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (Platform.OS === "web") {
         // Use web OAuth flow
         await promptAsync();
         // The response will be handled by the useEffect above
@@ -303,10 +342,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const deviceId = await getDeviceId();
       const deviceName = getDeviceName();
 
-      const { user: authUser, accessToken, refreshToken } = await api.signInAsGuest(
-        deviceId,
-        deviceName
-      );
+      const {
+        user: authUser,
+        accessToken,
+        refreshToken,
+      } = await api.signInAsGuest(deviceId, deviceName);
 
       api.setAccessToken(accessToken);
       setUser(authUser);
@@ -317,8 +357,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         [STORAGE_KEYS.USER, JSON.stringify(authUser)],
       ]);
     } catch (err: any) {
-      console.error('Guest sign-in error:', err);
-      setError(err.message || 'Guest sign-in failed');
+      console.error("Guest sign-in error:", err);
+      setError(err.message || "Guest sign-in failed");
     } finally {
       setIsLoading(false);
     }
