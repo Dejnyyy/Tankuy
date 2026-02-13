@@ -67,6 +67,11 @@ export default function SpendingChart({
   const containerXRef = useRef(0);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Reset active tooltip when data changes
+  React.useEffect(() => {
+    setActiveIndex(null);
+  }, [data, labels]);
+
   const PADDING_LEFT = 16;
   const PADDING_RIGHT = 16;
   const PADDING_TOP = 20;
@@ -162,17 +167,22 @@ export default function SpendingChart({
   const yLabelColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)";
   const xLabelColor = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)";
 
+  // Safe active point (bounds check)
+  const safeActive =
+    activeIndex !== null && activeIndex >= 0 && activeIndex < points.length
+      ? activeIndex
+      : null;
+  const activePoint = safeActive !== null ? points[safeActive] : null;
+
   // Tooltip position
   const tooltipWidth = 110;
-  const tooltipLeft =
-    activeIndex !== null
-      ? Math.min(
-          Math.max(points[activeIndex].x - tooltipWidth / 2, 4),
-          SVG_WIDTH - tooltipWidth - 4,
-        )
-      : 0;
-  const tooltipTop =
-    activeIndex !== null ? Math.max(points[activeIndex].y - 58, -4) : 0;
+  const tooltipLeft = activePoint
+    ? Math.min(
+        Math.max(activePoint.x - tooltipWidth / 2, 4),
+        SVG_WIDTH - tooltipWidth - 4,
+      )
+    : 0;
+  const tooltipTop = activePoint ? Math.max(activePoint.y - 58, -4) : 0;
 
   return (
     <View
@@ -254,12 +264,12 @@ export default function SpendingChart({
           ))}
 
         {/* Active vertical dashed line */}
-        {activeIndex !== null && (
+        {activePoint && (
           <G>
             <Line
-              x1={points[activeIndex].x}
+              x1={activePoint.x}
               y1={PADDING_TOP}
-              x2={points[activeIndex].x}
+              x2={activePoint.x}
               y2={CHART_BOTTOM}
               stroke={accentColor}
               strokeWidth="1"
@@ -268,8 +278,8 @@ export default function SpendingChart({
             />
             {/* Active dot — larger, filled */}
             <Circle
-              cx={points[activeIndex].x}
-              cy={points[activeIndex].y}
+              cx={activePoint.x}
+              cy={activePoint.y}
               r={7}
               fill={accentColor}
               stroke={isDark ? "#1C1C1E" : "#FFFFFF"}
@@ -298,7 +308,7 @@ export default function SpendingChart({
       </View>
 
       {/* Floating tooltip */}
-      {activeIndex !== null && (
+      {safeActive !== null && activePoint && (
         <View
           style={[
             styles.tooltip,
@@ -315,7 +325,7 @@ export default function SpendingChart({
           ]}
         >
           <Text style={[styles.tooltipValue, { color: accentColor }]}>
-            {data[activeIndex].toLocaleString()} {currency}
+            {data[safeActive].toLocaleString()} {currency}
           </Text>
           <Text
             style={[
@@ -323,7 +333,7 @@ export default function SpendingChart({
               { color: isDark ? "#8E8E93" : "#6E6E73" },
             ]}
           >
-            {labels[activeIndex]}
+            {labels[safeActive]}
           </Text>
         </View>
       )}
