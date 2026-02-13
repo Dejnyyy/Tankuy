@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Animated,
   Dimensions,
   Platform,
   Alert,
@@ -32,12 +33,86 @@ import NavigationOverlay, {
 
 const { width, height } = Dimensions.get("window");
 
+// Pulsating Go Now button component
+function GoNowButton({ onPress }: { onPress: () => void }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.06,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Animated.View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#FF9500",
+          paddingVertical: 14,
+          borderRadius: 12,
+          marginTop: 12,
+          gap: 10,
+          shadowColor: "#FF9500",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.5,
+          shadowRadius: 10,
+          elevation: 6,
+          transform: [{ scale: pulseAnim }],
+        }}
+      >
+        <FontAwesome name="location-arrow" size={18} color="#FFFFFF" />
+        <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 17 }}>
+          Go Now
+        </Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
 export default function FindScreen() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const [location, setLocation] = useState<Location.LocationObject | null>(
     null,
   );
+
+  // Merge Natural 95 + Natural 98 into "Natural 95 & 98"
+  const mergeFuelTypes = (fuels: string[]): string[] => {
+    const has95 = fuels.some(
+      (f) => f.toLowerCase().includes("natural 95") || f.toLowerCase() === "95",
+    );
+    const has98 = fuels.some(
+      (f) => f.toLowerCase().includes("natural 98") || f.toLowerCase() === "98",
+    );
+    if (has95 && has98) {
+      const filtered = fuels.filter(
+        (f) =>
+          !f.toLowerCase().includes("natural 95") &&
+          !f.toLowerCase().includes("natural 98") &&
+          f.toLowerCase() !== "95" &&
+          f.toLowerCase() !== "98",
+      );
+      return ["Natural 95 & 98", ...filtered];
+    }
+    return fuels;
+  };
+
   const [stations, setStations] = useState<GasStation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,6 +128,9 @@ export default function FindScreen() {
     duration: string;
   } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const routeFetchIdRef = useRef(0); // Cancel stale route fetches
+  const routeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Navigation state
   const [isNavigating, setIsNavigating] = useState(false);
@@ -249,13 +327,23 @@ export default function FindScreen() {
 
   const fetchRoute = async (station: GasStation) => {
     if (!location) return;
+    // Cancel any previous in-flight fetch
+    const fetchId = ++routeFetchIdRef.current;
     setRouteLoading(true);
     try {
       const fromLng = location.coords.longitude;
       const fromLat = location.coords.latitude;
       const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${station.lng},${station.lat}?overview=full&geometries=polyline&steps=true`;
-      const response = await fetch(url);
+      // Abort any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const response = await fetch(url, { signal: controller.signal });
       const data = await response.json();
+      // Ignore if a newer fetch was started
+      if (fetchId !== routeFetchIdRef.current) return;
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
         setRouteCoordinates(decodePolyline(route.geometry));
@@ -279,10 +367,13 @@ export default function FindScreen() {
         }
       }
     } catch (error) {
+      if (fetchId !== routeFetchIdRef.current) return;
       console.error("Failed to fetch route:", error);
       openNavigation(station);
     } finally {
-      setRouteLoading(false);
+      if (fetchId === routeFetchIdRef.current) {
+        setRouteLoading(false);
+      }
     }
   };
 
@@ -537,6 +628,13 @@ export default function FindScreen() {
               onStationSelect={(station: GasStation) => {
                 setSelectedStation(station);
                 clearRoute();
+                // Debounce route fetch to avoid OSRM rate limiting
+                if (routeDebounceRef.current) {
+                  clearTimeout(routeDebounceRef.current);
+                }
+                routeDebounceRef.current = setTimeout(() => {
+                  fetchRoute(station);
+                }, 500);
               }}
               onSwitchToList={() => setViewMode("list")}
               style={styles.map}
@@ -614,67 +712,81 @@ export default function FindScreen() {
                 )}
                 {selectedStation.fuelTypes?.length > 0 && (
                   <View style={[styles.fuelTypes, { marginTop: 0 }]}>
-                    {selectedStation.fuelTypes.slice(0, 3).map((fuel, idx) => (
-                      <View key={idx} style={styles.fuelBadge}>
-                        <Text style={styles.fuelBadgeText}>{fuel}</Text>
-                      </View>
-                    ))}
+                    {mergeFuelTypes(selectedStation.fuelTypes)
+                      .slice(0, 3)
+                      .map((fuel, idx) => (
+                        <View key={idx} style={styles.fuelBadge}>
+                          <Text style={styles.fuelBadgeText}>{fuel}</Text>
+                        </View>
+                      ))}
                   </View>
                 )}
               </View>
               {routeInfo && (
-                <View style={styles.routeInfoContainer}>
-                  <FontAwesome name="road" size={14} color={colors.tint} />
-                  <Text style={styles.routeInfoText}>{routeInfo.distance}</Text>
-                  <Text style={styles.routeInfoDivider}>·</Text>
-                  <FontAwesome name="clock-o" size={14} color={colors.tint} />
-                  <Text style={styles.routeInfoText}>{routeInfo.duration}</Text>
+                <View
+                  style={[
+                    styles.routeInfoContainer,
+                    { justifyContent: "space-between" },
+                  ]}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <FontAwesome name="road" size={14} color={colors.tint} />
+                    <Text style={styles.routeInfoText}>
+                      {routeInfo.distance}
+                    </Text>
+                    <Text style={styles.routeInfoDivider}>·</Text>
+                    <FontAwesome name="clock-o" size={14} color={colors.tint} />
+                    <Text style={styles.routeInfoText}>
+                      {routeInfo.duration}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.externalNavButton}
+                    onPress={() => openNavigation(selectedStation)}
+                    activeOpacity={0.7}
+                  >
+                    <FontAwesome
+                      name="external-link"
+                      size={14}
+                      color={colors.tint}
+                    />
+                    <Text style={styles.externalNavText}>Maps</Text>
+                  </TouchableOpacity>
                 </View>
               )}
-              <View style={styles.stationActions}>
+              {!routeInfo && (
                 <TouchableOpacity
-                  style={styles.navigateButton}
-                  onPress={() => fetchRoute(selectedStation)}
-                  activeOpacity={0.7}
-                  disabled={routeLoading}
-                >
-                  <FontAwesome
-                    name={routeLoading ? "spinner" : "road"}
-                    size={16}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.navigateButtonText}>
-                    {routeCoordinates.length > 0 ? "Recalculate" : "Show Route"}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.externalNavButton}
+                  style={[
+                    styles.externalNavButton,
+                    { marginTop: 12, alignSelf: "flex-end" },
+                  ]}
                   onPress={() => openNavigation(selectedStation)}
                   activeOpacity={0.7}
                 >
                   <FontAwesome
                     name="external-link"
-                    size={16}
+                    size={14}
                     color={colors.tint}
                   />
                   <Text style={styles.externalNavText}>Maps</Text>
                 </TouchableOpacity>
-              </View>
-              {/* Go Now button - only show when route is loaded */}
-              {routeCoordinates.length > 0 && navigationSteps.length > 0 && (
-                <TouchableOpacity
-                  style={styles.goNowButton}
-                  onPress={startNavigation}
-                  activeOpacity={0.7}
-                >
-                  <FontAwesome
-                    name="location-arrow"
-                    size={18}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.goNowText}>Go Now</Text>
-                </TouchableOpacity>
               )}
+              {/* Go Now button - pulsating */}
+              <GoNowButton
+                onPress={() => {
+                  if (routeCoordinates.length === 0) {
+                    fetchRoute(selectedStation).then(() => startNavigation());
+                  } else {
+                    startNavigation();
+                  }
+                }}
+              />
             </View>
           )}
 
@@ -719,11 +831,13 @@ export default function FindScreen() {
                 )}
                 {item.fuelTypes.length > 0 && (
                   <View style={styles.fuelTypes}>
-                    {item.fuelTypes.slice(0, 3).map((fuel, idx) => (
-                      <View key={idx} style={styles.fuelBadge}>
-                        <Text style={styles.fuelBadgeText}>{fuel}</Text>
-                      </View>
-                    ))}
+                    {mergeFuelTypes(item.fuelTypes)
+                      .slice(0, 3)
+                      .map((fuel, idx) => (
+                        <View key={idx} style={styles.fuelBadge}>
+                          <Text style={styles.fuelBadgeText}>{fuel}</Text>
+                        </View>
+                      ))}
                   </View>
                 )}
               </View>
