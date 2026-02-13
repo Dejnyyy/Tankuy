@@ -4,8 +4,8 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { View, StyleSheet } from "react-native";
-import MapView, { Marker, Polyline, Region } from "react-native-maps";
+import { View, StyleSheet, Dimensions } from "react-native";
+import MapView, { Marker, Polyline, Region, Camera } from "react-native-maps";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { GasStation } from "@/services/api";
 import { LocationObject } from "expo-location";
@@ -33,6 +33,31 @@ export interface StationMapHandle {
   animateToLocation: (lat: number, lng: number, heading?: number) => void;
 }
 
+// Offset center point slightly ahead of user in their heading direction
+// This makes the user appear in the lower part of map, showing more road ahead
+const offsetCenter = (
+  lat: number,
+  lng: number,
+  heading: number,
+  offsetMeters: number = 150,
+) => {
+  const headingRad = (heading * Math.PI) / 180;
+  const earthRadius = 6371000;
+  const dLat = (offsetMeters * Math.cos(headingRad)) / earthRadius;
+  const dLng =
+    (offsetMeters * Math.sin(headingRad)) /
+    (earthRadius * Math.cos((lat * Math.PI) / 180));
+  return {
+    latitude: lat + (dLat * 180) / Math.PI,
+    longitude: lng + (dLng * 180) / Math.PI,
+  };
+};
+
+const NAV_ZOOM = 18;
+const NAV_ALTITUDE = 300; // meters above ground - lower = more zoomed in
+const NAV_PITCH = 60;
+const NAV_ANIMATION_MS = 800;
+
 const StationMap = forwardRef<StationMapHandle, StationMapProps>(
   (
     {
@@ -51,16 +76,54 @@ const StationMap = forwardRef<StationMapHandle, StationMapProps>(
   ) => {
     const { colors, isDark } = useTheme();
     const mapRef = useRef<MapView>(null);
+    const lastHeadingRef = useRef<number>(0);
+
+    // Track the last valid heading to avoid snapping to north
+    useEffect(() => {
+      if (
+        userHeading !== undefined &&
+        userHeading !== null &&
+        userHeading >= 0
+      ) {
+        lastHeadingRef.current = userHeading;
+      }
+    }, [userHeading]);
+
+    // Single unified function for all camera updates during navigation
+    const updateNavCamera = (
+      lat: number,
+      lng: number,
+      heading: number,
+      duration: number = NAV_ANIMATION_MS,
+    ) => {
+      if (!mapRef.current) return;
+      const center = offsetCenter(lat, lng, heading);
+      mapRef.current.animateCamera(
+        {
+          center,
+          heading,
+          pitch: NAV_PITCH,
+          altitude: NAV_ALTITUDE,
+          zoom: NAV_ZOOM,
+        },
+        { duration },
+      );
+    };
 
     useImperativeHandle(ref, () => ({
       animateToLocation: (lat: number, lng: number, heading?: number) => {
-        if (mapRef.current) {
+        if (!mapRef.current) return;
+        if (isNavigating) {
+          const h = heading && heading >= 0 ? heading : lastHeadingRef.current;
+          updateNavCamera(lat, lng, h);
+        } else {
           mapRef.current.animateCamera(
             {
               center: { latitude: lat, longitude: lng },
-              heading: heading || 0,
-              pitch: isNavigating ? 45 : 0,
-              zoom: isNavigating ? 17 : 15,
+              heading: 0,
+              pitch: 0,
+              altitude: 5000,
+              zoom: 15,
             },
             { duration: 500 },
           );
@@ -68,20 +131,18 @@ const StationMap = forwardRef<StationMapHandle, StationMapProps>(
       },
     }));
 
-    // When entering navigation mode, tilt the camera
+    // When entering navigation mode, immediately set up the camera
     useEffect(() => {
       if (isNavigating && location && mapRef.current) {
-        mapRef.current.animateCamera(
-          {
-            center: {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            },
-            heading: userHeading || 0,
-            pitch: 45,
-            zoom: 17,
-          },
-          { duration: 800 },
+        const h =
+          userHeading && userHeading >= 0
+            ? userHeading
+            : lastHeadingRef.current;
+        updateNavCamera(
+          location.coords.latitude,
+          location.coords.longitude,
+          h,
+          1200, // slightly slower initial animation
         );
       }
     }, [isNavigating]);
@@ -102,40 +163,45 @@ const StationMap = forwardRef<StationMapHandle, StationMapProps>(
         showsUserLocation
         showsMyLocationButton={!isNavigating}
         userInterfaceStyle={isDark ? "dark" : "light"}
-        followsUserLocation={isNavigating}
-        showsCompass={true}
+        followsUserLocation={false}
+        showsCompass={!isNavigating}
+        showsTraffic={isNavigating}
         pitchEnabled={true}
         rotateEnabled={true}
+        scrollEnabled={!isNavigating}
+        zoomEnabled={!isNavigating}
       >
-        {stations.map((station) => (
-          <Marker
-            key={station.id}
-            coordinate={{ latitude: station.lat, longitude: station.lng }}
-            title={station.name}
-            description={station.address || undefined}
-            onPress={() => onStationSelect(station)}
-          >
-            <View
-              style={[
-                styles.markerContainer,
-                { backgroundColor: colors.tint, borderColor: "#FFFFFF" },
-                selectedStation?.id === station.id && {
-                  backgroundColor: "#FFFFFF",
-                  borderColor: colors.tint,
-                  transform: [{ scale: 1.2 }],
-                },
-              ]}
+        {/* Station markers - hidden during navigation */}
+        {!isNavigating &&
+          stations.map((station) => (
+            <Marker
+              key={station.id}
+              coordinate={{ latitude: station.lat, longitude: station.lng }}
+              title={station.name}
+              description={station.address || undefined}
+              onPress={() => onStationSelect(station)}
             >
-              <FontAwesome
-                name="tint"
-                size={16}
-                color={
-                  selectedStation?.id === station.id ? colors.tint : "#FFFFFF"
-                }
-              />
-            </View>
-          </Marker>
-        ))}
+              <View
+                style={[
+                  styles.markerContainer,
+                  { backgroundColor: colors.tint, borderColor: "#FFFFFF" },
+                  selectedStation?.id === station.id && {
+                    backgroundColor: "#FFFFFF",
+                    borderColor: colors.tint,
+                    transform: [{ scale: 1.2 }],
+                  },
+                ]}
+              >
+                <FontAwesome
+                  name="tint"
+                  size={16}
+                  color={
+                    selectedStation?.id === station.id ? colors.tint : "#FFFFFF"
+                  }
+                />
+              </View>
+            </Marker>
+          ))}
 
         {/* Destination marker during navigation */}
         {isNavigating && selectedStation && (
@@ -158,8 +224,8 @@ const StationMap = forwardRef<StationMapHandle, StationMapProps>(
         {routeCoordinates && routeCoordinates.length > 0 && (
           <Polyline
             coordinates={routeCoordinates}
-            strokeColor={colors.tint}
-            strokeWidth={isNavigating ? 6 : 4}
+            strokeColor={isNavigating ? "#FF9500" : colors.tint}
+            strokeWidth={isNavigating ? 8 : 4}
             lineDashPattern={undefined}
           />
         )}

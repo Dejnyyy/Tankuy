@@ -331,8 +331,8 @@ export default function FindScreen() {
       const watcher = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 1000,
-          distanceInterval: 5,
+          timeInterval: 500,
+          distanceInterval: 3,
         },
         (newLocation) => {
           setLocation(newLocation);
@@ -436,6 +436,12 @@ export default function FindScreen() {
       locationWatcherRef.current.remove();
       locationWatcherRef.current = null;
     }
+    clearRoute();
+    setSelectedStation(null);
+    // Reload nearby stations
+    if (location) {
+      loadNearbyStations(location.coords.latitude, location.coords.longitude);
+    }
   };
 
   // Clean up watcher on unmount
@@ -448,69 +454,73 @@ export default function FindScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Find Stations</Text>
-        <View style={styles.viewToggle}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              viewMode === "map" && styles.toggleButtonActive,
-            ]}
-            onPress={() => setViewMode("map")}
-          >
-            <FontAwesome
-              name="map"
-              size={16}
-              color={viewMode === "map" ? "#FFFFFF" : colors.textSecondary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              viewMode === "list" && styles.toggleButtonActive,
-            ]}
-            onPress={() => setViewMode("list")}
-          >
-            <FontAwesome
-              name="list"
-              size={16}
-              color={viewMode === "list" ? "#FFFFFF" : colors.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <FontAwesome name="search" size={16} color={colors.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search gas stations..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
+    <SafeAreaView style={styles.container} edges={isNavigating ? [] : ["top"]}>
+      {/* Header - hidden during navigation */}
+      {!isNavigating && (
+        <View style={styles.header}>
+          <Text style={styles.title}>Find Stations</Text>
+          <View style={styles.viewToggle}>
             <TouchableOpacity
-              onPress={() => {
-                setSearchQuery("");
-                refreshNearby();
-              }}
+              style={[
+                styles.toggleButton,
+                viewMode === "map" && styles.toggleButtonActive,
+              ]}
+              onPress={() => setViewMode("map")}
             >
               <FontAwesome
-                name="times-circle"
-                size={18}
-                color={colors.textSecondary}
+                name="map"
+                size={16}
+                color={viewMode === "map" ? "#FFFFFF" : colors.textSecondary}
               />
             </TouchableOpacity>
-          )}
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                viewMode === "list" && styles.toggleButtonActive,
+              ]}
+              onPress={() => setViewMode("list")}
+            >
+              <FontAwesome
+                name="list"
+                size={16}
+                color={viewMode === "list" ? "#FFFFFF" : colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
+
+      {/* Search Bar - hidden during navigation */}
+      {!isNavigating && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <FontAwesome name="search" size={16} color={colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search gas stations..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchQuery("");
+                  refreshNearby();
+                }}
+              >
+                <FontAwesome
+                  name="times-circle"
+                  size={18}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
 
       {viewMode === "map" ? (
         <View style={styles.mapContainer}>
@@ -551,8 +561,8 @@ export default function FindScreen() {
             </View>
           )}
 
-          {/* Station Details Card */}
-          {selectedStation && (
+          {/* Station Details Card - hidden during navigation */}
+          {selectedStation && !isNavigating && (
             <View style={styles.stationCard}>
               <View style={styles.stationCardHeader}>
                 <View style={styles.stationIconContainer}>

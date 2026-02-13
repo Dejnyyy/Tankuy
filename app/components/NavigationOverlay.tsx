@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -65,6 +66,7 @@ export default function NavigationOverlay({
   onStop,
 }: NavigationOverlayProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   if (!currentStep) return null;
 
@@ -76,7 +78,12 @@ export default function NavigationOverlay({
   return (
     <>
       {/* Top instruction card */}
-      <View style={[styles.topCard, { backgroundColor: colors.tint }]}>
+      <View
+        style={[
+          styles.topCard,
+          { backgroundColor: colors.tint, top: insets.top + 8 },
+        ]}
+      >
         <View style={styles.instructionRow}>
           <View style={styles.iconContainer}>
             <FontAwesome name={icon as any} size={28} color="#FFFFFF" />
@@ -136,14 +143,13 @@ export default function NavigationOverlay({
 const styles = StyleSheet.create({
   topCard: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 16,
+    left: 16,
+    right: 16,
     paddingTop: 8,
     paddingBottom: 14,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
