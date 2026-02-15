@@ -817,6 +817,8 @@ export default function FindScreen() {
               onPress={() => {
                 setSelectedStation(item);
                 setViewMode("map");
+                clearRoute();
+                fetchRoute(item);
               }}
             >
               <View style={styles.listItemIcon}>

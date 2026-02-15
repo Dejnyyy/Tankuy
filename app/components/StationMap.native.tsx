@@ -147,6 +147,21 @@ const StationMap = forwardRef<StationMapHandle, StationMapProps>(
       }
     }, [isNavigating]);
 
+    // Fit to route when route coordinates update (and not navigating)
+    useEffect(() => {
+      if (
+        !isNavigating &&
+        routeCoordinates &&
+        routeCoordinates.length > 0 &&
+        mapRef.current
+      ) {
+        mapRef.current.fitToCoordinates(routeCoordinates, {
+          edgePadding: { top: 180, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
+      }
+    }, [routeCoordinates, isNavigating]);
+
     if (!location) return null;
 
     return (
