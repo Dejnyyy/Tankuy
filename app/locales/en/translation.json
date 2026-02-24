@@ -1,0 +1,85 @@
+{
+  "home": {
+    "greeting": "Hello, {{name}}",
+    "greetingDefault": "Hello there",
+    "subGreeting": "Track your fuel expenses",
+    "periods": {
+      "week": "Week",
+      "month": "Month",
+      "year": "Year",
+      "all": "All"
+    },
+    "allTime": "All Time",
+    "stats": {
+      "totalSpent": "Total Spent",
+      "totalLiters": "Total Liters",
+      "avgPrice": "Avg Price/L",
+      "avgLiters": "Avg Liters",
+      "avgTank": "Avg/Tank",
+      "fillUps": "Fill-ups"
+    },
+    "chart": {
+      "title": "Spending Overview",
+      "noData": "No data yet",
+      "startTracking": "Start tracking to see your spending"
+    },
+    "recent": {
+      "title": "Recent Entries",
+      "noEntries": "No entries yet",
+      "scanFirst": "Scan a receipt to add your first entry"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "myVehicles": "My Vehicles",
+    "add": "Add",
+    "noVehicles": "No vehicles added yet",
+    "addFirstVehicle": "Tap to add your first vehicle",
+    "settings": {
+      "title": "Settings",
+      "darkMode": "Dark Mode",
+      "language": "Language",
+      "czech": "Čeština",
+      "english": "English",
+      "notifications": "Notifications",
+      "currency": "Currency",
+      "unitSystem": "Unit System"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "signOut": "Sign Out",
+    "modal": {
+      "addVehicle": "Add Vehicle",
+      "editVehicle": "Edit Vehicle",
+      "cancel": "Cancel",
+      "save": "Save",
+      "vehicleName": "Vehicle Name *",
+      "namePlaceholder": "e.g. My Car, Family SUV...",
+      "fuelType": "Fuel Type",
+      "brand": "Brand",
+      "brandPlaceholder": "Type brand or 'vw golf'...",
+      "model": "Model",
+      "modelPlaceholderBrand": "Models for {{brand}}...",
+      "modelPlaceholderNoBrand": "Select brand first...",
+      "year": "Year (Optional)",
+      "licensePlate": "License Plate (Optional)",
+      "engine": "Engine",
+      "enginePlaceholderModel": "Select engine...",
+      "enginePlaceholderNoModel": "Select model first..."
+    },
+    "alerts": {
+      "signOutTitle": "Sign Out",
+      "signOutMessage": "Are you sure you want to sign out?",
+      "deleteTitle": "Delete Vehicle",
+      "deleteMessage": "Are you sure you want to delete \"{{name}}\"?",
+      "error": "Error",
+      "deleteError": "Failed to delete vehicle",
+      "nameError": "Please enter a vehicle name",
+      "saveError": "Failed to save vehicle"
+    }
+  }
+}

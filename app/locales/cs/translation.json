@@ -1,0 +1,85 @@
+{
+  "home": {
+    "greeting": "Ahoj, {{name}}",
+    "greetingDefault": "Ahoj",
+    "subGreeting": "Sleduj své výdaje za palivo",
+    "periods": {
+      "week": "Týden",
+      "month": "Měsíc",
+      "year": "Rok",
+      "all": "Vše"
+    },
+    "allTime": "Za celou dobu",
+    "stats": {
+      "totalSpent": "Celkem utraceno",
+      "totalLiters": "Celkem litrů",
+      "avgPrice": "Průměrná cena/L",
+      "avgLiters": "Prům. litrů",
+      "avgTank": "Prům./Nádrž",
+      "fillUps": "Tankování"
+    },
+    "chart": {
+      "title": "Přehled výdajů",
+      "noData": "Zatím žádná data",
+      "startTracking": "Začněte sledovat pro zobrazení výdajů"
+    },
+    "recent": {
+      "title": "Nedávné záznamy",
+      "noEntries": "Zatím žádné záznamy",
+      "scanFirst": "Naskenujte účtenku a přidejte svůj první záznam"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "myVehicles": "Moje vozidla",
+    "add": "Přidat",
+    "noVehicles": "Zatím nepřidána žádná vozidla",
+    "addFirstVehicle": "Klepnutím přidáte první vozidlo",
+    "settings": {
+      "title": "Nastavení",
+      "darkMode": "Tmavý režim",
+      "language": "Jazyk",
+      "czech": "Čeština",
+      "english": "English",
+      "notifications": "Upozornění",
+      "currency": "Měna",
+      "unitSystem": "Jednotky"
+    },
+    "about": {
+      "title": "O aplikaci",
+      "version": "Verze",
+      "terms": "Podmínky služby",
+      "privacy": "Zásady ochrany osobních údajů"
+    },
+    "signOut": "Odhlásit se",
+    "modal": {
+      "addVehicle": "Přidat vozidlo",
+      "editVehicle": "Upravit vozidlo",
+      "cancel": "Zrušit",
+      "save": "Uložit",
+      "vehicleName": "Název vozidla *",
+      "namePlaceholder": "např. Moje auto, Rodinné SUV...",
+      "fuelType": "Typ paliva",
+      "brand": "Značka",
+      "brandPlaceholder": "Napište značku nebo 'vw golf'...",
+      "model": "Model",
+      "modelPlaceholderBrand": "Modely pro {{brand}}...",
+      "modelPlaceholderNoBrand": "Nejprve vyberte značku...",
+      "year": "Rok (Volitelné)",
+      "licensePlate": "SPZ (Volitelné)",
+      "engine": "Motor",
+      "enginePlaceholderModel": "Vyberte motor...",
+      "enginePlaceholderNoModel": "Nejprve vyberte model..."
+    },
+    "alerts": {
+      "signOutTitle": "Odhlášení",
+      "signOutMessage": "Opravdu se chcete odhlásit?",
+      "deleteTitle": "Smazat vozidlo",
+      "deleteMessage": "Opravdu chcete smazat \"{{name}}\"?",
+      "error": "Chyba",
+      "deleteError": "Nepodařilo se smazat vozidlo",
+      "nameError": "Prosím zadejte název vozidla",
+      "saveError": "Vozidlo se nepodařilo uložit"
+    }
+  }
+}

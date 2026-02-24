@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import api, { Stats, FuelEntry } from "@/services/api";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { t, i18n } = useTranslation();
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentEntries, setRecentEntries] = useState<FuelEntry[]>([]);
@@ -80,14 +82,17 @@ export default function HomeScreen() {
 
   const formattedPeriod = () => {
     if (period === "all") {
-      return "All Time";
+      return t("home.allTime");
     } else if (period === "year") {
       return currentDate.getFullYear().toString();
     } else if (period === "month") {
-      return currentDate.toLocaleDateString("cs-CZ", {
-        month: "long",
-        year: "numeric",
-      });
+      return currentDate.toLocaleDateString(
+        i18n.language === "cs" ? "cs-CZ" : "en-US",
+        {
+          month: "long",
+          year: "numeric",
+        },
+      );
     } else {
       // Week display
       const startOfWeek = new Date(currentDate);
@@ -134,9 +139,11 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>
-              Hello, {user?.name?.split(" ")[0] || "there"}
+              {user?.name
+                ? t("home.greeting", { name: user.name.split(" ")[0] })
+                : t("home.greetingDefault")}
             </Text>
-            <Text style={styles.subGreeting}>Track your fuel expenses</Text>
+            <Text style={styles.subGreeting}>{t("home.subGreeting")}</Text>
           </View>
         </View>
 
@@ -161,7 +168,7 @@ export default function HomeScreen() {
                     period === p && styles.periodButtonTextActive,
                   ]}
                 >
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                  {t(`home.periods.${p}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -201,42 +208,42 @@ export default function HomeScreen() {
         <View style={styles.statsContainer}>
           <StatsCard
             icon="credit-card"
-            label="Total Spent"
+            label={t("home.stats.totalSpent")}
             value={`${formatNumber(stats?.summary?.total_spent, 0)} Kč`}
             color={colors.tint}
             styles={styles}
           />
           <StatsCard
             icon="tint"
-            label="Total Liters"
+            label={t("home.stats.totalLiters")}
             value={`${formatNumber(stats?.summary?.total_liters, 1)}L`}
             color="#30D158"
             styles={styles}
           />
           <StatsCard
             icon="tag"
-            label="Avg Price/L"
+            label={t("home.stats.avgPrice")}
             value={`${formatNumber(stats?.summary?.avg_price_per_liter, 2)} Kč`}
             color="#32ADE6"
             styles={styles}
           />
           <StatsCard
             icon="dashboard"
-            label="Avg Liters"
+            label={t("home.stats.avgLiters")}
             value={`${formatNumber(stats?.summary?.avg_liters_per_tank, 1)}L`}
             color="#5AC8FA"
             styles={styles}
           />
           <StatsCard
             icon="bar-chart"
-            label="Avg/Tank"
+            label={t("home.stats.avgTank")}
             value={`${formatNumber(stats?.summary?.avg_per_tank, 0)} Kč`}
             color="#5E5CE6"
             styles={styles}
           />
           <StatsCard
             icon="hashtag"
-            label="Fill-ups"
+            label={t("home.stats.fillUps")}
             value={`${stats?.summary?.total_tanks || 0}`}
             color="#FF375F"
             styles={styles}
@@ -245,7 +252,7 @@ export default function HomeScreen() {
 
         {/* Spending Chart */}
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Spending Overview</Text>
+          <Text style={styles.chartTitle}>{t("home.chart.title")}</Text>
           {hasData ? (
             <SpendingChart
               labels={chartData.labels}
@@ -259,9 +266,9 @@ export default function HomeScreen() {
                 size={48}
                 color={colors.textMuted}
               />
-              <Text style={styles.emptyText}>No data yet</Text>
+              <Text style={styles.emptyText}>{t("home.chart.noData")}</Text>
               <Text style={styles.emptySubtext}>
-                Start tracking to see your spending
+                {t("home.chart.startTracking")}
               </Text>
             </View>
           )}
@@ -269,7 +276,7 @@ export default function HomeScreen() {
 
         {/* Recent Entries */}
         <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>Recent Entries</Text>
+          <Text style={styles.sectionTitle}>{t("home.recent.title")}</Text>
           {recentEntries.length > 0 ? (
             recentEntries.map((entry) => (
               <EntryCard
@@ -282,9 +289,9 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.emptyCard}>
               <FontAwesome name="tint" size={32} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No entries yet</Text>
+              <Text style={styles.emptyText}>{t("home.recent.noEntries")}</Text>
               <Text style={styles.emptySubtext}>
-                Scan a receipt to add your first entry
+                {t("home.recent.scanFirst")}
               </Text>
             </View>
           )}

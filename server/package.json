@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tunnel": "ngrok http --domain=interpolative-noemi-inhomogeneously.ngrok-free.dev 3000"
   },
   "keywords": [
     "tankuy",
