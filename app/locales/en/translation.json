@@ -27,6 +27,36 @@
       "title": "Recent Entries",
       "noEntries": "No entries yet",
       "scanFirst": "Scan a receipt to add your first entry"
+    },
+    "insights": {
+      "title": "Fun Facts",
+      "favoriteStation": "Favorite Station",
+      "favoriteStationDesc": "{{count}} visits",
+      "mostExpensive": "Most Expensive Fill-Up",
+      "mostExpensiveDesc": "{{cost}} on {{date}}",
+      "cheapest": "Best Price",
+      "cheapestDesc": "{{price}} on {{date}}",
+      "mostExpensiveLiter": "Highest Price",
+      "mostExpensiveLiterDesc": "{{price}} on {{date}}",
+      "biggest": "Biggest Fill-Up",
+      "biggestDesc": "{{liters}} on {{date}}",
+      "smallest": "Smallest Fill-Up",
+      "smallestDesc": "{{liters}} on {{date}}",
+      "favoriteDay": "Busiest Day",
+      "favoriteDayDesc": "{{count}} times on {{day}}s",
+      "lastFillUp": "Last Fill-Up",
+      "lastFillUpToday": "Today",
+      "lastFillUpYesterday": "Yesterday",
+      "lastFillUpDays": "{{days}} days ago",
+      "dayName": {
+        "Monday": "Monday",
+        "Tuesday": "Tuesday",
+        "Wednesday": "Wednesday",
+        "Thursday": "Thursday",
+        "Friday": "Friday",
+        "Saturday": "Saturday",
+        "Sunday": "Sunday"
+      }
     }
   },
   "profile": {

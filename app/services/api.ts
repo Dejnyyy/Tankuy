@@ -6,6 +6,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl: string;
+  currency?: string;
 }
 
 export interface Vehicle {
@@ -63,6 +64,16 @@ export interface Stats {
   chart: {
     labels: string[];
     data: number[];
+  };
+  insights?: {
+    favoriteStation?: { name: string; count: number };
+    mostExpensive?: { date: string; cost: number };
+    cheapestLiters?: { date: string; price: number };
+    mostExpensiveLiter?: { date: string; price: number };
+    biggestFillUp?: { date: string; liters: number };
+    smallestFillUp?: { date: string; liters: number };
+    favoriteDay?: { day: string; count: number };
+    lastFillUpDays?: number;
   };
   monthly: Array<{ month: string; total: number; count: number }>;
   weekly: Array<{ week: number; total: number; count: number }>;

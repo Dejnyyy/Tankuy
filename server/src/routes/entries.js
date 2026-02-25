@@ -1,7 +1,7 @@
-import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import pool from '../db/connection.js';
-import { authMiddleware } from '../middleware/auth.js';
+import express from "express";
+import { v4 as uuidv4 } from "uuid";
+import pool from "../db/connection.js";
+import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -9,9 +9,17 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // GET /api/entries - List fuel entries with optional filters
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const { vehicleId, startDate, endDate, limit = 50, offset = 0, sortBy = 'date', order = 'DESC' } = req.query;
+    const {
+      vehicleId,
+      startDate,
+      endDate,
+      limit = 50,
+      offset = 0,
+      sortBy = "date",
+      order = "DESC",
+    } = req.query;
 
     let query = `
       SELECT e.*, v.name as vehicle_name 
@@ -22,32 +30,32 @@ router.get('/', async (req, res) => {
     const params = [req.user.userId];
 
     if (vehicleId) {
-      query += ' AND e.vehicle_id = ?';
+      query += " AND e.vehicle_id = ?";
       params.push(vehicleId);
     }
 
     if (startDate) {
-      query += ' AND e.date >= ?';
+      query += " AND e.date >= ?";
       params.push(startDate);
     }
 
     if (endDate) {
-      query += ' AND e.date <= ?';
+      query += " AND e.date <= ?";
       params.push(endDate);
     }
 
     // Sorting Logic
-    let orderByClause = 'e.date DESC, e.time DESC'; // Default
-    const direction = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    let orderByClause = "e.date DESC, e.time DESC"; // Default
+    const direction = order.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     switch (sortBy) {
-      case 'price':
+      case "price":
         orderByClause = `e.total_cost ${direction}`;
         break;
-      case 'liters':
+      case "liters":
         orderByClause = `e.total_liters ${direction}`;
         break;
-      case 'date':
+      case "date":
       default:
         orderByClause = `e.date ${direction}, e.time ${direction}`;
         break;
@@ -58,7 +66,7 @@ router.get('/', async (req, res) => {
 
     const [entries] = await pool.execute(query, params);
 
-    const mappedEntries = entries.map(entry => ({
+    const mappedEntries = entries.map((entry) => ({
       id: entry.id,
       vehicleId: entry.vehicle_id,
       vehicleName: entry.vehicle_name,
@@ -78,15 +86,15 @@ router.get('/', async (req, res) => {
 
     res.json(mappedEntries);
   } catch (error) {
-    console.error('Get entries error:', error);
-    res.status(500).json({ error: 'Failed to get entries' });
+    console.error("Get entries error:", error);
+    res.status(500).json({ error: "Failed to get entries" });
   }
 });
 
 // GET /api/entries/stats - Get spending statistics
-router.get('/stats', async (req, res) => {
+router.get("/stats", async (req, res) => {
   try {
-    const { period = 'month', date } = req.query;
+    const { period = "month", date } = req.query;
     const userId = req.user.userId;
 
     // Determine Date Range (Calendar based)
@@ -96,31 +104,31 @@ router.get('/stats', async (req, res) => {
 
     const formatDate = (d) => {
       const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
 
-    if (period === 'week') {
+    if (period === "week") {
       // Start: Monday of the week
       const day = refDate.getDay();
-      const diff = refDate.getDate() - day + (day === 0 ? -6 : 1); 
+      const diff = refDate.getDate() - day + (day === 0 ? -6 : 1);
       startDate = new Date(refDate);
       startDate.setDate(diff);
-      
+
       endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
 
       groupByFormat = "date"; // Group by day
       labelFormat = "%a"; // Mon, Tue...
-    } else if (period === 'year') {
+    } else if (period === "year") {
       startDate = new Date(refDate.getFullYear(), 0, 1);
       endDate = new Date(refDate.getFullYear(), 11, 31);
-      
+
       groupByFormat = "DATE_FORMAT(date, '%Y-%m')"; // Group by month
       labelFormat = "%b"; // Jan, Feb...
-    } else if (period === 'all') {
-      startDate = new Date('2020-01-01'); // Start of app usage/decade
+    } else if (period === "all") {
+      startDate = new Date("2020-01-01"); // Start of app usage/decade
       endDate = new Date(); // Today
 
       groupByFormat = "DATE_FORMAT(date, '%Y-%m')"; // Group by month
@@ -129,7 +137,7 @@ router.get('/stats', async (req, res) => {
       // Month (default)
       startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
       endDate = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0); // Last day of month
-      
+
       groupByFormat = "YEARWEEK(date, 1)"; // Group by week
       labelFormat = "%d.%m"; // 01.01
     }
@@ -151,13 +159,13 @@ router.get('/stats', async (req, res) => {
         COALESCE(SUM(total_liters), 0) as total_liters
        FROM fuel_entries 
        WHERE user_id = ? AND date >= ? AND date <= ?`,
-      [userId, startStr, endStr]
+      [userId, startStr, endStr],
     );
 
     // Chart Data
     // Chart Data
     let chartQuery = `
-      SELECT ${period === 'year' ? `DATE_FORMAT(date, '%b')` : `DATE_FORMAT(date, '${labelFormat}')`} as label, 
+      SELECT ${period === "year" ? `DATE_FORMAT(date, '%b')` : `DATE_FORMAT(date, '${labelFormat}')`} as label, 
              SUM(total_cost) as value
       FROM fuel_entries
       WHERE user_id = ? AND date >= ? AND date <= ?
@@ -166,28 +174,129 @@ router.get('/stats', async (req, res) => {
     `;
 
     // Special handling for week/month labels
-    if (period === 'week') {
-       chartQuery = `
+    if (period === "week") {
+      chartQuery = `
          SELECT DATE_FORMAT(date, '%a') as label, SUM(total_cost) as value 
          FROM fuel_entries 
          WHERE user_id = ? AND date >= ? AND date <= ?
          GROUP BY date ORDER BY date ASC`;
-    } else if (period === 'month') {
-        // Group by Date (Active days only)
-        // This ensures every day with a fill-up gets a point, 
-        // avoiding "missing dots" from weekly grouping AND "jaggy zeros" from full filling.
-        chartQuery = `
+    } else if (period === "month") {
+      // Group by Date (Active days only)
+      // This ensures every day with a fill-up gets a point,
+      // avoiding "missing dots" from weekly grouping AND "jaggy zeros" from full filling.
+      chartQuery = `
          SELECT DATE_FORMAT(date, '%d.%m') as label, SUM(total_cost) as value
          FROM fuel_entries 
          WHERE user_id = ? AND date >= ? AND date <= ?
          GROUP BY date ORDER BY date ASC`;
     }
 
-    const [chartRows] = await pool.execute(chartQuery, [userId, startStr, endStr]);
+    const [chartRows] = await pool.execute(chartQuery, [
+      userId,
+      startStr,
+      endStr,
+    ]);
 
     let chartData = {
-      labels: chartRows.map(r => r.label),
-      data: chartRows.map(r => parseFloat(r.value))
+      labels: chartRows.map((r) => r.label),
+      data: chartRows.map((r) => parseFloat(r.value)),
+    };
+
+    // Insights Queries
+    // 1. Favorite Station (most visited in period)
+    const [favStationResult] = await pool.execute(
+      `SELECT station_name as name, COUNT(*) as count
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ? AND station_name IS NOT NULL AND station_name != ''
+       GROUP BY station_name
+       ORDER BY count DESC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    // 2. Most Expensive Fill-Up
+    const [mostExpensiveResult] = await pool.execute(
+      `SELECT date, total_cost as cost
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ?
+       ORDER BY total_cost DESC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    // 3. Cheapest Fill-Up (Lowest price per liter)
+    const [cheapestResult] = await pool.execute(
+      `SELECT date, price_per_liter as price
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ? AND price_per_liter > 0
+       ORDER BY price_per_liter ASC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    // 4. Biggest Fill-Up (Most liters)
+    const [biggestResult] = await pool.execute(
+      `SELECT date, total_liters as liters
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ?
+       ORDER BY total_liters DESC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    // 5. Favorite Day of the Week
+    const [favoriteDayResult] = await pool.execute(
+      `SELECT DAYNAME(date) as day, COUNT(*) as count
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ?
+       GROUP BY DAYOFWEEK(date), DAYNAME(date)
+       ORDER BY count DESC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    // 6. Days Since Last Fill-Up
+    const [lastFillUpResult] = await pool.execute(
+      `SELECT DATEDIFF(CURRENT_DATE, MAX(date)) as days_ago
+       FROM fuel_entries
+       WHERE user_id = ?`,
+      [userId],
+    );
+
+    // 7. Smallest Fill-Up (Least liters, > 0)
+    const [smallestResult] = await pool.execute(
+      `SELECT date, total_liters as liters
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ? AND total_liters > 0
+       ORDER BY total_liters ASC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    // 8. Most Expensive Price Per Liter
+    const [mostExpensiveLiterResult] = await pool.execute(
+      `SELECT date, price_per_liter as price
+       FROM fuel_entries
+       WHERE user_id = ? AND date >= ? AND date <= ? AND price_per_liter > 0
+       ORDER BY price_per_liter DESC
+       LIMIT 1`,
+      [userId, startStr, endStr],
+    );
+
+    const insights = {
+      favoriteStation: favStationResult.length > 0 ? favStationResult[0] : null,
+      mostExpensive:
+        mostExpensiveResult.length > 0 ? mostExpensiveResult[0] : null,
+      cheapestLiters: cheapestResult.length > 0 ? cheapestResult[0] : null,
+      mostExpensiveLiter:
+        mostExpensiveLiterResult.length > 0
+          ? mostExpensiveLiterResult[0]
+          : null,
+      biggestFillUp: biggestResult.length > 0 ? biggestResult[0] : null,
+      smallestFillUp: smallestResult.length > 0 ? smallestResult[0] : null,
+      favoriteDay: favoriteDayResult.length > 0 ? favoriteDayResult[0] : null,
+      lastFillUpDays:
+        lastFillUpResult.length > 0 ? lastFillUpResult[0].days_ago : null,
     };
 
     res.json({
@@ -195,16 +304,16 @@ router.get('/stats', async (req, res) => {
       range: { start: startStr, end: endStr },
       summary: totalResult[0],
       chart: chartData,
+      insights,
     });
-
   } catch (error) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ error: 'Failed to get statistics' });
+    console.error("Get stats error:", error);
+    res.status(500).json({ error: "Failed to get statistics" });
   }
 });
 
 // POST /api/entries - Add a new fuel entry
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const {
       vehicleId,
@@ -223,27 +332,29 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     if (!totalCost || !date) {
-      return res.status(400).json({ error: 'Date and total cost are required' });
+      return res
+        .status(400)
+        .json({ error: "Date and total cost are required" });
     }
 
     // Duplicate Check
     // If exact same date and amount (tolerance 1 CZK) exists, warn user
     // Unless ?force=true is present
-    const forceSave = req.query.force === 'true';
-    
+    const forceSave = req.query.force === "true";
+
     if (!forceSave) {
       const [duplicates] = await pool.execute(
         `SELECT id, date, total_cost FROM fuel_entries 
          WHERE user_id = ? 
          AND date = ? 
          AND ABS(total_cost - ?) < 1.0`,
-        [req.user.userId, date, totalCost]
+        [req.user.userId, date, totalCost],
       );
 
       if (duplicates.length > 0) {
-        return res.status(409).json({ 
-          error: 'Potential duplicate entry detected',
-          duplicate: duplicates[0] 
+        return res.status(409).json({
+          error: "Potential duplicate entry detected",
+          duplicate: duplicates[0],
         });
       }
     }
@@ -256,61 +367,83 @@ router.post('/', async (req, res) => {
         date, time, price_per_liter, total_liters, total_cost, mileage, receipt_image_url, notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        entryId, req.user.userId, vehicleId, stationName, stationAddress,
-        stationLat, stationLng, date, time, pricePerLiter, totalLiters,
-        totalCost, mileage, receiptImageUrl, notes
-      ]
+        entryId,
+        req.user.userId,
+        vehicleId,
+        stationName,
+        stationAddress,
+        stationLat,
+        stationLng,
+        date,
+        time,
+        pricePerLiter,
+        totalLiters,
+        totalCost,
+        mileage,
+        receiptImageUrl,
+        notes,
+      ],
     );
 
     const [entries] = await pool.execute(
-      'SELECT * FROM fuel_entries WHERE id = ?',
-      [entryId]
+      "SELECT * FROM fuel_entries WHERE id = ?",
+      [entryId],
     );
 
     res.status(201).json(entries[0]);
   } catch (error) {
-    console.error('Add entry error:', error);
-    res.status(500).json({ error: 'Failed to add entry' });
+    console.error("Add entry error:", error);
+    res.status(500).json({ error: "Failed to add entry" });
   }
 });
 
 // GET /api/entries/:id - Get a specific entry
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const [entries] = await pool.execute(
       `SELECT e.*, v.name as vehicle_name 
        FROM fuel_entries e 
        LEFT JOIN vehicles v ON e.vehicle_id = v.id
        WHERE e.id = ? AND e.user_id = ?`,
-      [req.params.id, req.user.userId]
+      [req.params.id, req.user.userId],
     );
 
     if (entries.length === 0) {
-      return res.status(404).json({ error: 'Entry not found' });
+      return res.status(404).json({ error: "Entry not found" });
     }
 
     res.json(entries[0]);
   } catch (error) {
-    console.error('Get entry error:', error);
-    res.status(500).json({ error: 'Failed to get entry' });
+    console.error("Get entry error:", error);
+    res.status(500).json({ error: "Failed to get entry" });
   }
 });
 
 // PUT /api/entries/:id - Update an entry
-router.put('/:id', async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const {
-      vehicleId, stationName, stationAddress, stationLat, stationLng,
-      date, time, pricePerLiter, totalLiters, totalCost, mileage, notes
+      vehicleId,
+      stationName,
+      stationAddress,
+      stationLat,
+      stationLng,
+      date,
+      time,
+      pricePerLiter,
+      totalLiters,
+      totalCost,
+      mileage,
+      notes,
     } = req.body;
 
     const [existing] = await pool.execute(
-      'SELECT id FROM fuel_entries WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.userId]
+      "SELECT id FROM fuel_entries WHERE id = ? AND user_id = ?",
+      [req.params.id, req.user.userId],
     );
 
     if (existing.length === 0) {
-      return res.status(404).json({ error: 'Entry not found' });
+      return res.status(404).json({ error: "Entry not found" });
     }
 
     await pool.execute(
@@ -320,45 +453,56 @@ router.put('/:id', async (req, res) => {
        mileage = ?, notes = ?, updated_at = NOW()
        WHERE id = ? AND user_id = ?`,
       [
-        vehicleId, stationName, stationAddress, stationLat, stationLng,
-        date, time, pricePerLiter, totalLiters, totalCost, mileage, notes,
-        req.params.id, req.user.userId
-      ]
+        vehicleId,
+        stationName,
+        stationAddress,
+        stationLat,
+        stationLng,
+        date,
+        time,
+        pricePerLiter,
+        totalLiters,
+        totalCost,
+        mileage,
+        notes,
+        req.params.id,
+        req.user.userId,
+      ],
     );
 
     const [entries] = await pool.execute(
-      'SELECT * FROM fuel_entries WHERE id = ?',
-      [req.params.id]
+      "SELECT * FROM fuel_entries WHERE id = ?",
+      [req.params.id],
     );
 
     res.json(entries[0]);
   } catch (error) {
-    console.error('Update entry error:', error);
-    res.status(500).json({ error: 'Failed to update entry' });
+    console.error("Update entry error:", error);
+    res.status(500).json({ error: "Failed to update entry" });
   }
 });
 
 // DELETE /api/entries/:id - Delete an entry
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const [existing] = await pool.execute(
-      'SELECT id FROM fuel_entries WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.userId]
+      "SELECT id FROM fuel_entries WHERE id = ? AND user_id = ?",
+      [req.params.id, req.user.userId],
     );
 
     if (existing.length === 0) {
-      return res.status(404).json({ error: 'Entry not found' });
+      return res.status(404).json({ error: "Entry not found" });
     }
 
     await pool.execute(
-      'DELETE FROM fuel_entries WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.userId]
+      "DELETE FROM fuel_entries WHERE id = ? AND user_id = ?",
+      [req.params.id, req.user.userId],
     );
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete entry error:', error);
-    res.status(500).json({ error: 'Failed to delete entry' });
+    console.error("Delete entry error:", error);
+    res.status(500).json({ error: "Failed to delete entry" });
   }
 });
 

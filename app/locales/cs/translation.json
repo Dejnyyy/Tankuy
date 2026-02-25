@@ -27,6 +27,36 @@
       "title": "Nedávné záznamy",
       "noEntries": "Zatím žádné záznamy",
       "scanFirst": "Naskenujte účtenku a přidejte svůj první záznam"
+    },
+    "insights": {
+      "title": "Zajímavosti",
+      "favoriteStation": "Oblíbená stanice",
+      "favoriteStationDesc": "{{count}} návštěv",
+      "mostExpensive": "Nejdražší tankování",
+      "mostExpensiveDesc": "{{cost}} dne {{date}}",
+      "cheapest": "Nejlepší cena",
+      "cheapestDesc": "{{price}} dne {{date}}",
+      "mostExpensiveLiter": "Nejvyšší cena",
+      "mostExpensiveLiterDesc": "{{price}} dne {{date}}",
+      "biggest": "Největší nádrž",
+      "biggestDesc": "{{liters}} dne {{date}}",
+      "smallest": "Nejmenší tankování",
+      "smallestDesc": "{{liters}} dne {{date}}",
+      "favoriteDay": "Nejčastější den",
+      "favoriteDayDesc": "{{count}}krát v {{day}}",
+      "lastFillUp": "Poslední tankování",
+      "lastFillUpToday": "Dnes",
+      "lastFillUpYesterday": "Včera",
+      "lastFillUpDays": "před {{days}} dny",
+      "dayName": {
+        "Monday": "Pondělí",
+        "Tuesday": "Úterý",
+        "Wednesday": "Středu",
+        "Thursday": "Čtvrtek",
+        "Friday": "Pátek",
+        "Saturday": "Sobotu",
+        "Sunday": "Neděli"
+      }
     }
   },
   "profile": {
