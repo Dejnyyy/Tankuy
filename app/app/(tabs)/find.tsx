@@ -144,7 +144,8 @@ export default function FindScreen() {
   const mapRef = useRef<StationMapHandle>(null);
 
   const [radius, setRadius] = useState(5000);
-  const searchTimeout = React.useRef<any>();
+  const searchTimeout = React.useRef<any>(null);
+  const searchDebounceRef = React.useRef<any>(null);
 
   useEffect(() => {
     (async () => {
@@ -191,35 +192,70 @@ export default function FindScreen() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = useCallback(
+    async (query?: string) => {
+      const q = (query ?? searchQuery).trim();
+      if (!q) return;
 
-    try {
-      setLoading(true);
-      const lat = location?.coords.latitude;
-      const lng = location?.coords.longitude;
-      // Updated to use object signature
-      const result = await api.searchStations({ query: searchQuery, lat, lng });
-      setStations(result.stations);
-    } catch (error) {
-      console.error("Search failed:", error);
-      Alert.alert(
-        "Search Timeout",
-        "The search took too long. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        setLoading(true);
+        const lat = location?.coords.latitude;
+        const lng = location?.coords.longitude;
+        const result = await api.searchStations({ query: q, lat, lng });
+        setStations(result.stations);
+      } catch (error) {
+        console.error("Search failed:", error);
+        // Don't show alert for debounced searches, only for explicit submits
+        if (!query) {
+          Alert.alert(
+            "Search Timeout",
+            "The search took too long. Please try again.",
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchQuery, location],
+  );
+
+  // Debounced search-as-you-type
+  const handleSearchTextChange = useCallback(
+    (text: string) => {
+      setSearchQuery(text);
+
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+
+      if (text.trim().length >= 2) {
+        searchDebounceRef.current = setTimeout(() => {
+          handleSearch(text);
+        }, 1000);
+      } else if (text.trim().length === 0) {
+        // Clear search and reload nearby
+        refreshNearby();
+      }
+    },
+    [handleSearch, location],
+  );
 
   const handleRegionChange = useCallback(
     (region: any) => {
-      // Only fetch if no search query is active
+      // Don't fetch if a search query is active
       if (searchQuery.length > 0) return;
+      // Don't fetch if a station is selected or a route is being shown
+      if (selectedStation || routeCoordinates.length > 0) return;
 
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
       searchTimeout.current = setTimeout(async () => {
+        // Skip if zoomed out too far (prevent huge Overpass queries that crash the app)
+        // latitudeDelta > 0.5 ≈ ~55km visible area, way too many stations
+        if (region.latitudeDelta > 0.5 || region.longitudeDelta > 0.5) {
+          return;
+        }
+
         // Calculate bounding box
         const south = region.latitude - region.latitudeDelta / 2;
         const west = region.longitude - region.longitudeDelta / 2;
@@ -235,19 +271,22 @@ export default function FindScreen() {
             lat: currentLat,
             lng: currentLng,
           });
-          // Don't overwrite if user is typing
-          if (searchQuery.length === 0) {
+          // Don't overwrite if user is typing or station selected in the meantime
+          if (searchQuery.length === 0 && !selectedStation) {
             setStations(result.stations);
           }
         } catch (e) {
           console.log("Map fetch failed silently", e);
         }
-      }, 800); // 800ms debounce
+      }, 1200); // 1200ms debounce (increased from 800ms to reduce API spam)
     },
-    [searchQuery, location],
+    [searchQuery, location, selectedStation, routeCoordinates],
   );
 
   const handleLoadMore = () => {
+    // Don't load more nearby stations if we are looking at search results
+    if (searchQuery.length > 0) return;
+
     if (viewMode === "list" && location && !loading) {
       const newRadius = radius + 5000;
       setRadius(newRadius);
@@ -378,6 +417,19 @@ export default function FindScreen() {
   };
 
   const clearRoute = () => {
+    // Cancel any debounced route fetch
+    if (routeDebounceRef.current) {
+      clearTimeout(routeDebounceRef.current);
+      routeDebounceRef.current = null;
+    }
+    // Cancel any in-flight route fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    // Invalidate any pending fetch results
+    routeFetchIdRef.current++;
+    setRouteLoading(false);
     setRouteCoordinates([]);
     setRouteInfo(null);
     setNavigationSteps([]);
@@ -577,38 +629,6 @@ export default function FindScreen() {
                 color={viewMode === "list" ? "#FFFFFF" : colors.textSecondary}
               />
             </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Search Bar - hidden during navigation */}
-      {!isNavigating && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <FontAwesome name="search" size={16} color={colors.textSecondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search gas stations..."
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => {
-                  setSearchQuery("");
-                  refreshNearby();
-                }}
-              >
-                <FontAwesome
-                  name="times-circle"
-                  size={18}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       )}

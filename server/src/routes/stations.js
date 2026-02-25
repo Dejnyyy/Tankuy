@@ -125,7 +125,7 @@ router.get("/search", async (req, res) => {
       // Search within specific bounds (south,west,north,east)
       const [south, west, north, east] = bounds.split(",").map(parseFloat);
       overpassQuery = `
-        [out:json][timeout:8];
+        [out:json][timeout:15];
         (
           node["amenity"="fuel"](${south},${west},${north},${east});
           way["amenity"="fuel"](${south},${west},${north},${east});
@@ -136,7 +136,7 @@ router.get("/search", async (req, res) => {
       // Search around user location (50km radius) - Much faster than area search
       const radius = 50000;
       overpassQuery = `
-        [out:json][timeout:8];
+        [out:json][timeout:15];
         (
           node["amenity"="fuel"]["name"~"${sanitizedQuery}",i](around:${radius},${lat},${lng});
           node["amenity"="fuel"]["brand"~"${sanitizedQuery}",i](around:${radius},${lat},${lng});
@@ -149,7 +149,7 @@ router.get("/search", async (req, res) => {
       // Search by name in Czech Republic (Fallback)
       // Limit to 20 results to prevent timeout on broad terms like "tank"
       overpassQuery = `
-        [out:json][timeout:8];
+        [out:json][timeout:15];
         area["ISO3166-1"="CZ"]->.cz;
         (
           node["amenity"="fuel"]["name"~"${sanitizedQuery}",i](area.cz);
@@ -163,7 +163,7 @@ router.get("/search", async (req, res) => {
 
     const response = await axios.post(OVERPASS_API, overpassQuery, {
       headers: { "Content-Type": "text/plain" },
-      timeout: 10000,
+      timeout: 20000,
     });
 
     const stations = response.data.elements
