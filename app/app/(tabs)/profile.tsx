@@ -306,6 +306,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -968,6 +969,12 @@ const getStyles = (colors: any) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    scrollContent: {
+      maxWidth: 800,
+      width: "100%",
+      alignSelf: "center",
+      paddingBottom: 40,
     },
     header: {
       paddingHorizontal: 20,

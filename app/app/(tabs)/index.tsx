@@ -6,7 +6,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -16,8 +16,6 @@ import { useTheme } from "@/context/ThemeContext";
 import api, { Stats, FuelEntry } from "@/services/api";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
-
-const screenWidth = Dimensions.get("window").width;
 
 // Helper function to safely format numbers
 const formatNumber = (value: any, decimals: number = 2): string => {
@@ -29,9 +27,14 @@ const formatNumber = (value: any, decimals: number = 2): string => {
 };
 
 export default function HomeScreen() {
+  const { width: screenWidth } = useWindowDimensions();
+  const isLargeScreen = screenWidth >= 768;
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const styles = useMemo(
+    () => getStyles(colors, screenWidth, isLargeScreen),
+    [colors, screenWidth, isLargeScreen],
+  );
   const { t, i18n } = useTranslation();
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -129,6 +132,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -304,253 +308,255 @@ export default function HomeScreen() {
           <View style={styles.insightsSection}>
             <Text style={styles.sectionTitle}>{t("home.insights.title")}</Text>
 
-            {/* Favorite Station */}
-            {stats.insights.favoriteStation && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(255, 59, 48, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="heart" size={20} color="#FF3B30" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.favoriteStation")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {stats.insights.favoriteStation.name}
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.favoriteStationDesc", {
-                      count: stats.insights.favoriteStation.count,
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Most Expensive */}
-            {stats.insights.mostExpensive && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(255, 149, 0, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="money" size={20} color="#FF9500" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.mostExpensive")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {formatNumber(stats.insights.mostExpensive.cost, 0)}{" "}
-                    {currencySymbol}
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.mostExpensiveDesc", {
-                      cost: "",
-                      date: new Date(
-                        stats.insights.mostExpensive.date,
-                      ).toLocaleDateString(),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Cheapest Liters */}
-            {stats.insights.cheapestLiters && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(52, 199, 89, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="tag" size={20} color="#34C759" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.cheapest")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {formatNumber(stats.insights.cheapestLiters.price)}{" "}
-                    {currencySymbol}/L
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.cheapestDesc", {
-                      price: "",
-                      date: new Date(
-                        stats.insights.cheapestLiters.date,
-                      ).toLocaleDateString(),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Most Expensive Liter */}
-            {stats.insights.mostExpensiveLiter && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(255, 59, 48, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="fire" size={20} color="#FF3B30" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.mostExpensiveLiter")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {formatNumber(stats.insights.mostExpensiveLiter.price)}{" "}
-                    {currencySymbol}/L
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.mostExpensiveLiterDesc", {
-                      price: "",
-                      date: new Date(
-                        stats.insights.mostExpensiveLiter.date,
-                      ).toLocaleDateString(),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Biggest Fill-up */}
-            {stats.insights.biggestFillUp && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(0, 122, 255, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="tachometer" size={20} color="#007AFF" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.biggest")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {formatNumber(stats.insights.biggestFillUp.liters)} L
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.biggestDesc", {
-                      liters: "",
-                      date: new Date(
-                        stats.insights.biggestFillUp.date,
-                      ).toLocaleDateString(),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Smallest Fill-up */}
-            {stats.insights.smallestFillUp && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(90, 200, 250, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="battery-1" size={20} color="#5AC8FA" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.smallest")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {formatNumber(stats.insights.smallestFillUp.liters)} L
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.smallestDesc", {
-                      liters: "",
-                      date: new Date(
-                        stats.insights.smallestFillUp.date,
-                      ).toLocaleDateString(),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Favorite Day */}
-            {stats.insights.favoriteDay && (
-              <View style={styles.insightCard}>
-                <View
-                  style={[
-                    styles.insightIcon,
-                    { backgroundColor: "rgba(175, 82, 222, 0.1)" },
-                  ]}
-                >
-                  <FontAwesome name="calendar" size={20} color="#AF52DE" />
-                </View>
-                <View style={styles.insightContent}>
-                  <Text style={styles.insightLabel}>
-                    {t("home.insights.favoriteDay")}
-                  </Text>
-                  <Text style={styles.insightValue}>
-                    {t(
-                      `home.insights.dayName.${stats.insights.favoriteDay.day}`,
-                    )}
-                  </Text>
-                  <Text style={styles.insightSub}>
-                    {t("home.insights.favoriteDayDesc", {
-                      count: stats.insights.favoriteDay.count,
-                      day: t(
-                        `home.insights.dayName.${stats.insights.favoriteDay.day}`,
-                      ).toLowerCase(),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Last Fill-Up */}
-            {stats.insights.lastFillUpDays !== null &&
-              stats.insights.lastFillUpDays !== undefined && (
+            <View style={styles.insightsGrid}>
+              {/* Favorite Station */}
+              {stats.insights.favoriteStation && (
                 <View style={styles.insightCard}>
                   <View
                     style={[
                       styles.insightIcon,
-                      { backgroundColor: "rgba(88, 86, 214, 0.1)" },
+                      { backgroundColor: "rgba(255, 59, 48, 0.1)" },
                     ]}
                   >
-                    <FontAwesome name="history" size={20} color="#5856D6" />
+                    <FontAwesome name="heart" size={20} color="#FF3B30" />
                   </View>
                   <View style={styles.insightContent}>
                     <Text style={styles.insightLabel}>
-                      {t("home.insights.lastFillUp")}
+                      {t("home.insights.favoriteStation")}
                     </Text>
                     <Text style={styles.insightValue}>
-                      {stats.insights.lastFillUpDays === 0
-                        ? t("home.insights.lastFillUpToday")
-                        : stats.insights.lastFillUpDays === 1
-                          ? t("home.insights.lastFillUpYesterday")
-                          : t("home.insights.lastFillUpDays", {
-                              days: stats.insights.lastFillUpDays,
-                            })}
+                      {stats.insights.favoriteStation.name}
                     </Text>
                     <Text style={styles.insightSub}>
-                      {stats.insights.lastFillUpDays === 0
-                        ? t("home.insights.lastFillUpToday")
-                        : stats.insights.lastFillUpDays === 1
-                          ? t("home.insights.lastFillUpYesterday")
-                          : `${stats.insights.lastFillUpDays} days ago`}
+                      {t("home.insights.favoriteStationDesc", {
+                        count: stats.insights.favoriteStation.count,
+                      })}
                     </Text>
                   </View>
                 </View>
               )}
+
+              {/* Most Expensive */}
+              {stats.insights.mostExpensive && (
+                <View style={styles.insightCard}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: "rgba(255, 149, 0, 0.1)" },
+                    ]}
+                  >
+                    <FontAwesome name="money" size={20} color="#FF9500" />
+                  </View>
+                  <View style={styles.insightContent}>
+                    <Text style={styles.insightLabel}>
+                      {t("home.insights.mostExpensive")}
+                    </Text>
+                    <Text style={styles.insightValue}>
+                      {formatNumber(stats.insights.mostExpensive.cost, 0)}{" "}
+                      {currencySymbol}
+                    </Text>
+                    <Text style={styles.insightSub}>
+                      {t("home.insights.mostExpensiveDesc", {
+                        cost: "",
+                        date: new Date(
+                          stats.insights.mostExpensive.date,
+                        ).toLocaleDateString(),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Cheapest Liters */}
+              {stats.insights.cheapestLiters && (
+                <View style={styles.insightCard}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: "rgba(52, 199, 89, 0.1)" },
+                    ]}
+                  >
+                    <FontAwesome name="tag" size={20} color="#34C759" />
+                  </View>
+                  <View style={styles.insightContent}>
+                    <Text style={styles.insightLabel}>
+                      {t("home.insights.cheapest")}
+                    </Text>
+                    <Text style={styles.insightValue}>
+                      {formatNumber(stats.insights.cheapestLiters.price)}{" "}
+                      {currencySymbol}/L
+                    </Text>
+                    <Text style={styles.insightSub}>
+                      {t("home.insights.cheapestDesc", {
+                        price: "",
+                        date: new Date(
+                          stats.insights.cheapestLiters.date,
+                        ).toLocaleDateString(),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Most Expensive Liter */}
+              {stats.insights.mostExpensiveLiter && (
+                <View style={styles.insightCard}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: "rgba(255, 59, 48, 0.1)" },
+                    ]}
+                  >
+                    <FontAwesome name="fire" size={20} color="#FF3B30" />
+                  </View>
+                  <View style={styles.insightContent}>
+                    <Text style={styles.insightLabel}>
+                      {t("home.insights.mostExpensiveLiter")}
+                    </Text>
+                    <Text style={styles.insightValue}>
+                      {formatNumber(stats.insights.mostExpensiveLiter.price)}{" "}
+                      {currencySymbol}/L
+                    </Text>
+                    <Text style={styles.insightSub}>
+                      {t("home.insights.mostExpensiveLiterDesc", {
+                        price: "",
+                        date: new Date(
+                          stats.insights.mostExpensiveLiter.date,
+                        ).toLocaleDateString(),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Biggest Fill-up */}
+              {stats.insights.biggestFillUp && (
+                <View style={styles.insightCard}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: "rgba(0, 122, 255, 0.1)" },
+                    ]}
+                  >
+                    <FontAwesome name="tachometer" size={20} color="#007AFF" />
+                  </View>
+                  <View style={styles.insightContent}>
+                    <Text style={styles.insightLabel}>
+                      {t("home.insights.biggest")}
+                    </Text>
+                    <Text style={styles.insightValue}>
+                      {formatNumber(stats.insights.biggestFillUp.liters)} L
+                    </Text>
+                    <Text style={styles.insightSub}>
+                      {t("home.insights.biggestDesc", {
+                        liters: "",
+                        date: new Date(
+                          stats.insights.biggestFillUp.date,
+                        ).toLocaleDateString(),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Smallest Fill-up */}
+              {stats.insights.smallestFillUp && (
+                <View style={styles.insightCard}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: "rgba(90, 200, 250, 0.1)" },
+                    ]}
+                  >
+                    <FontAwesome name="battery-1" size={20} color="#5AC8FA" />
+                  </View>
+                  <View style={styles.insightContent}>
+                    <Text style={styles.insightLabel}>
+                      {t("home.insights.smallest")}
+                    </Text>
+                    <Text style={styles.insightValue}>
+                      {formatNumber(stats.insights.smallestFillUp.liters)} L
+                    </Text>
+                    <Text style={styles.insightSub}>
+                      {t("home.insights.smallestDesc", {
+                        liters: "",
+                        date: new Date(
+                          stats.insights.smallestFillUp.date,
+                        ).toLocaleDateString(),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Favorite Day */}
+              {stats.insights.favoriteDay && (
+                <View style={styles.insightCard}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: "rgba(175, 82, 222, 0.1)" },
+                    ]}
+                  >
+                    <FontAwesome name="calendar" size={20} color="#AF52DE" />
+                  </View>
+                  <View style={styles.insightContent}>
+                    <Text style={styles.insightLabel}>
+                      {t("home.insights.favoriteDay")}
+                    </Text>
+                    <Text style={styles.insightValue}>
+                      {t(
+                        `home.insights.dayName.${stats.insights.favoriteDay.day}`,
+                      )}
+                    </Text>
+                    <Text style={styles.insightSub}>
+                      {t("home.insights.favoriteDayDesc", {
+                        count: stats.insights.favoriteDay.count,
+                        day: t(
+                          `home.insights.dayName.${stats.insights.favoriteDay.day}`,
+                        ).toLowerCase(),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Last Fill-Up */}
+              {stats.insights.lastFillUpDays !== null &&
+                stats.insights.lastFillUpDays !== undefined && (
+                  <View style={styles.insightCard}>
+                    <View
+                      style={[
+                        styles.insightIcon,
+                        { backgroundColor: "rgba(88, 86, 214, 0.1)" },
+                      ]}
+                    >
+                      <FontAwesome name="history" size={20} color="#5856D6" />
+                    </View>
+                    <View style={styles.insightContent}>
+                      <Text style={styles.insightLabel}>
+                        {t("home.insights.lastFillUp")}
+                      </Text>
+                      <Text style={styles.insightValue}>
+                        {stats.insights.lastFillUpDays === 0
+                          ? t("home.insights.lastFillUpToday")
+                          : stats.insights.lastFillUpDays === 1
+                            ? t("home.insights.lastFillUpYesterday")
+                            : t("home.insights.lastFillUpDays", {
+                                days: stats.insights.lastFillUpDays,
+                              })}
+                      </Text>
+                      <Text style={styles.insightSub}>
+                        {stats.insights.lastFillUpDays === 0
+                          ? t("home.insights.lastFillUpToday")
+                          : stats.insights.lastFillUpDays === 1
+                            ? t("home.insights.lastFillUpYesterday")
+                            : `${stats.insights.lastFillUpDays} days ago`}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -624,11 +630,17 @@ function EntryCard({
   );
 }
 
-const getStyles = (colors: any) =>
+const getStyles = (colors: any, screenWidth: number, isLargeScreen: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    scrollContent: {
+      maxWidth: 800,
+      width: "100%",
+      alignSelf: "center",
+      paddingBottom: 20,
     },
     header: {
       flexDirection: "row",
@@ -703,7 +715,9 @@ const getStyles = (colors: any) =>
       gap: 8,
     },
     statsCard: {
-      width: (screenWidth - 32) / 2,
+      width: isLargeScreen ? "23%" : "47%",
+      flexGrow: 1,
+      maxWidth: isLargeScreen ? "25%" : "50%",
       backgroundColor: colors.card,
       borderRadius: 16,
       padding: 16,
@@ -827,11 +841,17 @@ const getStyles = (colors: any) =>
       paddingHorizontal: 20,
       paddingBottom: 40,
     },
+    insightsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      gap: 12,
+    },
     insightCard: {
+      width: isLargeScreen ? "48%" : "100%",
       backgroundColor: colors.card,
       borderRadius: 16,
       padding: 16,
-      marginBottom: 12,
       flexDirection: "row",
       alignItems: "center",
       shadowColor: "#000",

@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
   GestureResponderEvent,
 } from "react-native";
 import Svg, {
@@ -72,12 +72,13 @@ export default function SpendingChart({
     setActiveIndex(null);
   }, [data, labels]);
 
+  const { width: screenWidth } = useWindowDimensions();
   const PADDING_LEFT = 16;
   const PADDING_RIGHT = 16;
   const PADDING_TOP = 20;
   const CHART_DRAW_HEIGHT = 140;
   const CHART_BOTTOM = PADDING_TOP + CHART_DRAW_HEIGHT;
-  const SVG_WIDTH = Dimensions.get("window").width - 40; // card horizontal padding
+  const SVG_WIDTH = Math.min(screenWidth, 800) - 40; // max width 800 minus card margin
   const SVG_HEIGHT = CHART_BOTTOM + 28; // chart + x-labels
   const DRAW_WIDTH = SVG_WIDTH - PADDING_LEFT - PADDING_RIGHT;
 
