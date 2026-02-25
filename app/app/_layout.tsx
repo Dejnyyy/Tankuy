@@ -2,6 +2,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
@@ -69,6 +70,16 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(legal)"
+          options={{
+            headerShown: false,
+            gestureEnabled: true,
+            gestureDirection: "horizontal",
+            fullScreenGestureEnabled: true,
+            animation: "slide_from_right",
+          }}
+        />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
     </NavigationThemeProvider>
@@ -115,6 +126,7 @@ export default function RootLayout() {
   return (
     <CustomThemeProvider>
       <AuthProvider>
+        <StatusBar style="auto" translucent backgroundColor="transparent" />
         <RootLayoutNav />
       </AuthProvider>
     </CustomThemeProvider>

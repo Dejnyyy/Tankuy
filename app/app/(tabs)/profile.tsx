@@ -16,6 +16,7 @@ import {
   Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -47,6 +48,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { t, i18n } = useTranslation();
+  const router = useRouter();
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -518,6 +520,7 @@ export default function ProfileScreen() {
               showArrow
               styles={styles}
               colors={colors}
+              onPress={() => router.push("/(legal)/terms")}
             />
             <SettingsItem
               icon="lock"
@@ -525,6 +528,7 @@ export default function ProfileScreen() {
               showArrow
               styles={styles}
               colors={colors}
+              onPress={() => router.push("/(legal)/privacy")}
             />
           </View>
         </View>
@@ -918,6 +922,7 @@ function SettingsItem({
   showArrow,
   styles,
   colors,
+  onPress,
 }: {
   icon: string;
   label: string;
@@ -925,9 +930,15 @@ function SettingsItem({
   showArrow?: boolean;
   styles: any;
   colors: any;
+  onPress?: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.settingsItem}
+      activeOpacity={0.7}
+      onPress={onPress}
+      disabled={!onPress}
+    >
       <View style={styles.settingsItemLeft}>
         <View style={styles.settingsIconContainer}>
           <FontAwesome
