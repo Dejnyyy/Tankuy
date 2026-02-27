@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  tankuy-api:
+    build: 
+      context: ./server
+    container_name: tankuy-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    networks:
+      - tankuy-network
+
+  tankuy-app:
+    build:
+      context: ./app
+    container_name: tankuy-app
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    environment:
+      # This forces Expo to generate a QR code pointing to this explicit IP/Domain
+      - REACT_NATIVE_PACKAGER_HOSTNAME=${VPS_PUBLIC_IP}
+      - EXPO_NO_TELEMETRY=1
+    env_file:
+      - ./app/.env
+    # tty: true is required if Expo attempts to render the interactive terminal, 
+    # but the logs will output the Expo URL which can be converted to a QR code or copied.
+    stdin_open: true
+    tty: true
+    networks:
+      - tankuy-network
+
+networks:
+  tankuy-network:
+    name: tankuy-network
