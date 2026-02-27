@@ -10,7 +10,7 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 8081
+EXPOSE 8085
 
 # Setting the packager hostname is critical for the QR code to point to the VPS IP
-CMD ["npx", "expo", "start", "--lan", "--port", "8081"]
+CMD ["npx", "expo", "start", "--lan", "--port", "8085"]
