@@ -294,13 +294,40 @@ class ApiService {
   }
 
   // Receipts
-  async scanReceipt(imageBase64: string, mimeType: string) {
+  async scanReceipt(imageBase64: string, mimeType: string, imageUri?: string) {
     const formData = new FormData();
-    formData.append("image", {
-      uri: `data:${mimeType};base64,${imageBase64}`,
-      type: mimeType,
-      name: "receipt.jpg",
-    } as any);
+
+    // On web, we need to convert base64 to a Blob for FormData to work properly
+    if (typeof window !== "undefined" && window.document) {
+      if (imageUri) {
+        // Fetch raw Blob directly from object URI for max quality
+        const res = await fetch(imageUri);
+        const blob = await res.blob();
+        formData.append("image", blob, "receipt.jpg");
+      } else {
+        // Decode base64 to binary
+        const byteCharacters = atob(imageBase64);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+          const slice = byteCharacters.slice(offset, offset + 512);
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+        const blob = new Blob(byteArrays, { type: mimeType });
+        formData.append("image", blob, "receipt.jpg");
+      }
+    } else {
+      // Native React Native environment
+      formData.append("image", {
+        uri: imageUri || `data:${mimeType};base64,${imageBase64}`,
+        type: mimeType,
+        name: "receipt.jpg",
+      } as any);
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/receipts/scan`, {
       method: "POST",

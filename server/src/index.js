@@ -175,7 +175,6 @@ app.get("/qr", async (req, res) => {
     <body>
         <div class="container">
             <div class="card">
-                <div class="logo">🚙</div>
                 <h1><span>Tankuy</span> is ready!</h1>
                 <p class="subtitle">Scan with <strong>Expo Go</strong> on Android or the Camera app on iOS</p>
                 <div class="qr-container">

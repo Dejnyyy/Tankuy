@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -10,25 +16,25 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import { router } from 'expo-router';
-import api, { ReceiptScanResult, Vehicle } from '@/services/api';
-import { useTheme } from '@/context/ThemeContext';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { router } from "expo-router";
+import api, { ReceiptScanResult, Vehicle } from "@/services/api";
+import { useTheme } from "@/context/ThemeContext";
 
 // Conditionally import Camera (not available on web)
 let CameraView: any = null;
 let useCameraPermissions: any = null;
-if (Platform.OS !== 'web') {
-  const Camera = require('expo-camera');
+if (Platform.OS !== "web") {
+  const Camera = require("expo-camera");
   CameraView = Camera.CameraView;
   useCameraPermissions = Camera.useCameraPermissions;
 }
 
-type ScanState = 'camera' | 'processing' | 'review' | 'form' | 'manual';
+type ScanState = "camera" | "processing" | "review" | "form" | "manual";
 
 type StationSuggestion = {
   id: string;
@@ -42,21 +48,21 @@ type StationSuggestion = {
 // Helper to safely format numbers
 const formatNum = (val: any, decimals: number = 2): string => {
   const num = Number(val);
-  return isNaN(num) ? '0' : num.toFixed(decimals);
+  return isNaN(num) ? "0" : num.toFixed(decimals);
 };
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => clearTimeout(handler);
   }, [value, delay]);
-  
+
   return debouncedValue;
 }
 
@@ -64,47 +70,50 @@ export default function ScanScreen() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const [scanState, setScanState] = useState<ScanState>('camera');
+  const [scanState, setScanState] = useState<ScanState>("camera");
   const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const cameraRef = useRef<any>(null);
-  
+
   // Location state
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
   // Autocomplete state
-  const [stationQuery, setStationQuery] = useState('');
+  const [stationQuery, setStationQuery] = useState("");
   const [suggestions, setSuggestions] = useState<StationSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  
+
   const debouncedQuery = useDebounce(stationQuery, 300);
-  
+
   // Manual entry form state
   const [manualForm, setManualForm] = useState({
-    stationName: '',
-    stationAddress: '',
-    date: new Date().toISOString().split('T')[0],
-    time: '',
-    pricePerLiter: '',
-    totalLiters: '',
-    totalCost: '',
-    mileage: '',
-    notes: '',
+    stationName: "",
+    stationAddress: "",
+    date: new Date().toISOString().split("T")[0],
+    time: "",
+    pricePerLiter: "",
+    totalLiters: "",
+    totalCost: "",
+    mileage: "",
+    notes: "",
   });
 
   // ... (permissions and effects) ...
 
   const handleSaveManualEntry = async () => {
     if (!manualForm.totalCost) {
-      Alert.alert('Error', 'Please enter at least the total cost.');
+      Alert.alert("Error", "Please enter at least the total cost.");
       return;
     }
 
     if (!manualForm.pricePerLiter) {
-      Alert.alert('Error', 'Please enter the price per liter.');
+      Alert.alert("Error", "Please enter the price per liter.");
       return;
     }
 
@@ -116,8 +125,12 @@ export default function ScanScreen() {
       stationLng: null,
       date: manualForm.date,
       time: manualForm.time || null,
-      pricePerLiter: manualForm.pricePerLiter ? parseFloat(manualForm.pricePerLiter) : null,
-      totalLiters: manualForm.totalLiters ? parseFloat(manualForm.totalLiters) : null,
+      pricePerLiter: manualForm.pricePerLiter
+        ? parseFloat(manualForm.pricePerLiter)
+        : null,
+      totalLiters: manualForm.totalLiters
+        ? parseFloat(manualForm.totalLiters)
+        : null,
       totalCost: parseFloat(manualForm.totalCost),
       mileage: manualForm.mileage ? parseInt(manualForm.mileage) : null,
       receiptImageUrl: null,
@@ -128,51 +141,57 @@ export default function ScanScreen() {
       setSaving(true);
       await api.addEntry(entryData);
 
-      Alert.alert('Success', 'Entry saved successfully!', [
-        { 
-          text: 'OK', 
+      Alert.alert("Success", "Entry saved successfully!", [
+        {
+          text: "OK",
           onPress: () => {
             resetScan();
-            router.replace('/(tabs)/');
-          }
-        }
+            router.replace("/(tabs)/");
+          },
+        },
       ]);
     } catch (error: any) {
-      console.error('Failed to save entry:', error);
-      
-      if (error.message && (error.message.includes('409') || error.message.includes('Conflict'))) {
+      console.error("Failed to save entry:", error);
+
+      if (
+        error.message &&
+        (error.message.includes("409") || error.message.includes("Conflict"))
+      ) {
         Alert.alert(
-          'Duplicate Entry', 
-          'We found a similar entry with the same date and cost. Do you want to save it anyway?',
+          "Duplicate Entry",
+          "We found a similar entry with the same date and cost. Do you want to save it anyway?",
           [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Save Anyway', 
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Save Anyway",
               onPress: async () => {
                 try {
                   setSaving(true);
                   await api.addEntry(entryData, true);
-                  Alert.alert('Success', 'Entry saved successfully!', [
-                    { 
-                      text: 'OK', 
+                  Alert.alert("Success", "Entry saved successfully!", [
+                    {
+                      text: "OK",
                       onPress: () => {
                         resetScan();
-                        router.replace('/(tabs)/');
-                      }
-                    }
+                        router.replace("/(tabs)/");
+                      },
+                    },
                   ]);
                 } catch (retryError) {
-                  console.error('Retry save failed:', retryError);
-                  Alert.alert('Error', 'Failed to save entry even with force option.');
+                  console.error("Retry save failed:", retryError);
+                  Alert.alert(
+                    "Error",
+                    "Failed to save entry even with force option.",
+                  );
                 } finally {
                   setSaving(false);
                 }
-              }
-            }
-          ]
+              },
+            },
+          ],
         );
       } else {
-        Alert.alert('Error', 'Failed to save the entry. Please try again.');
+        Alert.alert("Error", "Failed to save the entry. Please try again.");
       }
     } finally {
       setSaving(false);
@@ -180,34 +199,35 @@ export default function ScanScreen() {
   };
 
   const resetScan = () => {
-    setScanState('camera');
+    setScanState("camera");
     setScanResult(null);
-    setStationQuery('');
+    setStationQuery("");
     setSuggestions([]);
     setShowSuggestions(false);
     setManualForm({
-      stationName: '',
-      stationAddress: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '',
-      pricePerLiter: '',
-      totalLiters: '',
-      totalCost: '',
-      mileage: '',
-      notes: '',
+      stationName: "",
+      stationAddress: "",
+      date: new Date().toISOString().split("T")[0],
+      time: "",
+      pricePerLiter: "",
+      totalLiters: "",
+      totalCost: "",
+      mileage: "",
+      notes: "",
     });
   };
 
   // Camera permission (only on native)
-  const [permission, requestPermission] = Platform.OS !== 'web' && useCameraPermissions 
-    ? useCameraPermissions() 
-    : [{ granted: false }, () => {}];
+  const [permission, requestPermission] =
+    Platform.OS !== "web" && useCameraPermissions
+      ? useCameraPermissions()
+      : [{ granted: false }, () => {}];
 
   useEffect(() => {
     loadVehicles();
     getUserLocation();
   }, []);
-  
+
   // Fetch suggestions when query changes
   useEffect(() => {
     if (debouncedQuery.length >= 2) {
@@ -217,11 +237,11 @@ export default function ScanScreen() {
       setShowSuggestions(false);
     }
   }, [debouncedQuery]);
-  
+
   const getUserLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
+      if (status === "granted") {
         const location = await Location.getCurrentPositionAsync({});
         setUserLocation({
           lat: location.coords.latitude,
@@ -229,7 +249,7 @@ export default function ScanScreen() {
         });
       }
     } catch (error) {
-      console.log('Could not get location:', error);
+      console.log("Could not get location:", error);
     }
   };
 
@@ -239,20 +259,20 @@ export default function ScanScreen() {
       const result = await api.autocompleteStations(
         query,
         userLocation?.lat,
-        userLocation?.lng
+        userLocation?.lng,
       );
       setSuggestions(result.suggestions);
       setShowSuggestions(true);
     } catch (error) {
-      console.error('Failed to fetch suggestions:', error);
+      console.error("Failed to fetch suggestions:", error);
     } finally {
       setLoadingSuggestions(false);
     }
   };
-  
+
   const selectSuggestion = (suggestion: StationSuggestion) => {
     setStationQuery(suggestion.name);
-    setManualForm(prev => ({ ...prev, stationName: suggestion.name }));
+    setManualForm((prev) => ({ ...prev, stationName: suggestion.name }));
     setShowSuggestions(false);
     setSuggestions([]);
   };
@@ -265,7 +285,7 @@ export default function ScanScreen() {
         setSelectedVehicle(data[0].id);
       }
     } catch (error) {
-      console.error('Failed to load vehicles:', error);
+      console.error("Failed to load vehicles:", error);
     }
   };
 
@@ -273,35 +293,35 @@ export default function ScanScreen() {
     if (!cameraRef.current) return;
 
     try {
-      setScanState('processing');
+      setScanState("processing");
       const photo = await cameraRef.current.takePictureAsync({
         base64: true,
         quality: 0.4,
       });
 
       if (photo?.base64) {
-        const result = await api.scanReceipt(photo.base64, 'image/jpeg');
-        
+        const result = await api.scanReceipt(photo.base64, "image/jpeg");
+
         // Auto-populate manual form with extracted data
         const extracted = result.parsed || result;
         setScanResult(result); // Restore scanResult for Review screen
-        setManualForm(prev => ({
+        setManualForm((prev) => ({
           ...prev,
           stationName: extracted.stationName || prev.stationName,
           date: extracted.date || prev.date,
           time: extracted.time || prev.time,
-          pricePerLiter: extracted.pricePerLiter?.toString() || '',
-          totalLiters: extracted.totalLiters?.toString() || '',
-          totalCost: extracted.totalCost?.toString() || '',
+          pricePerLiter: extracted.pricePerLiter?.toString() || "",
+          totalLiters: extracted.totalLiters?.toString() || "",
+          totalCost: extracted.totalCost?.toString() || "",
         }));
-        
+
         // Go to review screen first
-        setScanState('review');
+        setScanState("review");
       }
     } catch (error) {
-      console.error('Failed to scan receipt:', error);
-      Alert.alert('Error', 'Failed to scan the receipt. Please try again.');
-      setScanState('camera');
+      console.error("Failed to scan receipt:", error);
+      Alert.alert("Error", "Failed to scan the receipt. Please try again.");
+      setScanState("camera");
     }
   };
 
@@ -310,41 +330,49 @@ export default function ScanScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         base64: true,
-        quality: 0.4,
+        quality: 0.8, // Increased quality for better OCR
       });
 
       if (!result.canceled && result.assets[0].base64) {
-        setScanState('processing');
+        setScanState("processing");
+        let base64Data = result.assets[0].base64;
+
+        // Sometimes web ImagePicker includes the data URI prefix in the base64 field
+        if (base64Data.includes("base64,")) {
+          base64Data = base64Data.split("base64,")[1];
+        }
+
         const scanData = await api.scanReceipt(
-          result.assets[0].base64, 
-          result.assets[0].mimeType || 'image/jpeg'
+          base64Data,
+          result.assets[0].mimeType || "image/jpeg",
+          result.assets[0].uri,
         );
-        
+
         // Auto-populate manual form with extracted data
         const extracted = scanData.parsed || scanData;
         setScanResult(scanData); // Restore scanResult for Review screen
-        setManualForm(prev => ({
+        setManualForm((prev) => ({
           ...prev,
           stationName: extracted.stationName || prev.stationName,
           date: extracted.date || prev.date,
           time: extracted.time || prev.time,
-          pricePerLiter: extracted.pricePerLiter?.toString() || '',
-          totalLiters: extracted.totalLiters?.toString() || '',
-          totalCost: extracted.totalCost?.toString() || '',
+          pricePerLiter: extracted.pricePerLiter?.toString() || "",
+          totalLiters: extracted.totalLiters?.toString() || "",
+          totalCost: extracted.totalCost?.toString() || "",
         }));
-        
+
         // Go to review screen first
-        setScanState('review');
+        setScanState("review");
       }
     } catch (error) {
-      console.error('Failed to scan image:', error);
-      Alert.alert('Error', 'Failed to scan the image. Please try again.');
-      setScanState('camera');
+      console.error("Failed to scan image:", error);
+      Alert.alert("Error", "Failed to scan the image. Please try again.");
+      setScanState("camera");
     }
   };
 
   const handleConfirmScan = () => {
-    setScanState('form');
+    setScanState("form");
   };
 
   const handleSaveEntry = async () => {
@@ -352,21 +380,29 @@ export default function ScanScreen() {
 
     // We use manualForm because user might have edited the values inline
     if (!manualForm.totalCost) {
-      Alert.alert('Error', 'Please check the total cost.');
+      Alert.alert("Error", "Please check the total cost.");
       setSaving(false);
       return;
     }
 
     const entryData = {
       vehicleId: selectedVehicle,
-      stationName: manualForm.stationName || scanResult?.parsed.stationName || null,
+      stationName:
+        manualForm.stationName || scanResult?.parsed.stationName || null,
       stationAddress: manualForm.stationAddress || null,
       stationLat: null,
       stationLng: null,
-      date: manualForm.date || scanResult?.parsed.date || new Date().toISOString().split('T')[0],
+      date:
+        manualForm.date ||
+        scanResult?.parsed.date ||
+        new Date().toISOString().split("T")[0],
       time: manualForm.time || scanResult?.parsed.time,
-      pricePerLiter: manualForm.pricePerLiter ? parseFloat(manualForm.pricePerLiter) : null,
-      totalLiters: manualForm.totalLiters ? parseFloat(manualForm.totalLiters) : null,
+      pricePerLiter: manualForm.pricePerLiter
+        ? parseFloat(manualForm.pricePerLiter)
+        : null,
+      totalLiters: manualForm.totalLiters
+        ? parseFloat(manualForm.totalLiters)
+        : null,
       totalCost: parseFloat(manualForm.totalCost),
       mileage: manualForm.mileage ? parseInt(manualForm.mileage) : null,
       receiptImageUrl: scanResult?.imageUrl || null,
@@ -377,48 +413,53 @@ export default function ScanScreen() {
       setSaving(true);
       await api.addEntry(entryData);
 
-      Alert.alert('Success', 'Entry saved successfully!', [
-        { text: 'OK', onPress: () => {
+      Alert.alert("Success", "Entry saved successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
             resetScan();
-            router.replace('/(tabs)/');
-          } 
-        }
+            router.replace("/(tabs)/");
+          },
+        },
       ]);
     } catch (error: any) {
-      console.error('Failed to save entry:', error);
+      console.error("Failed to save entry:", error);
 
-      if (error.message && (error.message.includes('409') || error.message.includes('Conflict'))) {
+      if (
+        error.message &&
+        (error.message.includes("409") || error.message.includes("Conflict"))
+      ) {
         Alert.alert(
-          'Duplicate Entry', 
-          'We found a similar entry with the same date and cost. Do you want to save it anyway?',
+          "Duplicate Entry",
+          "We found a similar entry with the same date and cost. Do you want to save it anyway?",
           [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Save Anyway', 
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Save Anyway",
               onPress: async () => {
                 try {
                   setSaving(true);
                   await api.addEntry(entryData, true);
-                  Alert.alert('Success', 'Entry saved successfully!', [
-                    { 
-                      text: 'OK', 
+                  Alert.alert("Success", "Entry saved successfully!", [
+                    {
+                      text: "OK",
                       onPress: () => {
                         resetScan();
-                        router.replace('/(tabs)/');
-                      }
-                    }
+                        router.replace("/(tabs)/");
+                      },
+                    },
                   ]);
                 } catch (retryError) {
-                  console.error('Retry save failed:', retryError);
+                  console.error("Retry save failed:", retryError);
                 } finally {
                   setSaving(false);
                 }
-              }
-            }
-          ]
+              },
+            },
+          ],
         );
       } else {
-        Alert.alert('Error', 'Failed to save entry: ' + error.message);
+        Alert.alert("Error", "Failed to save entry: " + error.message);
       }
     } finally {
       setSaving(false);
@@ -429,14 +470,14 @@ export default function ScanScreen() {
   const updateManualForm = (field: string, value: string) => {
     // Basic update
     const newForm = { ...manualForm, [field]: value };
-    
+
     // Parse current values (using the new value for the field being updated)
     const liters = parseFloat(newForm.totalLiters);
     const cost = parseFloat(newForm.totalCost);
     const price = parseFloat(newForm.pricePerLiter);
-    
+
     // Logic: Treat Price as anchor if present and positive
-    if (field === 'totalLiters') {
+    if (field === "totalLiters") {
       if (!isNaN(liters) && liters > 0) {
         // If we have price, update cost (L * P = C)
         if (!isNaN(price) && price > 0) {
@@ -447,7 +488,7 @@ export default function ScanScreen() {
           newForm.pricePerLiter = (cost / liters).toFixed(3);
         }
       }
-    } else if (field === 'totalCost') {
+    } else if (field === "totalCost") {
       if (!isNaN(cost) && cost > 0) {
         // If we have price, update liters (C / P = L)
         if (!isNaN(price) && price > 0) {
@@ -458,7 +499,7 @@ export default function ScanScreen() {
           newForm.pricePerLiter = (cost / liters).toFixed(3);
         }
       }
-    } else if (field === 'pricePerLiter') {
+    } else if (field === "pricePerLiter") {
       if (!isNaN(price) && price > 0) {
         // If we have liters, update cost (L * P = C)
         if (!isNaN(liters) && liters > 0) {
@@ -470,12 +511,12 @@ export default function ScanScreen() {
         }
       }
     }
-    
+
     setManualForm(newForm);
   };
 
   // Processing state
-  if (scanState === 'processing') {
+  if (scanState === "processing") {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
@@ -488,14 +529,17 @@ export default function ScanScreen() {
   }
 
   // Manual Entry Form
-  if (scanState === 'manual') {
+  if (scanState === "manual") {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <ScrollView style={styles.formContainer} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            style={styles.formContainer}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.reviewHeader}>
               <TouchableOpacity onPress={resetScan}>
                 <FontAwesome name="arrow-left" size={20} color={colors.tint} />
@@ -506,12 +550,14 @@ export default function ScanScreen() {
 
             {/* Station Brand with Autocomplete */}
             <View style={styles.formSection}>
-              <Text style={styles.formSectionTitle}>
-                Station Brand
-              </Text>
+              <Text style={styles.formSectionTitle}>Station Brand</Text>
               <View style={styles.autocompleteContainer}>
                 <View style={styles.inputContainer}>
-                  <FontAwesome name="building" size={18} color={colors.textSecondary} />
+                  <FontAwesome
+                    name="building"
+                    size={18}
+                    color={colors.textSecondary}
+                  />
                   <TextInput
                     style={styles.textInput}
                     placeholder="e.g. Shell, Benzina, OMV..."
@@ -519,15 +565,17 @@ export default function ScanScreen() {
                     value={stationQuery}
                     onChangeText={(v) => {
                       setStationQuery(v);
-                      setManualForm(prev => ({ ...prev, stationName: v }));
+                      setManualForm((prev) => ({ ...prev, stationName: v }));
                     }}
-                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    onFocus={() =>
+                      suggestions.length > 0 && setShowSuggestions(true)
+                    }
                   />
                   {loadingSuggestions && (
                     <ActivityIndicator size="small" color={colors.tint} />
                   )}
                 </View>
-                
+
                 {/* Suggestions Dropdown */}
                 {showSuggestions && suggestions.length > 0 && (
                   <View style={styles.suggestionsContainer}>
@@ -537,7 +585,11 @@ export default function ScanScreen() {
                         style={styles.suggestionItem}
                         onPress={() => selectSuggestion(item)}
                       >
-                        <FontAwesome name="tint" size={16} color={colors.tint} />
+                        <FontAwesome
+                          name="tint"
+                          size={16}
+                          color={colors.tint}
+                        />
                         <View style={styles.suggestionText}>
                           <Text style={styles.suggestionName}>{item.name}</Text>
                         </View>
@@ -552,16 +604,27 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>
                 Location
-                {userLocation && <Text style={styles.locationBadge}> 📍 Using your location</Text>}
+                {userLocation && (
+                  <Text style={styles.locationBadge}>
+                    {" "}
+                    📍 Using your location
+                  </Text>
+                )}
               </Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="map-marker" size={18} color={colors.textSecondary} />
+                <FontAwesome
+                  name="map-marker"
+                  size={18}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={styles.textInput}
                   placeholder="e.g. Teplice, Severní terasa..."
                   placeholderTextColor={colors.textMuted}
-                  value={manualForm.stationAddress || ''}
-                  onChangeText={(v) => setManualForm(prev => ({ ...prev, stationAddress: v }))}
+                  value={manualForm.stationAddress || ""}
+                  onChangeText={(v) =>
+                    setManualForm((prev) => ({ ...prev, stationAddress: v }))
+                  }
                 />
               </View>
             </View>
@@ -570,13 +633,17 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Date</Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="calendar" size={18} color={colors.textSecondary} />
+                <FontAwesome
+                  name="calendar"
+                  size={18}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={styles.textInput}
                   placeholder="YYYY-MM-DD"
                   placeholderTextColor={colors.textMuted}
                   value={manualForm.date}
-                  onChangeText={(v) => updateManualForm('date', v)}
+                  onChangeText={(v) => updateManualForm("date", v)}
                 />
               </View>
             </View>
@@ -584,46 +651,65 @@ export default function ScanScreen() {
             {/* Fuel Details */}
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Fuel Details</Text>
-              
+
               <View style={styles.inputRow}>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <FontAwesome name="tint" size={18} color={colors.textSecondary} />
+                  <FontAwesome
+                    name="tint"
+                    size={18}
+                    color={colors.textSecondary}
+                  />
                   <TextInput
                     style={styles.textInput}
                     placeholder="Liters"
                     placeholderTextColor={colors.textMuted}
                     keyboardType="decimal-pad"
                     value={manualForm.totalLiters}
-                    onChangeText={(v) => updateManualForm('totalLiters', v)}
+                    onChangeText={(v) => updateManualForm("totalLiters", v)}
                   />
                   <Text style={styles.inputUnit}>L</Text>
                 </View>
               </View>
 
               <View style={[styles.inputContainer, { marginTop: 10 }]}>
-                <FontAwesome name="euro" size={18} color={colors.textSecondary} />
+                <FontAwesome
+                  name="euro"
+                  size={18}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={styles.textInput}
                   placeholder="Price per liter"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="decimal-pad"
                   value={manualForm.pricePerLiter}
-                  onChangeText={(v) => updateManualForm('pricePerLiter', v)}
+                  onChangeText={(v) => updateManualForm("pricePerLiter", v)}
                 />
                 <Text style={styles.inputUnit}>Kč/L</Text>
               </View>
 
-              <View style={[styles.inputContainer, styles.highlightedInput, { marginTop: 10 }]}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  styles.highlightedInput,
+                  { marginTop: 10 },
+                ]}
+              >
                 <FontAwesome name="credit-card" size={18} color={colors.tint} />
                 <TextInput
-                  style={[styles.textInput, { color: colors.tint, fontWeight: '600' }]}
+                  style={[
+                    styles.textInput,
+                    { color: colors.tint, fontWeight: "600" },
+                  ]}
                   placeholder="Total cost *"
                   placeholderTextColor={colors.tint}
                   keyboardType="decimal-pad"
                   value={manualForm.totalCost}
-                  onChangeText={(v) => updateManualForm('totalCost', v)}
+                  onChangeText={(v) => updateManualForm("totalCost", v)}
                 />
-                <Text style={[styles.inputUnit, { color: colors.tint }]}>Kč</Text>
+                <Text style={[styles.inputUnit, { color: colors.tint }]}>
+                  Kč
+                </Text>
               </View>
             </View>
 
@@ -638,19 +724,27 @@ export default function ScanScreen() {
                         key={vehicle.id}
                         style={[
                           styles.vehicleChip,
-                          selectedVehicle === vehicle.id && styles.vehicleChipSelected,
+                          selectedVehicle === vehicle.id &&
+                            styles.vehicleChipSelected,
                         ]}
                         onPress={() => setSelectedVehicle(vehicle.id)}
                       >
-                        <FontAwesome 
-                          name="car" 
-                          size={14} 
-                          color={selectedVehicle === vehicle.id ? '#FFFFFF' : colors.textSecondary} 
+                        <FontAwesome
+                          name="car"
+                          size={14}
+                          color={
+                            selectedVehicle === vehicle.id
+                              ? "#FFFFFF"
+                              : colors.textSecondary
+                          }
                         />
-                        <Text style={[
-                          styles.vehicleChipText,
-                          selectedVehicle === vehicle.id && styles.vehicleChipTextSelected,
-                        ]}>
+                        <Text
+                          style={[
+                            styles.vehicleChipText,
+                            selectedVehicle === vehicle.id &&
+                              styles.vehicleChipTextSelected,
+                          ]}
+                        >
                           {vehicle.name}
                         </Text>
                       </TouchableOpacity>
@@ -666,26 +760,35 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Mileage (Optional)</Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="tachometer" size={18} color={colors.textSecondary} />
+                <FontAwesome
+                  name="tachometer"
+                  size={18}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={styles.textInput}
                   placeholder="Current odometer reading"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="numeric"
                   value={manualForm.mileage}
-                  onChangeText={(v) => updateManualForm('mileage', v)}
+                  onChangeText={(v) => updateManualForm("mileage", v)}
                 />
                 <Text style={styles.inputUnit}>km</Text>
               </View>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.saveButton, 
-                (saving || !manualForm.totalCost || !manualForm.pricePerLiter) && styles.saveButtonDisabled
+                styles.saveButton,
+                (saving ||
+                  !manualForm.totalCost ||
+                  !manualForm.pricePerLiter) &&
+                  styles.saveButtonDisabled,
               ]}
               onPress={handleSaveManualEntry}
-              disabled={saving || !manualForm.totalCost || !manualForm.pricePerLiter}
+              disabled={
+                saving || !manualForm.totalCost || !manualForm.pricePerLiter
+              }
             >
               {saving ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -703,9 +806,9 @@ export default function ScanScreen() {
   }
 
   // Review scanned result
-  if (scanState === 'review' && scanResult) {
+  if (scanState === "review" && scanResult) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <ScrollView style={styles.reviewContainer}>
           <View style={styles.reviewHeader}>
             <TouchableOpacity onPress={resetScan}>
@@ -717,65 +820,77 @@ export default function ScanScreen() {
 
           <View style={styles.resultCard}>
             <Text style={styles.resultCardTitle}>Extracted Data</Text>
-            
-            <DataRow 
-              label="Station" 
-              value={scanResult.parsed.stationName || 'Not detected'} 
+
+            <DataRow
+              label="Station"
+              value={scanResult.parsed.stationName || "Not detected"}
               icon="building"
-              styles={styles} colors={colors}
+              styles={styles}
+              colors={colors}
             />
-            <DataRow 
-              label="Date" 
-              value={manualForm.date} 
+            <DataRow
+              label="Date"
+              value={manualForm.date}
               icon="calendar"
               editable
-              onChangeText={(v: string) => updateManualForm('date', v)}
-              styles={styles} colors={colors}
+              onChangeText={(v: string) => updateManualForm("date", v)}
+              styles={styles}
+              colors={colors}
             />
-            <DataRow 
-              label="Time" 
-              value={manualForm.time} 
+            <DataRow
+              label="Time"
+              value={manualForm.time}
               icon="clock-o"
               editable
-              onChangeText={(v: string) => updateManualForm('time', v)}
-              styles={styles} colors={colors}
+              onChangeText={(v: string) => updateManualForm("time", v)}
+              styles={styles}
+              colors={colors}
             />
-            <DataRow 
-              label="Price/Liter" 
-              value={manualForm.pricePerLiter} 
+            <DataRow
+              label="Price/Liter"
+              value={manualForm.pricePerLiter}
               icon="euro"
               editable
-              onChangeText={(v: string) => updateManualForm('pricePerLiter', v)}
+              onChangeText={(v: string) => updateManualForm("pricePerLiter", v)}
               placeholder="0.00"
-              styles={styles} colors={colors}
+              styles={styles}
+              colors={colors}
             />
-            <DataRow 
-              label="Total Liters" 
-              value={manualForm.totalLiters} 
+            <DataRow
+              label="Total Liters"
+              value={manualForm.totalLiters}
               icon="tint"
               editable
-              onChangeText={(v: string) => updateManualForm('totalLiters', v)}
+              onChangeText={(v: string) => updateManualForm("totalLiters", v)}
               placeholder="0.00"
-              styles={styles} colors={colors}
+              styles={styles}
+              colors={colors}
             />
-            <DataRow 
-              label="Total Cost" 
-              value={manualForm.totalCost} 
+            <DataRow
+              label="Total Cost"
+              value={manualForm.totalCost}
               icon="credit-card"
               highlighted
               editable
-              onChangeText={(v: string) => updateManualForm('totalCost', v)}
+              onChangeText={(v: string) => updateManualForm("totalCost", v)}
               placeholder="0"
-              styles={styles} colors={colors}
+              styles={styles}
+              colors={colors}
             />
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.secondaryButton} onPress={resetScan}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={resetScan}
+            >
               <FontAwesome name="refresh" size={18} color={colors.tint} />
               <Text style={styles.secondaryButtonText}>Rescan</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmScan}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleConfirmScan}
+            >
               <FontAwesome name="check" size={18} color="#FFFFFF" />
               <Text style={styles.primaryButtonText}>Confirm</Text>
             </TouchableOpacity>
@@ -786,16 +901,16 @@ export default function ScanScreen() {
   }
 
   // Form after scan confirmation
-  if (scanState === 'form' && scanResult) {
+  if (scanState === "form" && scanResult) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <ScrollView style={styles.formContainer}>
             <View style={styles.reviewHeader}>
-              <TouchableOpacity onPress={() => setScanState('review')}>
+              <TouchableOpacity onPress={() => setScanState("review")}>
                 <FontAwesome name="arrow-left" size={20} color={colors.tint} />
               </TouchableOpacity>
               <Text style={styles.reviewTitle}>Complete Entry</Text>
@@ -812,19 +927,27 @@ export default function ScanScreen() {
                         key={vehicle.id}
                         style={[
                           styles.vehicleChip,
-                          selectedVehicle === vehicle.id && styles.vehicleChipSelected,
+                          selectedVehicle === vehicle.id &&
+                            styles.vehicleChipSelected,
                         ]}
                         onPress={() => setSelectedVehicle(vehicle.id)}
                       >
-                        <FontAwesome 
-                          name="car" 
-                          size={14} 
-                          color={selectedVehicle === vehicle.id ? '#FFFFFF' : colors.textSecondary} 
+                        <FontAwesome
+                          name="car"
+                          size={14}
+                          color={
+                            selectedVehicle === vehicle.id
+                              ? "#FFFFFF"
+                              : colors.textSecondary
+                          }
                         />
-                        <Text style={[
-                          styles.vehicleChipText,
-                          selectedVehicle === vehicle.id && styles.vehicleChipTextSelected,
-                        ]}>
+                        <Text
+                          style={[
+                            styles.vehicleChipText,
+                            selectedVehicle === vehicle.id &&
+                              styles.vehicleChipTextSelected,
+                          ]}
+                        >
                           {vehicle.name}
                         </Text>
                       </TouchableOpacity>
@@ -839,14 +962,18 @@ export default function ScanScreen() {
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Mileage (Optional)</Text>
               <View style={styles.inputContainer}>
-                <FontAwesome name="tachometer" size={18} color={colors.textSecondary} />
+                <FontAwesome
+                  name="tachometer"
+                  size={18}
+                  color={colors.textSecondary}
+                />
                 <TextInput
                   style={styles.textInput}
                   placeholder="Enter current mileage"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="numeric"
                   value={manualForm.mileage}
-                  onChangeText={(v) => updateManualForm('mileage', v)}
+                  onChangeText={(v) => updateManualForm("mileage", v)}
                 />
                 <Text style={styles.inputUnit}>km</Text>
               </View>
@@ -854,54 +981,61 @@ export default function ScanScreen() {
 
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Review & Edit Details</Text>
-              
-              <DataRow 
-                label="Date" 
-                value={manualForm.date} 
+
+              <DataRow
+                label="Date"
+                value={manualForm.date}
                 icon="calendar"
                 editable
-                onChangeText={(v: string) => updateManualForm('date', v)}
-                styles={styles} colors={colors}
+                onChangeText={(v: string) => updateManualForm("date", v)}
+                styles={styles}
+                colors={colors}
               />
-              <DataRow 
-                label="Time" 
-                value={manualForm.time} 
+              <DataRow
+                label="Time"
+                value={manualForm.time}
                 icon="clock-o"
                 editable
-                onChangeText={(v: string) => updateManualForm('time', v)}
-                styles={styles} colors={colors}
+                onChangeText={(v: string) => updateManualForm("time", v)}
+                styles={styles}
+                colors={colors}
               />
-              <DataRow 
-                label="Price/Liter" 
-                value={manualForm.pricePerLiter} 
+              <DataRow
+                label="Price/Liter"
+                value={manualForm.pricePerLiter}
                 icon="euro"
                 editable
-                onChangeText={(v: string) => updateManualForm('pricePerLiter', v)}
+                onChangeText={(v: string) =>
+                  updateManualForm("pricePerLiter", v)
+                }
                 placeholder="0.00"
-                styles={styles} colors={colors}
+                styles={styles}
+                colors={colors}
               />
-              <DataRow 
-                label="Total Liters" 
-                value={manualForm.totalLiters} 
+              <DataRow
+                label="Total Liters"
+                value={manualForm.totalLiters}
                 icon="tint"
                 editable
-                onChangeText={(v: string) => updateManualForm('totalLiters', v)}
+                onChangeText={(v: string) => updateManualForm("totalLiters", v)}
                 placeholder="0.00"
-                styles={styles} colors={colors}
+                styles={styles}
+                colors={colors}
               />
-              <DataRow 
-                label="Total Cost" 
-                value={manualForm.totalCost} 
+              <DataRow
+                label="Total Cost"
+                value={manualForm.totalCost}
                 icon="credit-card"
                 highlighted
                 editable
-                onChangeText={(v: string) => updateManualForm('totalCost', v)}
+                onChangeText={(v: string) => updateManualForm("totalCost", v)}
                 placeholder="0"
-                styles={styles} colors={colors}
+                styles={styles}
+                colors={colors}
               />
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
               onPress={handleSaveEntry}
               disabled={saving}
@@ -923,18 +1057,22 @@ export default function ScanScreen() {
 
   // MAIN CAMERA VIEW (default)
   // Web fallback - show image picker option
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.cameraHeader}>
           <Text style={styles.cameraTitle}>Scan Receipt</Text>
-          <Text style={styles.cameraSubtitle}>Upload an image of your receipt</Text>
+          <Text style={styles.cameraSubtitle}>
+            Upload an image of your receipt
+          </Text>
         </View>
 
         <View style={styles.webContainer}>
           <View style={styles.webPlaceholder}>
             <FontAwesome name="camera" size={64} color={colors.textMuted} />
-            <Text style={styles.webPlaceholderText}>Camera not available on web</Text>
+            <Text style={styles.webPlaceholderText}>
+              Camera not available on web
+            </Text>
           </View>
 
           <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
@@ -944,9 +1082,9 @@ export default function ScanScreen() {
         </View>
 
         {/* Manual entry link */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.manualEntryLink}
-          onPress={() => setScanState('manual')}
+          onPress={() => setScanState("manual")}
         >
           <FontAwesome name="pencil" size={14} color={colors.textSecondary} />
           <Text style={styles.manualEntryText}>Or enter details manually</Text>
@@ -958,23 +1096,28 @@ export default function ScanScreen() {
   // Native camera view
   if (!permission?.granted) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.centerContainer}>
           <FontAwesome name="camera" size={64} color={colors.textMuted} />
           <Text style={styles.permissionTitle}>Camera Access Required</Text>
           <Text style={styles.permissionText}>
             We need camera access to scan your fuel receipts
           </Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+          <TouchableOpacity
+            style={styles.permissionButton}
+            onPress={requestPermission}
+          >
             <Text style={styles.permissionButtonText}>Grant Permission</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.manualEntryLink}
-            onPress={() => setScanState('manual')}
+            onPress={() => setScanState("manual")}
           >
             <FontAwesome name="pencil" size={14} color={colors.textSecondary} />
-            <Text style={styles.manualEntryText}>Or enter details manually</Text>
+            <Text style={styles.manualEntryText}>
+              Or enter details manually
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -982,19 +1125,17 @@ export default function ScanScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.cameraHeader}>
         <Text style={styles.cameraTitle}>Scan Receipt</Text>
-        <Text style={styles.cameraSubtitle}>Position the receipt within the frame</Text>
+        <Text style={styles.cameraSubtitle}>
+          Position the receipt within the frame
+        </Text>
       </View>
 
       <View style={styles.cameraContainer}>
         {CameraView && (
-          <CameraView 
-            ref={cameraRef}
-            style={styles.camera}
-            facing="back"
-          />
+          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
         )}
         <View style={[styles.cameraOverlay, StyleSheet.absoluteFill]}>
           <View style={styles.frameLine} />
@@ -1005,14 +1146,14 @@ export default function ScanScreen() {
         <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
           <FontAwesome name="image" size={22} color={colors.text} />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
           <View style={styles.captureButtonInner} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.manualButton} 
-          onPress={() => setScanState('manual')}
+
+        <TouchableOpacity
+          style={styles.manualButton}
+          onPress={() => setScanState("manual")}
         >
           <FontAwesome name="pencil" size={18} color={colors.text} />
         </TouchableOpacity>
@@ -1021,9 +1162,19 @@ export default function ScanScreen() {
   );
 }
 
-function DataRow({ label, value, icon, highlighted, editable, onChangeText, placeholder, styles, colors }: { 
-  label: string; 
-  value: string; 
+function DataRow({
+  label,
+  value,
+  icon,
+  highlighted,
+  editable,
+  onChangeText,
+  placeholder,
+  styles,
+  colors,
+}: {
+  label: string;
+  value: string;
   icon: string;
   highlighted?: boolean;
   editable?: boolean;
@@ -1035,444 +1186,458 @@ function DataRow({ label, value, icon, highlighted, editable, onChangeText, plac
   return (
     <View style={[styles.dataRow, highlighted && styles.dataRowHighlighted]}>
       <View style={styles.dataRowIcon}>
-        <FontAwesome name={icon as any} size={16} color={highlighted ? colors.tint : colors.textSecondary} />
+        <FontAwesome
+          name={icon as any}
+          size={16}
+          color={highlighted ? colors.tint : colors.textSecondary}
+        />
       </View>
       <Text style={styles.dataRowLabel}>{label}</Text>
       {editable ? (
         <TextInput
           style={[
-            styles.textInput, 
-            { textAlign: 'right', padding: 0 },
-            highlighted && styles.dataRowValueHighlighted
+            styles.textInput,
+            { textAlign: "right", padding: 0 },
+            highlighted && styles.dataRowValueHighlighted,
           ]}
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder || 'Not detected'}
+          placeholder={placeholder || "Not detected"}
           placeholderTextColor={colors.textMuted}
-          keyboardType={label.includes('Date') || label.includes('Time') ? 'default' : 'numeric'}
+          keyboardType={
+            label.includes("Date") || label.includes("Time")
+              ? "default"
+              : "numeric"
+          }
         />
       ) : (
-        <Text style={[styles.dataRowValue, highlighted && styles.dataRowValueHighlighted]}>
-          {value || 'Not detected'}
+        <Text
+          style={[
+            styles.dataRowValue,
+            highlighted && styles.dataRowValueHighlighted,
+          ]}
+        >
+          {value || "Not detected"}
         </Text>
       )}
     </View>
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 20,
-  },
-  permissionText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  permissionButton: {
-    backgroundColor: colors.tint,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 24,
-  },
-  permissionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  processingText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 20,
-  },
-  processingSubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 8,
-  },
-  cameraHeader: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  cameraTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  cameraSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  cameraContainer: {
-    flex: 1,
-    marginHorizontal: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  frameLine: {
-    width: '85%',
-    height: '70%',
-    borderWidth: 2,
-    borderColor: colors.tint,
-    borderRadius: 16,
-    borderStyle: 'dashed',
-  },
-  cameraControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 40,
-  },
-  galleryButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.tint,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButtonInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: colors.tint,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
-  manualButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  manualEntryLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 20,
-  },
-  manualEntryText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  webContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  webPlaceholder: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  webPlaceholderText: {
-    fontSize: 16,
-    color: colors.textMuted,
-    marginTop: 16,
-  },
-  uploadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.tint,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 12,
-  },
-  uploadButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  reviewContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  reviewTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  resultCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-  },
-  resultCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  dataRowHighlighted: {
-    backgroundColor: colors.primaryLight,
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderBottomWidth: 0,
-    marginTop: 8,
-  },
-  dataRowIcon: {
-    width: 32,
-  },
-  dataRowLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  dataRowValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  dataRowValueHighlighted: {
-    fontSize: 18,
-    color: colors.tint,
-    fontWeight: '700',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  secondaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 8,
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.tint,
-  },
-  primaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.tint,
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 8,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  formContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  formSection: {
-    marginBottom: 24,
-  },
-  formSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 12,
-  },
-  locationBadge: {
-    fontSize: 12,
-    color: '#30D158',
-    fontWeight: '400',
-  },
-  autocompleteContainer: {
-    position: 'relative',
-    zIndex: 100,
-  },
-  suggestionsContainer: {
-    backgroundColor: colors.elevated,
-    borderRadius: 12,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  suggestionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: 12,
-  },
-  suggestionText: {
-    flex: 1,
-  },
-  suggestionName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  suggestionAddress: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  suggestionDistance: {
-    fontSize: 12,
-    color: colors.tint,
-    marginTop: 2,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  highlightedInput: {
-    borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.3)',
-    backgroundColor: colors.primaryLight,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text,
-  },
-  inputUnit: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  vehicleListHorizontal: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  vehicleChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 8,
-  },
-  vehicleChipSelected: {
-    backgroundColor: colors.tint,
-  },
-  vehicleChipText: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  vehicleChipTextSelected: {
-    color: '#FFFFFF',
-  },
-  noVehiclesText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  summaryCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  summaryLabel: {
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  summaryValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.tint,
-  },
-  summaryValueSmall: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.tint,
-    paddingVertical: 18,
-    borderRadius: 14,
-    gap: 10,
-    marginBottom: 40,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
+const getStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 32,
+    },
+    permissionTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: colors.text,
+      marginTop: 20,
+    },
+    permissionText: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: 8,
+    },
+    permissionButton: {
+      backgroundColor: colors.tint,
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      borderRadius: 12,
+      marginTop: 24,
+    },
+    permissionButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
+    processingText: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginTop: 20,
+    },
+    processingSubtext: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 8,
+    },
+    cameraHeader: {
+      padding: 20,
+      alignItems: "center",
+    },
+    cameraTitle: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    cameraSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    cameraContainer: {
+      flex: 1,
+      marginHorizontal: 20,
+      borderRadius: 20,
+      overflow: "hidden",
+    },
+    camera: {
+      flex: 1,
+    },
+    cameraOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.3)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    frameLine: {
+      width: "85%",
+      height: "70%",
+      borderWidth: 2,
+      borderColor: colors.tint,
+      borderRadius: 16,
+      borderStyle: "dashed",
+    },
+    cameraControls: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+      paddingVertical: 30,
+      paddingHorizontal: 40,
+    },
+    galleryButton: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: colors.card,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    captureButton: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.tint,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    captureButtonInner: {
+      width: 62,
+      height: 62,
+      borderRadius: 31,
+      backgroundColor: colors.tint,
+      borderWidth: 3,
+      borderColor: "#FFFFFF",
+    },
+    manualButton: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      backgroundColor: colors.card,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    manualEntryLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      paddingVertical: 20,
+    },
+    manualEntryText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    webContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 40,
+    },
+    webPlaceholder: {
+      alignItems: "center",
+      marginBottom: 32,
+    },
+    webPlaceholderText: {
+      fontSize: 16,
+      color: colors.textMuted,
+      marginTop: 16,
+    },
+    uploadButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.tint,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+      borderRadius: 14,
+      gap: 12,
+    },
+    uploadButtonText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
+    reviewContainer: {
+      flex: 1,
+      padding: 20,
+    },
+    reviewHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    reviewTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    resultCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 16,
+    },
+    resultCardTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 16,
+    },
+    dataRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    dataRowHighlighted: {
+      backgroundColor: colors.primaryLight,
+      marginHorizontal: -16,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+      borderBottomWidth: 0,
+      marginTop: 8,
+    },
+    dataRowIcon: {
+      width: 32,
+    },
+    dataRowLabel: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    dataRowValue: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    dataRowValueHighlighted: {
+      fontSize: 18,
+      color: colors.tint,
+      fontWeight: "700",
+    },
+    buttonContainer: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 24,
+    },
+    secondaryButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.card,
+      paddingVertical: 16,
+      borderRadius: 14,
+      gap: 8,
+    },
+    secondaryButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.tint,
+    },
+    primaryButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.tint,
+      paddingVertical: 16,
+      borderRadius: 14,
+      gap: 8,
+    },
+    primaryButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
+    formContainer: {
+      flex: 1,
+      padding: 20,
+    },
+    formSection: {
+      marginBottom: 24,
+    },
+    formSectionTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 12,
+    },
+    locationBadge: {
+      fontSize: 12,
+      color: "#30D158",
+      fontWeight: "400",
+    },
+    autocompleteContainer: {
+      position: "relative",
+      zIndex: 100,
+    },
+    suggestionsContainer: {
+      backgroundColor: colors.elevated,
+      borderRadius: 12,
+      marginTop: 8,
+      overflow: "hidden",
+    },
+    suggestionItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: 12,
+    },
+    suggestionText: {
+      flex: 1,
+    },
+    suggestionName: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    suggestionAddress: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    suggestionDistance: {
+      fontSize: 12,
+      color: colors.tint,
+      marginTop: 2,
+    },
+    inputRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    inputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      gap: 12,
+    },
+    highlightedInput: {
+      borderWidth: 1,
+      borderColor: "rgba(255, 149, 0, 0.3)",
+      backgroundColor: colors.primaryLight,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.text,
+    },
+    inputUnit: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    vehicleListHorizontal: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    vehicleChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 10,
+      gap: 8,
+    },
+    vehicleChipSelected: {
+      backgroundColor: colors.tint,
+    },
+    vehicleChipText: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: "500",
+    },
+    vehicleChipTextSelected: {
+      color: "#FFFFFF",
+    },
+    noVehiclesText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    summaryCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 24,
+    },
+    summaryTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 16,
+    },
+    summaryRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+    summaryLabel: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    summaryValue: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: colors.tint,
+    },
+    summaryValueSmall: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    saveButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.tint,
+      paddingVertical: 18,
+      borderRadius: 14,
+      gap: 10,
+      marginBottom: 40,
+    },
+    saveButtonDisabled: {
+      opacity: 0.6,
+    },
+    saveButtonText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
+  });
