@@ -294,12 +294,19 @@ class ApiService {
   }
 
   // Receipts
-  async scanReceipt(imageBase64: string, mimeType: string, imageUri?: string) {
+  async scanReceipt(
+    imageBase64: string,
+    mimeType: string,
+    imageUri?: string,
+    webFile?: any,
+  ) {
     const formData = new FormData();
 
     // On web, we need to convert base64 to a Blob for FormData to work properly
     if (typeof window !== "undefined" && window.document) {
-      if (imageUri) {
+      if (webFile) {
+        formData.append("image", webFile, webFile.name || "receipt.jpg");
+      } else if (imageUri && !imageUri.startsWith("data:")) {
         // Fetch raw Blob directly from object URI for max quality
         const res = await fetch(imageUri);
         const blob = await res.blob();

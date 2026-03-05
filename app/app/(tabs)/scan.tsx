@@ -333,19 +333,22 @@ export default function ScanScreen() {
         quality: 0.8, // Increased quality for better OCR
       });
 
-      if (!result.canceled && result.assets[0].base64) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         setScanState("processing");
-        let base64Data = result.assets[0].base64;
+        const asset = result.assets[0];
+        const webFile = (asset as any).file; // Web often provides native File object
+        let base64Data = asset.base64 || "";
 
         // Sometimes web ImagePicker includes the data URI prefix in the base64 field
-        if (base64Data.includes("base64,")) {
+        if (base64Data && base64Data.includes("base64,")) {
           base64Data = base64Data.split("base64,")[1];
         }
 
         const scanData = await api.scanReceipt(
           base64Data,
-          result.assets[0].mimeType || "image/jpeg",
-          result.assets[0].uri,
+          asset.mimeType || "image/jpeg",
+          asset.uri,
+          webFile,
         );
 
         // Auto-populate manual form with extracted data
