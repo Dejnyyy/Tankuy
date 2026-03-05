@@ -47,7 +47,7 @@ app.get("/qr", async (req, res) => {
       width: 400,
       margin: 2,
       color: {
-        dark: "#F97316", // Orange color
+        dark: "#FF9500", // Orange - matches app primary
         light: "#FFFFFF",
       },
     });
@@ -58,26 +58,136 @@ app.get("/qr", async (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Tankuy - Expo Connection</title>
+        <title>Tankuy - Connect with Expo Go</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
-            .card { background: #16213e; padding: 24px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center; width: 100%; max-width: 400px; }
-            h1 { color: #ffffff; font-size: 1.4rem; margin-bottom: 8px; }
-            p { color: #a0a0b8; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.4; }
-            .qr-wrapper { background: white; border-radius: 12px; padding: 16px; display: inline-block; }
-            img { width: 100%; max-width: 280px; height: auto; display: block; }
-            .url { margin-top: 16px; padding: 10px 12px; background: #0f3460; border-radius: 8px; font-family: monospace; color: #F97316; font-size: 0.8rem; word-break: break-all; }
+            body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                background: #0D0D0D;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                overflow: hidden;
+            }
+            body::before {
+                content: '';
+                position: fixed;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(ellipse at 30% 20%, rgba(255, 149, 0, 0.08) 0%, transparent 50%),
+                            radial-gradient(ellipse at 70% 80%, rgba(255, 149, 0, 0.05) 0%, transparent 50%);
+                z-index: 0;
+            }
+            .container {
+                position: relative;
+                z-index: 1;
+                width: 100%;
+                max-width: 380px;
+            }
+            .card {
+                background: rgba(28, 28, 30, 0.8);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 149, 0, 0.15);
+                border-radius: 24px;
+                padding: 32px 24px;
+                text-align: center;
+            }
+            .logo { font-size: 2.5rem; margin-bottom: 4px; }
+            h1 {
+                color: #FFFFFF;
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-bottom: 6px;
+            }
+            h1 span { color: #FF9500; }
+            .subtitle {
+                color: #8E8E93;
+                font-size: 0.85rem;
+                line-height: 1.5;
+                margin-bottom: 24px;
+            }
+            .subtitle strong { color: #FF9500; font-weight: 600; }
+            .qr-container {
+                position: relative;
+                display: inline-block;
+                padding: 20px;
+                background: #FFFFFF;
+                border-radius: 20px;
+                box-shadow: 0 0 40px rgba(255, 149, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.4);
+            }
+            .qr-container img {
+                width: 220px;
+                height: 220px;
+                display: block;
+            }
+            .divider {
+                height: 1px;
+                background: linear-gradient(90deg, transparent, rgba(255, 149, 0, 0.3), transparent);
+                margin: 24px 0;
+            }
+            .url-box {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 16px;
+                background: rgba(255, 149, 0, 0.08);
+                border: 1px solid rgba(255, 149, 0, 0.15);
+                border-radius: 12px;
+            }
+            .url-icon { font-size: 1rem; flex-shrink: 0; }
+            .url-text {
+                font-family: 'SF Mono', 'Fira Code', monospace;
+                color: #FF9500;
+                font-size: 0.78rem;
+                word-break: break-all;
+                text-align: left;
+            }
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-top: 20px;
+                padding: 6px 14px;
+                background: rgba(48, 209, 88, 0.1);
+                border: 1px solid rgba(48, 209, 88, 0.2);
+                border-radius: 20px;
+                color: #30D158;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+            .badge::before { content: ''; width: 6px; height: 6px; background: #30D158; border-radius: 50%; animation: pulse 2s infinite; }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+            @media (max-width: 400px) {
+                .card { padding: 24px 18px; border-radius: 20px; }
+                .qr-container img { width: 180px; height: 180px; }
+                .qr-container { padding: 16px; }
+                h1 { font-size: 1.3rem; }
+            }
         </style>
     </head>
     <body>
-        <div class="card">
-            <h1>🚙 Tankuy is ready!</h1>
-            <p>Scan this QR code with the <strong>Expo Go</strong> app on your Android or the Camera app on your iOS device.</p>
-            <div class="qr-wrapper">
-                <img src="${qrDataUrl}" alt="Expo QR Code" />
+        <div class="container">
+            <div class="card">
+                <div class="logo">🚙</div>
+                <h1><span>Tankuy</span> is ready!</h1>
+                <p class="subtitle">Scan with <strong>Expo Go</strong> on Android or the Camera app on iOS</p>
+                <div class="qr-container">
+                    <img src="${qrDataUrl}" alt="Expo QR Code" />
+                </div>
+                <div class="divider"></div>
+                <div class="url-box">
+                    <span class="url-icon">🔗</span>
+                    <span class="url-text">${expoUrl}</span>
+                </div>
+                <div class="badge">Server running</div>
             </div>
-            <div class="url">${expoUrl}</div>
         </div>
     </body>
     </html>
