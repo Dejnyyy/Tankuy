@@ -60,19 +60,23 @@ app.get("/qr", async (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Tankuy - Expo Connection</title>
         <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-            .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
-            h1 { color: #111827; font-size: 1.5rem; margin-bottom: 0.5rem; }
-            p { color: #4B5563; margin-bottom: 1.5rem; max-width: 350px; }
-            img { border: 4px solid white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-            .url { margin-top: 1.5rem; padding: 0.75rem; background: #f3f4f6; border-radius: 6px; font-family: monospace; color: #374151; font-size: 0.875rem; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
+            .card { background: #16213e; padding: 24px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center; width: 100%; max-width: 400px; }
+            h1 { color: #ffffff; font-size: 1.4rem; margin-bottom: 8px; }
+            p { color: #a0a0b8; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.4; }
+            .qr-wrapper { background: white; border-radius: 12px; padding: 16px; display: inline-block; }
+            img { width: 100%; max-width: 280px; height: auto; display: block; }
+            .url { margin-top: 16px; padding: 10px 12px; background: #0f3460; border-radius: 8px; font-family: monospace; color: #F97316; font-size: 0.8rem; word-break: break-all; }
         </style>
     </head>
     <body>
         <div class="card">
             <h1>🚙 Tankuy is ready!</h1>
             <p>Scan this QR code with the <strong>Expo Go</strong> app on your Android or the Camera app on your iOS device.</p>
-            <img src="${qrDataUrl}" alt="Expo QR Code" />
+            <div class="qr-wrapper">
+                <img src="${qrDataUrl}" alt="Expo QR Code" />
+            </div>
             <div class="url">${expoUrl}</div>
         </div>
     </body>
