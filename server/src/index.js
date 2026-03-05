@@ -47,7 +47,7 @@ app.get("/qr", async (req, res) => {
       width: 400,
       margin: 2,
       color: {
-        dark: "#22C55E", // Green color
+        dark: "#F97316", // Orange color
         light: "#FFFFFF",
       },
     });
