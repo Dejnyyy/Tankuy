@@ -3,6 +3,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import heicConvert from "heic-convert";
 import { authMiddleware } from "../middleware/auth.js";
 
 dotenv.config();
@@ -22,7 +23,11 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    // allow image/* and specific HEIC mimetypes
+    if (
+      file.mimetype.startsWith("image/") ||
+      file.mimetype === "application/octet-stream" // Sometimes iOS HEIC is sent like this
+    ) {
       cb(null, true);
     } else {
       cb(new Error("Only image files are allowed"), false);
@@ -111,11 +116,35 @@ router.post("/scan", upload.single("image"), async (req, res) => {
     let extractedText = "";
     let parsedData = {};
 
+    let imageBuffer = req.file.buffer;
+    let mimeType = req.file.mimetype;
+
+    // Detect and convert HEIC
+    const isHeic =
+      mimeType === "image/heic" ||
+      mimeType === "image/heif" ||
+      req.file.originalname.toLowerCase().endsWith(".heic");
+
+    if (isHeic) {
+      console.log("HEIC image detected. Converting to JPEG...");
+      try {
+        imageBuffer = await heicConvert({
+          buffer: req.file.buffer,
+          format: "JPEG",
+          quality: 0.8,
+        });
+        mimeType = "image/jpeg";
+      } catch (err) {
+        console.error("Failed to convert HEIC to JPEG:", err);
+        return res.status(400).json({ error: "Failed to process HEIC file" });
+      }
+    }
+
     // Upload to Cloudinary
     if (process.env.CLOUDINARY_CLOUD_NAME) {
       try {
-        const base64Image = req.file.buffer.toString("base64");
-        const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+        const base64Image = imageBuffer.toString("base64");
+        const dataUri = `data:${mimeType};base64,${base64Image}`;
 
         const uploadResult = await cloudinary.uploader.upload(dataUri, {
           folder: "tankuy/receipts",
@@ -130,10 +159,7 @@ router.post("/scan", upload.single("image"), async (req, res) => {
 
     // OpenAI Analysis
     try {
-      parsedData = await analyzeReceiptWithOpenAI(
-        req.file.buffer,
-        req.file.mimetype,
-      );
+      parsedData = await analyzeReceiptWithOpenAI(imageBuffer, mimeType);
       console.log("OpenAI parsed data:", parsedData);
     } catch (error) {
       console.error("OCR processing error:", error);
