@@ -1393,6 +1393,9 @@ const getStyles = (colors: any) =>
     reviewContainer: {
       flex: 1,
       padding: 20,
+      width: "100%",
+      maxWidth: 600,
+      alignSelf: "center",
     },
     reviewHeader: {
       flexDirection: "row",
@@ -1487,6 +1490,9 @@ const getStyles = (colors: any) =>
     formContainer: {
       flex: 1,
       padding: 20,
+      width: "100%",
+      maxWidth: 600,
+      alignSelf: "center",
     },
     formSection: {
       marginBottom: 24,
