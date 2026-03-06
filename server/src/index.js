@@ -180,11 +180,6 @@ app.get("/qr", async (req, res) => {
                 <div class="qr-container">
                     <img src="${qrDataUrl}" alt="Expo QR Code" />
                 </div>
-                <div class="divider"></div>
-                <div class="url-box">
-                    <span class="url-icon">🔗</span>
-                    <span class="url-text">${expoUrl}</span>
-                </div>
                 <div class="badge">Server running</div>
             </div>
         </div>
