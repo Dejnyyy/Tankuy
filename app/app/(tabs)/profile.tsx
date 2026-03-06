@@ -54,6 +54,25 @@ export default function ProfileScreen() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+
+  // Custom Confirmation Modal state
+  const [confirmConfig, setConfirmConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText: string;
+    isDestructive: boolean;
+    onConfirm: () => void;
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    confirmText: t("profile.modal.save"),
+    cancelText: t("profile.modal.cancel"),
+    isDestructive: false,
+    onConfirm: () => {},
+  });
   const [vehicleForm, setVehicleForm] = useState({
     name: "",
     licensePlate: "",
@@ -97,43 +116,45 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      t("profile.alerts.signOutTitle"),
-      t("profile.alerts.signOutMessage"),
-      [
-        { text: t("profile.modal.cancel"), style: "cancel" },
-        {
-          text: t("profile.signOut"),
-          style: "destructive",
-          onPress: signOut,
-        },
-      ],
-    );
+    setConfirmConfig({
+      visible: true,
+      title: t("profile.alerts.signOutTitle"),
+      message: t("profile.alerts.signOutMessage"),
+      confirmText: t("profile.signOut"),
+      cancelText: t("profile.modal.cancel"),
+      isDestructive: true,
+      onConfirm: () => {
+        setConfirmConfig((prev) => ({ ...prev, visible: false }));
+        signOut();
+      },
+    });
   };
 
   const handleDeleteVehicle = (vehicle: Vehicle) => {
-    Alert.alert(
-      t("profile.alerts.deleteTitle"),
-      t("profile.alerts.deleteMessage", { name: vehicle.name }),
-      [
-        { text: t("profile.modal.cancel"), style: "cancel" },
-        {
-          text: t("profile.modal.save"), // Reusing save/delete action loosely or 'delete' if available, defaulting to action
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await api.deleteVehicle(vehicle.id);
-              setVehicles((prev) => prev.filter((v) => v.id !== vehicle.id));
-            } catch (error) {
-              Alert.alert(
-                t("profile.alerts.error"),
-                t("profile.alerts.deleteError"),
-              );
-            }
-          },
-        },
-      ],
-    );
+    setConfirmConfig({
+      visible: true,
+      title: t("profile.alerts.deleteTitle"),
+      message: t("profile.alerts.deleteMessage", { name: vehicle.name }),
+      confirmText: t("profile.modal.save"), // using save keyword translation per existing schema, represents destructive OK
+      cancelText: t("profile.modal.cancel"),
+      isDestructive: true,
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, visible: false }));
+        try {
+          await api.deleteVehicle(vehicle.id);
+          setVehicles((prev) => prev.filter((v) => v.id !== vehicle.id));
+        } catch (error) {
+          if (Platform.OS === "web") {
+            window.alert(t("profile.alerts.deleteError"));
+          } else {
+            Alert.alert(
+              t("profile.alerts.error"),
+              t("profile.alerts.deleteError"),
+            );
+          }
+        }
+      },
+    });
   };
 
   const openAddModal = () => {
@@ -414,7 +435,7 @@ export default function ProfileScreen() {
                 value={isDark}
                 onValueChange={toggleTheme}
                 trackColor={{ false: "#767577", true: colors.tint }}
-                thumbColor={isDark ? "#FFFFFF" : "#f4f3f4"}
+                thumbColor={isDark ? colors.tint : "#f4f3f4"}
               />
             </View>
 
@@ -912,6 +933,70 @@ export default function ProfileScreen() {
           </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
+
+      {/* Custom Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={confirmConfig.visible}
+        onRequestClose={() =>
+          setConfirmConfig((prev) => ({ ...prev, visible: false }))
+        }
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmBox}>
+            <View style={styles.confirmHeader}>
+              <View
+                style={[
+                  styles.confirmIconBg,
+                  confirmConfig.isDestructive &&
+                    styles.confirmIconBgDestructive,
+                ]}
+              >
+                <FontAwesome
+                  name={
+                    confirmConfig.isDestructive
+                      ? "exclamation-triangle"
+                      : "info"
+                  }
+                  size={24}
+                  color={
+                    confirmConfig.isDestructive ? colors.error : colors.tint
+                  }
+                />
+              </View>
+            </View>
+            <Text style={styles.confirmTitle}>{confirmConfig.title}</Text>
+            <Text style={styles.confirmMessage}>{confirmConfig.message}</Text>
+
+            <View style={styles.confirmActions}>
+              <TouchableOpacity
+                style={styles.confirmCancelBtn}
+                onPress={() =>
+                  setConfirmConfig((prev) => ({ ...prev, visible: false }))
+                }
+              >
+                <Text style={styles.confirmCancelText}>
+                  {confirmConfig.cancelText}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.confirmActionBtn,
+                  confirmConfig.isDestructive &&
+                    styles.confirmActionBtnDestructive,
+                ]}
+                onPress={confirmConfig.onConfirm}
+              >
+                <Text style={styles.confirmActionText}>
+                  {confirmConfig.confirmText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1255,5 +1340,89 @@ const getStyles = (colors: any) =>
       fontSize: 15,
       color: colors.text,
       fontWeight: "500",
+    },
+    // Custom Confirmation Modal Styles
+    confirmOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    confirmBox: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 24,
+      width: "100%",
+      maxWidth: 380,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
+      elevation: 20,
+    },
+    confirmHeader: {
+      marginBottom: 16,
+    },
+    confirmIconBg: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: "rgba(255, 149, 0, 0.1)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    confirmIconBgDestructive: {
+      backgroundColor: "rgba(255, 69, 58, 0.1)",
+    },
+    confirmTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: "center",
+    },
+    confirmMessage: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: 24,
+      paddingHorizontal: 8,
+      lineHeight: 22,
+    },
+    confirmActions: {
+      flexDirection: "row",
+      gap: 12,
+      width: "100%",
+    },
+    confirmCancelBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 14,
+      backgroundColor: colors.inputBackground,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    confirmCancelText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    confirmActionBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 14,
+      backgroundColor: colors.tint,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    confirmActionBtnDestructive: {
+      backgroundColor: colors.error,
+    },
+    confirmActionText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#FFFFFF",
     },
   });
