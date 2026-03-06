@@ -375,7 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           await GoogleSignin.signOut();
         } catch (err) {
-          console.error("Google sign out failed:", err);
+          console.log("Google sign out failed/ignored:", err);
         }
       }
 
@@ -383,16 +383,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         await api.logout(deviceId);
       } catch (err) {
-        console.error("Backend logout failed:", err);
+        console.log("Backend logout failed/ignored:", err);
       }
-
-      // Clear local session
-      await clearSession();
     } catch (err) {
-      console.error("Sign out error:", err);
-      // Still clear session even if sign out fails
-      await clearSession();
+      console.error("Sign out preparation error:", err);
     } finally {
+      // Always clear local session even if remote calls fail
+      await clearSession();
       setIsLoading(false);
     }
   }, [getDeviceId]);
