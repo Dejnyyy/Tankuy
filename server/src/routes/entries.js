@@ -202,6 +202,28 @@ router.get("/stats", async (req, res) => {
       data: chartRows.map((r) => parseFloat(r.value)),
     };
 
+    // Mileage-based stats
+    // 1. Average km between fill-ups (using LAG window function)
+    const [avgKmResult] = await pool.execute(
+      `SELECT AVG(mileage_diff) as avg_km_between_fills FROM (
+        SELECT mileage - LAG(mileage) OVER (ORDER BY date ASC, time ASC) as mileage_diff
+        FROM fuel_entries
+        WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0
+      ) sub WHERE mileage_diff > 0`,
+      [userId, startStr, endStr],
+    );
+
+    // 2. Cost per km (total cost / total km driven)
+    const [costPerKmResult] = await pool.execute(
+      `SELECT 
+        CASE WHEN (MAX(mileage) - MIN(mileage)) > 0 
+        THEN SUM(total_cost) / (MAX(mileage) - MIN(mileage)) 
+        ELSE NULL END as cost_per_km
+      FROM fuel_entries 
+      WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0`,
+      [userId, startStr, endStr],
+    );
+
     // Insights Queries
     // 1. Favorite Station (most visited in period)
     const [favStationResult] = await pool.execute(
@@ -302,7 +324,11 @@ router.get("/stats", async (req, res) => {
     res.json({
       period,
       range: { start: startStr, end: endStr },
-      summary: totalResult[0],
+      summary: {
+        ...totalResult[0],
+        avg_km_between_fills: avgKmResult[0]?.avg_km_between_fills ?? null,
+        cost_per_km: costPerKmResult[0]?.cost_per_km ?? null,
+      },
       chart: chartData,
       insights,
     });

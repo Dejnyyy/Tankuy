@@ -16,7 +16,9 @@
       "avgPrice": "Průměrná cena/L",
       "avgLiters": "Prům. litrů",
       "avgTank": "Prům./Nádrž",
-      "fillUps": "Tankování"
+      "fillUps": "Tankování",
+      "avgKmBetweenFills": "Prům. km/Tank",
+      "costPerKm": "Cena/km"
     },
     "chart": {
       "title": "Přehled výdajů",
@@ -58,6 +60,9 @@
         "Sunday": "Neděli"
       }
     }
+  },
+  "history": {
+    "mileage": "Nájezd"
   },
   "profile": {
     "title": "Profil",

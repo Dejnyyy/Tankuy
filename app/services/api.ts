@@ -60,6 +60,8 @@ export interface Stats {
     avg_price_per_liter: number;
     avg_liters_per_tank: number;
     total_liters: number;
+    avg_km_between_fills: number | null;
+    cost_per_km: number | null;
   };
   chart: {
     labels: string[];

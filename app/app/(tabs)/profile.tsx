@@ -29,6 +29,12 @@ import {
 import { getEngineSuggestions } from "@/data/engineDatabase";
 import { useTranslation } from "react-i18next";
 import { changeLanguage } from "@/i18n";
+import {
+  ScaleInView,
+  FadeInView,
+  AnimatedPressable,
+  StaggeredChildren,
+} from "@/components/AnimatedComponents";
 
 type FuelType = "petrol" | "diesel" | "lpg" | "electric" | "hybrid";
 
@@ -94,10 +100,36 @@ export default function ProfileScreen() {
   const [showModelSuggestions, setShowModelSuggestions] = useState(false);
   const [showEngineSuggestions, setShowEngineSuggestions] = useState(false);
 
+  const [vehicleMileages, setVehicleMileages] = useState<
+    Record<string, number | null>
+  >({});
+
   const loadVehicles = useCallback(async () => {
     try {
       const data = await api.getVehicles();
       setVehicles(data);
+
+      // Fetch latest mileage for each vehicle
+      const mileageMap: Record<string, number | null> = {};
+      await Promise.all(
+        data.map(async (v: Vehicle) => {
+          try {
+            const entries = await api.getEntries({
+              vehicleId: v.id,
+              limit: 1,
+              sortBy: "date",
+              order: "DESC",
+            });
+            mileageMap[v.id] =
+              entries.length > 0 && entries[0].mileage
+                ? entries[0].mileage
+                : null;
+          } catch {
+            mileageMap[v.id] = null;
+          }
+        }),
+      );
+      setVehicleMileages(mileageMap);
     } catch (error) {
       console.error("Failed to load vehicles:", error);
     } finally {
@@ -342,19 +374,21 @@ export default function ProfileScreen() {
         </View>
 
         {/* User Card */}
-        <View style={styles.userCard}>
-          <View style={styles.avatarContainer}>
-            {user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <FontAwesome name="user" size={32} color="#8E8E93" />
-              </View>
-            )}
+        <ScaleInView delay={100}>
+          <View style={styles.userCard}>
+            <View style={styles.avatarContainer}>
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <FontAwesome name="user" size={32} color="#8E8E93" />
+                </View>
+              )}
+            </View>
+            <Text style={styles.userName}>{user?.name || "User"}</Text>
+            <Text style={styles.userEmail}>{user?.email || ""}</Text>
           </View>
-          <Text style={styles.userName}>{user?.name || "User"}</Text>
-          <Text style={styles.userEmail}>{user?.email || ""}</Text>
-        </View>
+        </ScaleInView>
 
         {/* Vehicles Section */}
         <View style={styles.section}>
@@ -372,32 +406,49 @@ export default function ProfileScreen() {
             </View>
           ) : vehicles.length > 0 ? (
             <View style={styles.vehicleList}>
-              {vehicles.map((vehicle) => (
-                <TouchableOpacity
-                  key={vehicle.id}
-                  style={styles.vehicleCard}
-                  onPress={() => openEditModal(vehicle)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.vehicleIconContainer}>
-                    <FontAwesome name="car" size={20} color="#FF9500" />
-                  </View>
-                  <View style={styles.vehicleInfo}>
-                    <Text style={styles.vehicleName}>{vehicle.name}</Text>
-                    <Text style={styles.vehicleMeta}>
-                      {[vehicle.brand, vehicle.model, vehicle.year]
-                        .filter(Boolean)
-                        .join(" • ") || vehicle.fuelType}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.vehicleAction}
-                    onPress={() => handleDeleteVehicle(vehicle)}
+              <StaggeredChildren stagger={80} baseDelay={200}>
+                {vehicles.map((vehicle) => (
+                  <AnimatedPressable
+                    key={vehicle.id}
+                    style={styles.vehicleCard}
+                    onPress={() => openEditModal(vehicle)}
+                    scaleValue={0.97}
                   >
-                    <FontAwesome name="trash-o" size={18} color="#FF453A" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
+                    <View style={styles.vehicleIconContainer}>
+                      <FontAwesome name="car" size={20} color="#FF9500" />
+                    </View>
+                    <View style={styles.vehicleInfo}>
+                      <Text style={styles.vehicleName}>{vehicle.name}</Text>
+                      <Text style={styles.vehicleMeta}>
+                        {[vehicle.brand, vehicle.model, vehicle.year]
+                          .filter(Boolean)
+                          .join(" • ") || vehicle.fuelType}
+                      </Text>
+                      {vehicleMileages[vehicle.id] != null && (
+                        <View style={styles.vehicleMileageRow}>
+                          <FontAwesome
+                            name="tachometer"
+                            size={12}
+                            color={colors.textMuted}
+                          />
+                          <Text style={styles.vehicleMileageText}>
+                            {Number(
+                              vehicleMileages[vehicle.id],
+                            ).toLocaleString()}{" "}
+                            km
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.vehicleAction}
+                      onPress={() => handleDeleteVehicle(vehicle)}
+                    >
+                      <FontAwesome name="trash-o" size={18} color="#FF453A" />
+                    </TouchableOpacity>
+                  </AnimatedPressable>
+                ))}
+              </StaggeredChildren>
             </View>
           ) : (
             <TouchableOpacity
@@ -1169,6 +1220,17 @@ const getStyles = (colors: any) =>
       fontSize: 13,
       color: colors.textSecondary,
       marginTop: 2,
+    },
+    vehicleMileageRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      marginTop: 3,
+    },
+    vehicleMileageText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      fontWeight: "500" as const,
     },
     vehicleAction: {
       padding: 8,

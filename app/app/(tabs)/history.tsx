@@ -17,6 +17,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import api, { FuelEntry, Vehicle } from "@/services/api";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
+import { AnimatedPressable } from "@/components/AnimatedComponents";
 
 // Helper to safely format numbers
 const formatCurrency = (val: any) => {
@@ -177,9 +178,9 @@ export default function HistoryScreen() {
       .join(" • ");
 
     return (
-      <TouchableOpacity
+      <AnimatedPressable
         style={styles.entryCard}
-        activeOpacity={0.7}
+        scaleValue={0.97}
         onPress={() => openEntryDetails(item)}
       >
         <View style={styles.entryLeft}>
@@ -201,6 +202,18 @@ export default function HistoryScreen() {
               {formatDecimal(item.pricePerLiter, 2)} Kč/L
             </Text>
           )}
+          {item.mileage && (
+            <View style={styles.entryMileageRow}>
+              <FontAwesome
+                name="tachometer"
+                size={11}
+                color={colors.textMuted}
+              />
+              <Text style={styles.entryMileage}>
+                {Number(item.mileage).toLocaleString()} km
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.entryRight}>
@@ -217,7 +230,7 @@ export default function HistoryScreen() {
             </View>
           )}
         </View>
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   };
 
@@ -748,6 +761,16 @@ const getStyles = (colors: any) =>
       fontSize: 12,
       color: colors.textMuted,
       marginTop: 3,
+    },
+    entryMileageRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 4,
+      marginTop: 3,
+    },
+    entryMileage: {
+      fontSize: 11,
+      color: colors.textMuted,
     },
     entryRight: {
       alignItems: "flex-end",

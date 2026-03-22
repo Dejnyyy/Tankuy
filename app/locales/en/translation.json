@@ -16,7 +16,9 @@
       "avgPrice": "Avg Price/L",
       "avgLiters": "Avg Liters",
       "avgTank": "Avg/Tank",
-      "fillUps": "Fill-ups"
+      "fillUps": "Fill-ups",
+      "avgKmBetweenFills": "Avg km/Fill",
+      "costPerKm": "Cost/km"
     },
     "chart": {
       "title": "Spending Overview",
@@ -58,6 +60,9 @@
         "Sunday": "Sunday"
       }
     }
+  },
+  "history": {
+    "mileage": "Mileage"
   },
   "profile": {
     "title": "Profile",

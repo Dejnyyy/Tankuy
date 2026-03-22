@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as Location from "expo-location";
 import api, { GasStation } from "@/services/api";
+import { AnimatedPressable } from "@/components/AnimatedComponents";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -832,8 +833,9 @@ export default function FindScreen() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.listItem}
+              scaleValue={0.97}
               onPress={() => {
                 setSelectedStation(item);
                 setViewMode("map");
@@ -878,7 +880,7 @@ export default function FindScreen() {
                   <FontAwesome name="car" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </AnimatedPressable>
           )}
           ListEmptyComponent={
             <View style={styles.emptyList}>

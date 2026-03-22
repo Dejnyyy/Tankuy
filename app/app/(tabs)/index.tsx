@@ -16,6 +16,12 @@ import { useTheme } from "@/context/ThemeContext";
 import api, { Stats, FuelEntry } from "@/services/api";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
+import {
+  FadeInView,
+  ScaleInView,
+  StaggeredChildren,
+  AnimatedPressable,
+} from "@/components/AnimatedComponents";
 
 // Helper function to safely format numbers
 const formatNumber = (value: any, decimals: number = 2): string => {
@@ -142,16 +148,18 @@ export default function HomeScreen() {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>
-              {user?.name
-                ? t("home.greeting", { name: user.name.split(" ")[0] })
-                : t("home.greetingDefault")}
-            </Text>
-            <Text style={styles.subGreeting}>{t("home.subGreeting")}</Text>
+        <FadeInView delay={0} translateY={15}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>
+                {user?.name
+                  ? t("home.greeting", { name: user.name.split(" ")[0] })
+                  : t("home.greetingDefault")}
+              </Text>
+              <Text style={styles.subGreeting}>{t("home.subGreeting")}</Text>
+            </View>
           </View>
-        </View>
+        </FadeInView>
 
         {/* Period Selector */}
         <View style={styles.periodSelectorContainer}>
@@ -211,97 +219,129 @@ export default function HomeScreen() {
         </View>
 
         {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <StatsCard
-            icon="credit-card"
-            label={t("home.stats.totalSpent")}
-            value={`${formatNumber(stats?.summary?.total_spent, 0)} Kč`}
-            color={colors.tint}
-            styles={styles}
-          />
-          <StatsCard
-            icon="tint"
-            label={t("home.stats.totalLiters")}
-            value={`${formatNumber(stats?.summary?.total_liters, 1)}L`}
-            color="#30D158"
-            styles={styles}
-          />
-          <StatsCard
-            icon="tag"
-            label={t("home.stats.avgPrice")}
-            value={`${formatNumber(stats?.summary?.avg_price_per_liter, 2)} Kč`}
-            color="#32ADE6"
-            styles={styles}
-          />
-          <StatsCard
-            icon="dashboard"
-            label={t("home.stats.avgLiters")}
-            value={`${formatNumber(stats?.summary?.avg_liters_per_tank, 1)}L`}
-            color="#5AC8FA"
-            styles={styles}
-          />
-          <StatsCard
-            icon="bar-chart"
-            label={t("home.stats.avgTank")}
-            value={`${formatNumber(stats?.summary?.avg_per_tank, 0)} Kč`}
-            color="#5E5CE6"
-            styles={styles}
-          />
-          <StatsCard
-            icon="hashtag"
-            label={t("home.stats.fillUps")}
-            value={`${stats?.summary?.total_tanks || 0}`}
-            color="#FF375F"
-            styles={styles}
-          />
-        </View>
+        <StaggeredChildren stagger={60} baseDelay={100}>
+          <View style={styles.statsContainer}>
+            <StatsCard
+              icon="credit-card"
+              label={t("home.stats.totalSpent")}
+              value={`${formatNumber(stats?.summary?.total_spent, 0)} Kč`}
+              color={colors.tint}
+              styles={styles}
+            />
+            <StatsCard
+              icon="tint"
+              label={t("home.stats.totalLiters")}
+              value={`${formatNumber(stats?.summary?.total_liters, 1)}L`}
+              color="#30D158"
+              styles={styles}
+            />
+            <StatsCard
+              icon="tag"
+              label={t("home.stats.avgPrice")}
+              value={`${formatNumber(stats?.summary?.avg_price_per_liter, 2)} Kč`}
+              color="#32ADE6"
+              styles={styles}
+            />
+            <StatsCard
+              icon="dashboard"
+              label={t("home.stats.avgLiters")}
+              value={`${formatNumber(stats?.summary?.avg_liters_per_tank, 1)}L`}
+              color="#5AC8FA"
+              styles={styles}
+            />
+            <StatsCard
+              icon="bar-chart"
+              label={t("home.stats.avgTank")}
+              value={`${formatNumber(stats?.summary?.avg_per_tank, 0)} Kč`}
+              color="#5E5CE6"
+              styles={styles}
+            />
+            <StatsCard
+              icon="hashtag"
+              label={t("home.stats.fillUps")}
+              value={`${stats?.summary?.total_tanks || 0}`}
+              color="#FF375F"
+              styles={styles}
+            />
+            <StatsCard
+              icon="road"
+              label={t("home.stats.avgKmBetweenFills")}
+              value={
+                stats?.summary?.avg_km_between_fills != null
+                  ? `${formatNumber(stats.summary.avg_km_between_fills, 0)} km`
+                  : "N/A"
+              }
+              color="#FF9F0A"
+              styles={styles}
+            />
+            <StatsCard
+              icon="money"
+              label={t("home.stats.costPerKm")}
+              value={
+                stats?.summary?.cost_per_km != null
+                  ? `${formatNumber(stats.summary.cost_per_km, 2)} Kč`
+                  : "N/A"
+              }
+              color="#BF5AF2"
+              styles={styles}
+            />
+          </View>
+        </StaggeredChildren>
 
         {/* Spending Chart */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>{t("home.chart.title")}</Text>
-          {hasData ? (
-            <SpendingChart
-              labels={chartData.labels}
-              data={chartData.datasets[0].data}
-              period={period}
-            />
-          ) : (
-            <View style={styles.emptyChart}>
-              <FontAwesome
-                name="line-chart"
-                size={48}
-                color={colors.textMuted}
+        <ScaleInView delay={300}>
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>{t("home.chart.title")}</Text>
+            {hasData ? (
+              <SpendingChart
+                labels={chartData.labels}
+                data={chartData.datasets[0].data}
+                period={period}
               />
-              <Text style={styles.emptyText}>{t("home.chart.noData")}</Text>
-              <Text style={styles.emptySubtext}>
-                {t("home.chart.startTracking")}
-              </Text>
-            </View>
-          )}
-        </View>
+            ) : (
+              <View style={styles.emptyChart}>
+                <FontAwesome
+                  name="line-chart"
+                  size={48}
+                  color={colors.textMuted}
+                />
+                <Text style={styles.emptyText}>{t("home.chart.noData")}</Text>
+                <Text style={styles.emptySubtext}>
+                  {t("home.chart.startTracking")}
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScaleInView>
 
         {/* Recent Entries */}
-        <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>{t("home.recent.title")}</Text>
-          {recentEntries.length > 0 ? (
-            recentEntries.map((entry) => (
-              <EntryCard
-                key={entry.id}
-                entry={entry}
-                styles={styles}
-                colors={colors}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyCard}>
-              <FontAwesome name="tint" size={32} color={colors.textMuted} />
-              <Text style={styles.emptyText}>{t("home.recent.noEntries")}</Text>
-              <Text style={styles.emptySubtext}>
-                {t("home.recent.scanFirst")}
-              </Text>
-            </View>
-          )}
-        </View>
+        <FadeInView delay={400} translateY={15}>
+          <View style={styles.recentSection}>
+            <Text style={styles.sectionTitle}>{t("home.recent.title")}</Text>
+            {recentEntries.length > 0 ? (
+              <StaggeredChildren stagger={80} baseDelay={450}>
+                {recentEntries.map((entry) => (
+                  <EntryCard
+                    key={entry.id}
+                    entry={entry}
+                    styles={styles}
+                    colors={colors}
+                  />
+                ))}
+              </StaggeredChildren>
+            ) : (
+              <View style={styles.emptyCard}>
+                <FontAwesome name="tint" size={32} color={colors.textMuted} />
+                <Text style={styles.emptyText}>
+                  {t("home.recent.noEntries")}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {t("home.recent.scanFirst")}
+                </Text>
+              </View>
+            )}
+          </View>
+        </FadeInView>
 
         {/* Insights Section */}
         {stats?.insights && hasData && (
@@ -606,7 +646,7 @@ function EntryCard({
   });
 
   return (
-    <TouchableOpacity style={styles.entryCard} activeOpacity={0.7}>
+    <AnimatedPressable style={styles.entryCard} scaleValue={0.97}>
       <View style={styles.entryIconContainer}>
         <FontAwesome name="tint" size={18} color={colors.tint} />
       </View>
@@ -626,7 +666,7 @@ function EntryCard({
           </Text>
         )}
       </View>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
