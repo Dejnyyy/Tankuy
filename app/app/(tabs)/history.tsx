@@ -336,120 +336,124 @@ export default function HistoryScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Entry Details</Text>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeButton}
-            >
-              <FontAwesome
-                name="times"
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Entry Details</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <FontAwesome
+                  name="times"
+                  size={24}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
 
-          {selectedEntry && (
-            <ScrollView style={styles.modalContent}>
-              <View style={styles.amountHeader}>
-                <Text style={styles.bigAmount}>
-                  {formatCurrency(selectedEntry.totalCost)} Kč
-                </Text>
-                <Text style={styles.volumeText}>
-                  {formatDecimal(selectedEntry.totalLiters, 2)} Liters
-                </Text>
-              </View>
+            {selectedEntry && (
+              <ScrollView style={styles.modalContent}>
+                <View style={styles.amountHeader}>
+                  <Text style={styles.bigAmount}>
+                    {formatCurrency(selectedEntry.totalCost)} Kč
+                  </Text>
+                  <Text style={styles.volumeText}>
+                    {formatDecimal(selectedEntry.totalLiters, 2)} Liters
+                  </Text>
+                </View>
 
-              <View style={styles.detailSection}>
-                <DetailRow
-                  icon="building"
-                  label="Station"
-                  value={selectedEntry.stationName || "Unknown Station"}
-                  styles={styles}
-                  colors={colors}
-                />
-                {selectedEntry.stationAddress && (
+                <View style={styles.detailSection}>
                   <DetailRow
-                    icon="map-marker"
-                    label="Address"
-                    value={selectedEntry.stationAddress}
+                    icon="building"
+                    label="Station"
+                    value={selectedEntry.stationName || "Unknown Station"}
                     styles={styles}
                     colors={colors}
                   />
-                )}
-                <DetailRow
-                  icon="calendar"
-                  label="Date"
-                  value={new Date(selectedEntry.date).toLocaleDateString()}
-                  styles={styles}
-                  colors={colors}
-                />
-                {selectedEntry.time && (
+                  {selectedEntry.stationAddress && (
+                    <DetailRow
+                      icon="map-marker"
+                      label="Address"
+                      value={selectedEntry.stationAddress}
+                      styles={styles}
+                      colors={colors}
+                    />
+                  )}
                   <DetailRow
-                    icon="clock-o"
-                    label="Time"
-                    value={selectedEntry.time}
+                    icon="calendar"
+                    label="Date"
+                    value={new Date(selectedEntry.date).toLocaleDateString()}
                     styles={styles}
                     colors={colors}
                   />
-                )}
-                <DetailRow
-                  icon="car"
-                  label="Vehicle"
-                  value={selectedEntry.vehicleName || "Unknown Vehicle"}
-                  styles={styles}
-                  colors={colors}
-                />
-                <DetailRow
-                  icon="euro"
-                  label="Price per Liter"
-                  value={`${formatDecimal(selectedEntry.pricePerLiter, 2)} Kč`}
-                  styles={styles}
-                  colors={colors}
-                />
-                {selectedEntry.mileage && (
+                  {selectedEntry.time && (
+                    <DetailRow
+                      icon="clock-o"
+                      label="Time"
+                      value={selectedEntry.time}
+                      styles={styles}
+                      colors={colors}
+                    />
+                  )}
+                  {selectedEntry.vehicleName && (
+                    <DetailRow
+                      icon="car"
+                      label="Vehicle"
+                      value={selectedEntry.vehicleName}
+                      styles={styles}
+                      colors={colors}
+                    />
+                  )}
+                  {selectedEntry.mileage && (
+                    <DetailRow
+                      icon="tachometer"
+                      label="Mileage"
+                      value={`${Number(selectedEntry.mileage).toLocaleString()} km`}
+                      styles={styles}
+                      colors={colors}
+                    />
+                  )}
                   <DetailRow
-                    icon="tachometer"
-                    label="Mileage"
-                    value={`${selectedEntry.mileage} km`}
+                    icon="euro"
+                    label="Price per Liter"
+                    value={`${formatDecimal(selectedEntry.pricePerLiter, 2)} Kč`}
                     styles={styles}
                     colors={colors}
                   />
-                )}
-                {selectedEntry.notes && (
-                  <View style={styles.noteContainer}>
-                    <Text style={styles.noteLabel}>Notes</Text>
-                    <Text style={styles.noteText}>{selectedEntry.notes}</Text>
+                  {selectedEntry.notes && (
+                    <View style={styles.noteContainer}>
+                      <Text style={styles.noteLabel}>Notes</Text>
+                      <Text style={styles.noteText}>{selectedEntry.notes}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {selectedEntry.receiptImageUrl && (
+                  <View style={styles.receiptSection}>
+                    <Text style={styles.sectionTitle}>Receipt Image</Text>
+                    <Image
+                      source={{ uri: selectedEntry.receiptImageUrl }}
+                      style={styles.receiptImage}
+                      resizeMode="contain"
+                    />
                   </View>
                 )}
-              </View>
 
-              {selectedEntry.receiptImageUrl && (
-                <View style={styles.receiptSection}>
-                  <Text style={styles.sectionTitle}>Receipt Image</Text>
-                  <Image
-                    source={{ uri: selectedEntry.receiptImageUrl }}
-                    style={styles.receiptImage}
-                    resizeMode="contain"
-                  />
-                </View>
-              )}
+                <View style={{ height: 40 }} />
 
-              <View style={{ height: 40 }} />
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={handleDeleteEntry}
+                >
+                  <FontAwesome name="trash" size={18} color={colors.error} />
+                  <Text style={styles.deleteButtonText}>Delete Entry</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDeleteEntry}
-              >
-                <FontAwesome name="trash" size={18} color={colors.error} />
-                <Text style={styles.deleteButtonText}>Delete Entry</Text>
-              </TouchableOpacity>
-
-              <View style={{ height: 40 }} />
-            </ScrollView>
-          )}
+                <View style={{ height: 40 }} />
+              </ScrollView>
+            )}
+          </View>
         </View>
       </Modal>
       <Modal
@@ -819,9 +823,16 @@ const getStyles = (colors: any) =>
       fontWeight: "600",
     },
     // Modal Styles
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
     modalContainer: {
       flex: 1,
-      backgroundColor: colors.card, // Was #1C1C1E
+      backgroundColor: colors.card,
+      maxWidth: 600,
+      width: "100%" as any,
+      alignSelf: "center" as const,
     },
     modalHeader: {
       flexDirection: "row",
