@@ -18,6 +18,7 @@ import api, { FuelEntry, Vehicle } from "@/services/api";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { AnimatedPressable } from "@/components/AnimatedComponents";
+import { useUnits } from "@/hooks/useUnits";
 
 // Helper to safely format numbers
 const formatCurrency = (val: any) => {
@@ -34,6 +35,17 @@ export default function HistoryScreen() {
   const params = useLocalSearchParams();
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const {
+    currencySymbol,
+    volumeUnit,
+    distanceUnit,
+    volumeUnitLabel,
+    pricePerVolumeUnit,
+    formatVolume,
+    formatDistance,
+    formatPricePerVolume,
+    convertCurrency,
+  } = useUnits();
 
   const [entries, setEntries] = useState<FuelEntry[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -198,8 +210,10 @@ export default function HistoryScreen() {
           </Text>
           {item.totalLiters && (
             <Text style={styles.entryDetails}>
-              {formatDecimal(item.totalLiters, 1)}L @{" "}
-              {formatDecimal(item.pricePerLiter, 2)} Kč/L
+              {formatDecimal(formatVolume(item.totalLiters), 1)}
+              {volumeUnit} @{" "}
+              {formatDecimal(formatPricePerVolume(item.pricePerLiter), 2)}{" "}
+              {pricePerVolumeUnit}
             </Text>
           )}
           {item.mileage && (
@@ -210,7 +224,8 @@ export default function HistoryScreen() {
                 color={colors.textMuted}
               />
               <Text style={styles.entryMileage}>
-                {Number(item.mileage).toLocaleString()} km
+                {Number(formatDistance(item.mileage)).toLocaleString()}{" "}
+                {distanceUnit}
               </Text>
             </View>
           )}
@@ -218,7 +233,7 @@ export default function HistoryScreen() {
 
         <View style={styles.entryRight}>
           <Text style={styles.entryAmount}>
-            {formatCurrency(item.totalCost)} Kč
+            {formatCurrency(convertCurrency(item.totalCost))} {currencySymbol}
           </Text>
           {item.receiptImageUrl && (
             <View style={styles.receiptBadge}>
@@ -356,10 +371,12 @@ export default function HistoryScreen() {
               <ScrollView style={styles.modalContent}>
                 <View style={styles.amountHeader}>
                   <Text style={styles.bigAmount}>
-                    {formatCurrency(selectedEntry.totalCost)} Kč
+                    {formatCurrency(convertCurrency(selectedEntry.totalCost))}{" "}
+                    {currencySymbol}
                   </Text>
                   <Text style={styles.volumeText}>
-                    {formatDecimal(selectedEntry.totalLiters, 2)} Liters
+                    {formatDecimal(formatVolume(selectedEntry.totalLiters), 2)}{" "}
+                    {volumeUnitLabel}
                   </Text>
                 </View>
 
@@ -409,15 +426,15 @@ export default function HistoryScreen() {
                     <DetailRow
                       icon="tachometer"
                       label="Mileage"
-                      value={`${Number(selectedEntry.mileage).toLocaleString()} km`}
+                      value={`${Number(formatDistance(selectedEntry.mileage)).toLocaleString()} ${distanceUnit}`}
                       styles={styles}
                       colors={colors}
                     />
                   )}
                   <DetailRow
-                    icon="euro"
-                    label="Price per Liter"
-                    value={`${formatDecimal(selectedEntry.pricePerLiter, 2)} Kč`}
+                    icon="money"
+                    label={`Price per ${volumeUnitLabel.slice(0, -1)}`}
+                    value={`${formatDecimal(formatPricePerVolume(selectedEntry.pricePerLiter), 2)} ${currencySymbol}`}
                     styles={styles}
                     colors={colors}
                   />

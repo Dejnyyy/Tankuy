@@ -7,6 +7,7 @@ export interface User {
   name: string;
   avatarUrl: string;
   currency?: string;
+  unitSystem?: string;
 }
 
 export interface Vehicle {
@@ -208,11 +209,23 @@ class ApiService {
     return this.request<User>("/api/users/me");
   }
 
-  async updateMe(data: { name: string }) {
+  async updateMe(data: {
+    name?: string;
+    currency?: string;
+    unitSystem?: string;
+  }) {
     return this.request<User>("/api/users/me", {
       method: "PUT",
       body: JSON.stringify(data),
     });
+  }
+
+  async getExchangeRates() {
+    return this.request<{
+      CZK_TO_USD: number;
+      USD_TO_CZK: number;
+      date: string;
+    }>("/api/exchange-rates");
   }
 
   // Vehicles

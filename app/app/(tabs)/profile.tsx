@@ -35,6 +35,7 @@ import {
   AnimatedPressable,
   StaggeredChildren,
 } from "@/components/AnimatedComponents";
+import { useUnits } from "@/hooks/useUnits";
 
 type FuelType = "petrol" | "diesel" | "lpg" | "electric" | "hybrid";
 
@@ -49,7 +50,8 @@ const FUEL_TYPES: { value: FuelType; label: string; icon: string }[] = [
 export default function ProfileScreen() {
   const { colors, toggleTheme, isDark } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
-  const { user, signOut, isLoading: authLoading } = useAuth();
+  const { user, signOut, isLoading: authLoading, updateUser } = useAuth();
+  const { currencySymbol, distanceUnit, currency, unitSystem } = useUnits();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -435,7 +437,7 @@ export default function ProfileScreen() {
                             {Number(
                               vehicleMileages[vehicle.id],
                             ).toLocaleString()}{" "}
-                            km
+                            {distanceUnit}
                           </Text>
                         </View>
                       )}
@@ -562,20 +564,128 @@ export default function ProfileScreen() {
               styles={styles}
               colors={colors}
             />
-            <SettingsItem
-              icon="money"
-              label={t("profile.settings.currency")}
-              value="CZK"
-              styles={styles}
-              colors={colors}
-            />
-            <SettingsItem
-              icon="tachometer"
-              label={t("profile.settings.unitSystem")}
-              value="Metric"
-              styles={styles}
-              colors={colors}
-            />
+
+            <View style={styles.settingsItem}>
+              <View style={styles.settingsItemLeft}>
+                <View style={styles.settingsIconContainer}>
+                  <FontAwesome
+                    name="money"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </View>
+                <Text style={styles.settingsLabel}>
+                  {t("profile.settings.currency")}
+                </Text>
+              </View>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <TouchableOpacity
+                  onPress={() => updateUser({ currency: "CZK" })}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                    backgroundColor:
+                      currency === "CZK" ? colors.tint : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: currency === "CZK" ? "#FFF" : colors.textSecondary,
+                    }}
+                  >
+                    CZK
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => updateUser({ currency: "USD" })}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                    backgroundColor:
+                      currency === "USD" ? colors.tint : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: currency === "USD" ? "#FFF" : colors.textSecondary,
+                    }}
+                  >
+                    USD
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.settingsItem}>
+              <View style={styles.settingsItemLeft}>
+                <View style={styles.settingsIconContainer}>
+                  <FontAwesome
+                    name="tachometer"
+                    size={16}
+                    color={colors.textSecondary}
+                  />
+                </View>
+                <Text style={styles.settingsLabel}>
+                  {t("profile.settings.unitSystem")}
+                </Text>
+              </View>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <TouchableOpacity
+                  onPress={() => updateUser({ unitSystem: "metric" })}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                    backgroundColor:
+                      unitSystem === "metric" ? colors.tint : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color:
+                        unitSystem === "metric" ? "#FFF" : colors.textSecondary,
+                    }}
+                  >
+                    Metric
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => updateUser({ unitSystem: "imperial" })}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                    backgroundColor:
+                      unitSystem === "imperial" ? colors.tint : "transparent",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color:
+                        unitSystem === "imperial"
+                          ? "#FFF"
+                          : colors.textSecondary,
+                    }}
+                  >
+                    Imperial
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
 

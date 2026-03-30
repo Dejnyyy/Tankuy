@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL,
     name VARCHAR(255),
     avatar_url TEXT,
+    currency ENUM('CZK','USD') DEFAULT 'CZK',
+    unit_system ENUM('metric','imperial') DEFAULT 'metric',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_google_id (google_id),

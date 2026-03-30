@@ -24,6 +24,7 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import api, { ReceiptScanResult, Vehicle } from "@/services/api";
 import { useTheme } from "@/context/ThemeContext";
+import { useUnits } from "@/hooks/useUnits";
 
 // Conditionally import Camera (not available on web)
 let CameraView: any = null;
@@ -69,6 +70,16 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function ScanScreen() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const {
+    currencySymbol,
+    volumeUnit,
+    volumeUnitLabel,
+    pricePerVolumeUnit,
+    distanceUnit,
+    toMetricVolume,
+    toMetricDistance,
+    toMetricPrice,
+  } = useUnits();
 
   const [scanState, setScanState] = useState<ScanState>("camera");
   const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null);
@@ -126,13 +137,15 @@ export default function ScanScreen() {
       date: manualForm.date,
       time: manualForm.time || null,
       pricePerLiter: manualForm.pricePerLiter
-        ? parseFloat(manualForm.pricePerLiter)
+        ? toMetricPrice(parseFloat(manualForm.pricePerLiter))
         : null,
       totalLiters: manualForm.totalLiters
-        ? parseFloat(manualForm.totalLiters)
+        ? toMetricVolume(parseFloat(manualForm.totalLiters))
         : null,
       totalCost: parseFloat(manualForm.totalCost),
-      mileage: manualForm.mileage ? parseInt(manualForm.mileage) : null,
+      mileage: manualForm.mileage
+        ? toMetricDistance(parseInt(manualForm.mileage))
+        : null,
       receiptImageUrl: null,
       notes: manualForm.notes || null,
     };
@@ -401,13 +414,15 @@ export default function ScanScreen() {
         new Date().toISOString().split("T")[0],
       time: manualForm.time || scanResult?.parsed.time,
       pricePerLiter: manualForm.pricePerLiter
-        ? parseFloat(manualForm.pricePerLiter)
+        ? toMetricPrice(parseFloat(manualForm.pricePerLiter))
         : null,
       totalLiters: manualForm.totalLiters
-        ? parseFloat(manualForm.totalLiters)
+        ? toMetricVolume(parseFloat(manualForm.totalLiters))
         : null,
       totalCost: parseFloat(manualForm.totalCost),
-      mileage: manualForm.mileage ? parseInt(manualForm.mileage) : null,
+      mileage: manualForm.mileage
+        ? toMetricDistance(parseInt(manualForm.mileage))
+        : null,
       receiptImageUrl: scanResult?.imageUrl || null,
       notes: manualForm.notes || null,
     };
@@ -664,7 +679,7 @@ export default function ScanScreen() {
                   />
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Liters"
+                    placeholder={volumeUnitLabel}
                     placeholderTextColor={colors.textMuted}
                     keyboardType="decimal-pad"
                     value={manualForm.totalLiters}
@@ -682,13 +697,13 @@ export default function ScanScreen() {
                 />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Price per liter"
+                  placeholder={`Price per ${volumeUnit}`}
                   placeholderTextColor={colors.textMuted}
                   keyboardType="decimal-pad"
                   value={manualForm.pricePerLiter}
                   onChangeText={(v) => updateManualForm("pricePerLiter", v)}
                 />
-                <Text style={styles.inputUnit}>Kč/L</Text>
+                <Text style={styles.inputUnit}>{pricePerVolumeUnit}</Text>
               </View>
 
               <View
@@ -711,7 +726,7 @@ export default function ScanScreen() {
                   onChangeText={(v) => updateManualForm("totalCost", v)}
                 />
                 <Text style={[styles.inputUnit, { color: colors.tint }]}>
-                  Kč
+                  {currencySymbol}
                 </Text>
               </View>
             </View>

@@ -59,6 +59,7 @@ interface AuthContextType {
   signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<boolean>;
+  updateUser: (data: Partial<User>) => Promise<void>;
   error: string | null;
 }
 
@@ -417,6 +418,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [getDeviceId]);
 
+  const updateUser = useCallback(async (data: Partial<User>) => {
+    try {
+      const updatedUser = await api.updateMe(data);
+      setUser(updatedUser);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.USER,
+        JSON.stringify(updatedUser),
+      );
+    } catch (err: any) {
+      console.error("Update user error:", err);
+      throw err;
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -427,6 +442,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signInAsGuest,
         signOut,
         refreshAuth,
+        updateUser,
         error,
       }}
     >

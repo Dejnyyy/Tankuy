@@ -22,6 +22,7 @@ import {
   StaggeredChildren,
   AnimatedPressable,
 } from "@/components/AnimatedComponents";
+import { useUnits } from "@/hooks/useUnits";
 
 // Helper function to safely format numbers
 const formatNumber = (value: any, decimals: number = 2): string => {
@@ -52,7 +53,18 @@ export default function HomeScreen() {
   );
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const currencySymbol = user?.currency || "Kč";
+  const {
+    currencySymbol,
+    volumeUnit,
+    distanceUnit,
+    volumeUnitLabel,
+    distanceUnitLabel,
+    formatVolume,
+    formatDistance,
+    formatPricePerVolume,
+    formatCostPerDistance,
+    convertCurrency,
+  } = useUnits();
 
   const loadData = useCallback(async () => {
     try {
@@ -224,35 +236,35 @@ export default function HomeScreen() {
             <StatsCard
               icon="credit-card"
               label={t("home.stats.totalSpent")}
-              value={`${formatNumber(stats?.summary?.total_spent, 0)} Kč`}
+              value={`${formatNumber(convertCurrency(stats?.summary?.total_spent), 0)} ${currencySymbol}`}
               color={colors.tint}
               styles={styles}
             />
             <StatsCard
               icon="tint"
-              label={t("home.stats.totalLiters")}
-              value={`${formatNumber(stats?.summary?.total_liters, 1)}L`}
+              label={t("home.stats.totalVolume", { unit: volumeUnitLabel })}
+              value={`${formatNumber(formatVolume(stats?.summary?.total_liters), 1)}${volumeUnit}`}
               color="#30D158"
               styles={styles}
             />
             <StatsCard
               icon="tag"
-              label={t("home.stats.avgPrice")}
-              value={`${formatNumber(stats?.summary?.avg_price_per_liter, 2)} Kč`}
+              label={t("home.stats.avgPrice", { unit: volumeUnit })}
+              value={`${formatNumber(formatPricePerVolume(stats?.summary?.avg_price_per_liter), 2)} ${currencySymbol}`}
               color="#32ADE6"
               styles={styles}
             />
             <StatsCard
               icon="dashboard"
-              label={t("home.stats.avgLiters")}
-              value={`${formatNumber(stats?.summary?.avg_liters_per_tank, 1)}L`}
+              label={t("home.stats.avgVolume", { unit: volumeUnitLabel })}
+              value={`${formatNumber(formatVolume(stats?.summary?.avg_liters_per_tank), 1)}${volumeUnit}`}
               color="#5AC8FA"
               styles={styles}
             />
             <StatsCard
               icon="bar-chart"
               label={t("home.stats.avgTank")}
-              value={`${formatNumber(stats?.summary?.avg_per_tank, 0)} Kč`}
+              value={`${formatNumber(convertCurrency(stats?.summary?.avg_per_tank), 0)} ${currencySymbol}`}
               color="#5E5CE6"
               styles={styles}
             />
@@ -265,10 +277,12 @@ export default function HomeScreen() {
             />
             <StatsCard
               icon="road"
-              label={t("home.stats.avgKmBetweenFills")}
+              label={t("home.stats.avgDistBetweenFills", {
+                unit: distanceUnitLabel,
+              })}
               value={
                 stats?.summary?.avg_km_between_fills != null
-                  ? `${formatNumber(stats.summary.avg_km_between_fills, 0)} km`
+                  ? `${formatNumber(formatDistance(stats.summary.avg_km_between_fills), 0)} ${distanceUnit}`
                   : "N/A"
               }
               color="#FF9F0A"
@@ -276,10 +290,10 @@ export default function HomeScreen() {
             />
             <StatsCard
               icon="money"
-              label={t("home.stats.costPerKm")}
+              label={t("home.stats.costPerDist", { unit: distanceUnit })}
               value={
                 stats?.summary?.cost_per_km != null
-                  ? `${formatNumber(stats.summary.cost_per_km, 2)} Kč`
+                  ? `${formatNumber(formatCostPerDistance(stats.summary.cost_per_km), 2)} ${currencySymbol}`
                   : "N/A"
               }
               color="#BF5AF2"
@@ -297,6 +311,7 @@ export default function HomeScreen() {
                 labels={chartData.labels}
                 data={chartData.datasets[0].data}
                 period={period}
+                currency={currencySymbol}
               />
             ) : (
               <View style={styles.emptyChart}>
@@ -326,6 +341,12 @@ export default function HomeScreen() {
                     entry={entry}
                     styles={styles}
                     colors={colors}
+                    units={{
+                      currencySymbol,
+                      volumeUnit,
+                      formatVolume,
+                      convertCurrency,
+                    }}
                   />
                 ))}
               </StaggeredChildren>
@@ -392,7 +413,10 @@ export default function HomeScreen() {
                       {t("home.insights.mostExpensive")}
                     </Text>
                     <Text style={styles.insightValue}>
-                      {formatNumber(stats.insights.mostExpensive.cost, 0)}{" "}
+                      {formatNumber(
+                        convertCurrency(stats.insights.mostExpensive.cost),
+                        0,
+                      )}{" "}
                       {currencySymbol}
                     </Text>
                     <Text style={styles.insightSub}>
@@ -423,8 +447,12 @@ export default function HomeScreen() {
                       {t("home.insights.cheapest")}
                     </Text>
                     <Text style={styles.insightValue}>
-                      {formatNumber(stats.insights.cheapestLiters.price)}{" "}
-                      {currencySymbol}/L
+                      {formatNumber(
+                        formatPricePerVolume(
+                          stats.insights.cheapestLiters.price,
+                        ),
+                      )}{" "}
+                      {currencySymbol}/{volumeUnit}
                     </Text>
                     <Text style={styles.insightSub}>
                       {t("home.insights.cheapestDesc", {
@@ -451,11 +479,17 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.insightContent}>
                     <Text style={styles.insightLabel}>
-                      {t("home.insights.mostExpensiveLiter")}
+                      {t("home.insights.mostExpensivePrice", {
+                        unit: volumeUnit,
+                      })}
                     </Text>
                     <Text style={styles.insightValue}>
-                      {formatNumber(stats.insights.mostExpensiveLiter.price)}{" "}
-                      {currencySymbol}/L
+                      {formatNumber(
+                        formatPricePerVolume(
+                          stats.insights.mostExpensiveLiter.price,
+                        ),
+                      )}{" "}
+                      {currencySymbol}/{volumeUnit}
                     </Text>
                     <Text style={styles.insightSub}>
                       {t("home.insights.mostExpensiveLiterDesc", {
@@ -485,7 +519,10 @@ export default function HomeScreen() {
                       {t("home.insights.biggest")}
                     </Text>
                     <Text style={styles.insightValue}>
-                      {formatNumber(stats.insights.biggestFillUp.liters)} L
+                      {formatNumber(
+                        formatVolume(stats.insights.biggestFillUp.liters),
+                      )}{" "}
+                      {volumeUnit}
                     </Text>
                     <Text style={styles.insightSub}>
                       {t("home.insights.biggestDesc", {
@@ -515,7 +552,10 @@ export default function HomeScreen() {
                       {t("home.insights.smallest")}
                     </Text>
                     <Text style={styles.insightValue}>
-                      {formatNumber(stats.insights.smallestFillUp.liters)} L
+                      {formatNumber(
+                        formatVolume(stats.insights.smallestFillUp.liters),
+                      )}{" "}
+                      {volumeUnit}
                     </Text>
                     <Text style={styles.insightSub}>
                       {t("home.insights.smallestDesc", {
@@ -634,11 +674,14 @@ function EntryCard({
   entry,
   styles,
   colors,
+  units,
 }: {
   entry: FuelEntry;
   styles: any;
   colors: any;
+  units: any;
 }) {
+  const { currencySymbol, volumeUnit, formatVolume, convertCurrency } = units;
   const date = new Date(entry.date);
   const formattedDate = date.toLocaleDateString("en-US", {
     month: "short",
@@ -658,11 +701,12 @@ function EntryCard({
       </View>
       <View style={styles.entryAmount}>
         <Text style={styles.entryAmountText}>
-          {Number(entry.totalCost).toFixed(0)} Kč
+          {Number(convertCurrency(entry.totalCost)).toFixed(0)} {currencySymbol}
         </Text>
         {entry.totalLiters && (
           <Text style={styles.entryLiters}>
-            {Number(entry.totalLiters).toFixed(1)}L
+            {Number(formatVolume(entry.totalLiters)).toFixed(1)}
+            {volumeUnit}
           </Text>
         )}
       </View>
