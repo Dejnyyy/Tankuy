@@ -91,6 +91,8 @@ export interface ReceiptScanResult {
     time: string | null;
     pricePerLiter: number | null;
     totalLiters: number | null;
+    pricePerUnit: number | null;
+    totalUnits: number | null;
     totalCost: number | null;
   };
 }

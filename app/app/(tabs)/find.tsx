@@ -26,6 +26,7 @@ import api, { GasStation } from "@/services/api";
 import { AnimatedPressable } from "@/components/AnimatedComponents";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useUnits } from "@/hooks/useUnits";
 
 import StationMap, { StationMapHandle } from "@/components/StationMap";
 import NavigationOverlay, {
@@ -89,6 +90,7 @@ function GoNowButton({ onPress }: { onPress: () => void }) {
 export default function FindScreen() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { distanceUnit, formatDistance } = useUnits();
   const [location, setLocation] = useState<Location.LocationObject | null>(
     null,
   );
@@ -388,7 +390,7 @@ export default function FindScreen() {
         const route = data.routes[0];
         setRouteCoordinates(decodePolyline(route.geometry));
         setRouteInfo({
-          distance: `${(route.distance / 1000).toFixed(1)} km`,
+          distance: `${formatDistance(route.distance / 1000)?.toFixed(1)} ${distanceUnit}`,
           duration: `${Math.round(route.duration / 60)} min`,
         });
 
@@ -727,7 +729,10 @@ export default function FindScreen() {
                       color={colors.tint}
                     />
                     <Text style={styles.distanceText}>
-                      {(selectedStation.distance / 1000).toFixed(1)} km
+                      {formatDistance(selectedStation.distance / 1000)?.toFixed(
+                        1,
+                      )}{" "}
+                      {distanceUnit}
                     </Text>
                   </View>
                 )}

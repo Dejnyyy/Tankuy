@@ -137,7 +137,7 @@ export default function HomeScreen() {
       {
         data:
           stats?.chart?.data && stats.chart.data.length > 0
-            ? stats.chart.data
+            ? stats.chart.data.map((val) => convertCurrency(val) || 0)
             : [0],
         strokeWidth: 2,
       },

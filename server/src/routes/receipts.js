@@ -62,14 +62,24 @@ const analyzeReceiptWithOpenAI = async (
         {
           role: "system",
           content:
-            "You are a specialized receipt scanner for Czech gas stations. Extract data strictly in JSON format. Do not use markdown.",
+            "You are a specialized receipt scanner for gas stations. Extract data strictly in JSON format. Do not use markdown.",
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Analyze this fuel receipt and extract the following fields in JSON format: stationName (string, use clean brand name like 'Tank ONO', 'Shell', 'Benzina'), date (YYYY-MM-DD), time (HH:MM), pricePerLiter (number), totalLiters (number), totalCost (number). \n\nToday is ${new Date().toISOString().split("T")[0]}. If the year is missing or ambiguous, assume the receipt is recent (from this year ${new Date().getFullYear()}). \n\nIf totalCost is missing, calculate it from liters * price. If station name contains 'ONO', simplify to 'Tank ONO'. Return ONLY the JSON object, no markdown.`,
+              text: `Analyze this fuel receipt and extract the following fields in JSON format: 
+stationName (string, use clean brand name like 'Tank ONO', 'Shell', 'Benzina', 'Chevron', 'Exxon'), 
+date (YYYY-MM-DD), 
+time (HH:MM), 
+pricePerUnit (number, price per Liter or Gallon), 
+totalUnits (number, total Liters or Gallons), 
+totalCost (number, total price in local currency). 
+
+Note: Extract units as they appear on the receipt. Today is ${new Date().toISOString().split("T")[0]}. If the year is missing or ambiguous, assume the receipt is recent (from this year ${new Date().getFullYear()}). 
+
+If totalCost is missing, calculate it from units * pricePerUnit. Simplify station names (e.g. 'ONO' -> 'Tank ONO'). Return ONLY the JSON object, no markdown.`,
             },
             {
               type: "image_url",

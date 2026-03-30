@@ -159,7 +159,7 @@ export default function ScanScreen() {
           text: "OK",
           onPress: () => {
             resetScan();
-            router.replace("/(tabs)/");
+            router.replace("/");
           },
         },
       ]);
@@ -186,7 +186,7 @@ export default function ScanScreen() {
                       text: "OK",
                       onPress: () => {
                         resetScan();
-                        router.replace("/(tabs)/");
+                        router.replace("/");
                       },
                     },
                   ]);
@@ -323,8 +323,11 @@ export default function ScanScreen() {
           stationName: extracted.stationName || prev.stationName,
           date: extracted.date || prev.date,
           time: extracted.time || prev.time,
-          pricePerLiter: extracted.pricePerLiter?.toString() || "",
-          totalLiters: extracted.totalLiters?.toString() || "",
+          pricePerLiter:
+            (extracted.pricePerUnit || extracted.pricePerLiter)?.toString() ||
+            "",
+          totalLiters:
+            (extracted.totalUnits || extracted.totalLiters)?.toString() || "",
           totalCost: extracted.totalCost?.toString() || "",
         }));
 
@@ -372,8 +375,11 @@ export default function ScanScreen() {
           stationName: extracted.stationName || prev.stationName,
           date: extracted.date || prev.date,
           time: extracted.time || prev.time,
-          pricePerLiter: extracted.pricePerLiter?.toString() || "",
-          totalLiters: extracted.totalLiters?.toString() || "",
+          pricePerLiter:
+            (extracted.pricePerUnit || extracted.pricePerLiter)?.toString() ||
+            "",
+          totalLiters:
+            (extracted.totalUnits || extracted.totalLiters)?.toString() || "",
           totalCost: extracted.totalCost?.toString() || "",
         }));
 
@@ -436,7 +442,7 @@ export default function ScanScreen() {
           text: "OK",
           onPress: () => {
             resetScan();
-            router.replace("/(tabs)/");
+            router.replace("/");
           },
         },
       ]);
@@ -463,7 +469,7 @@ export default function ScanScreen() {
                       text: "OK",
                       onPress: () => {
                         resetScan();
-                        router.replace("/(tabs)/");
+                        router.replace("/");
                       },
                     },
                   ]);
