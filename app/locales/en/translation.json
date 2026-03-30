@@ -12,13 +12,13 @@
     "allTime": "All Time",
     "stats": {
       "totalSpent": "Total Spent",
-      "totalLiters": "Total Liters",
-      "avgPrice": "Avg Price/L",
-      "avgLiters": "Avg Liters",
+      "totalVolume": "Total {{unit}}",
+      "avgPrice": "Avg Price/{{unit}}",
+      "avgVolume": "Avg {{unit}}",
       "avgTank": "Avg/Tank",
       "fillUps": "Fill-ups",
-      "avgKmBetweenFills": "Avg km/Fill",
-      "costPerKm": "Cost/km"
+      "avgDistBetweenFills": "Avg {{unit}} between fills",
+      "costPerDist": "Cost/{{unit}}"
     },
     "chart": {
       "title": "Spending Overview",
@@ -38,7 +38,7 @@
       "mostExpensiveDesc": "{{cost}} on {{date}}",
       "cheapest": "Best Price",
       "cheapestDesc": "{{price}} on {{date}}",
-      "mostExpensiveLiter": "Highest Price",
+      "mostExpensivePrice": "Highest Price/{{unit}}",
       "mostExpensiveLiterDesc": "{{price}} on {{date}}",
       "biggest": "Biggest Fill-Up",
       "biggestDesc": "{{liters}} on {{date}}",

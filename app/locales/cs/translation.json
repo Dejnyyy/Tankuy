@@ -12,13 +12,13 @@
     "allTime": "Za celou dobu",
     "stats": {
       "totalSpent": "Celkem utraceno",
-      "totalLiters": "Celkem litrů",
-      "avgPrice": "Průměrná cena/L",
-      "avgLiters": "Prům. litrů",
+      "totalVolume": "Celkem {{unit}}",
+      "avgPrice": "Průměrná cena/{{unit}}",
+      "avgVolume": "Průměrně {{unit}}",
       "avgTank": "Prům./Nádrž",
       "fillUps": "Tankování",
-      "avgKmBetweenFills": "Prům. km/Tank",
-      "costPerKm": "Cena/km"
+      "avgDistBetweenFills": "Průměrně {{unit}} na nádrž",
+      "costPerDist": "Cena/{{unit}}"
     },
     "chart": {
       "title": "Přehled výdajů",
@@ -38,7 +38,7 @@
       "mostExpensiveDesc": "{{cost}} dne {{date}}",
       "cheapest": "Nejlepší cena",
       "cheapestDesc": "{{price}} dne {{date}}",
-      "mostExpensiveLiter": "Nejvyšší cena",
+      "mostExpensivePrice": "Nejvyšší cena/{{unit}}",
       "mostExpensiveLiterDesc": "{{price}} dne {{date}}",
       "biggest": "Největší nádrž",
       "biggestDesc": "{{liters}} dne {{date}}",
