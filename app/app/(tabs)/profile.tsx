@@ -697,7 +697,7 @@ export default function ProfileScreen() {
             <SettingsItem
               icon="info-circle"
               label={t("profile.about.version")}
-              value="1.0.2"
+              value="1.0.3"
               styles={styles}
               colors={colors}
             />
