@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useWindowDimensions } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -6,6 +6,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedProps,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -14,58 +15,35 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/context/ThemeContext";
 import { AnimatedPressable } from "@/components/AnimatedComponents";
 
+// react-native-svg Path wrapped as a Reanimated animated component
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
 // ─── Layout constants ──────────────────────────────────────────────────────────
-const BUMP_H   = 30;   // how far the curve rises above the flat bar
-const FAB_R    = 28;   // Scan FAB circle radius
-const NOTCH_W  = 56;   // half-width of the notch curve on each side
-const BAR_H    = 58;   // flat bar height (exclusive of safe area)
-const PILL_W   = 20;   // active indicator pill width
-const PEAK_Y   = 2;    // top of curve (small gap from container top)
+const BUMP_H  = 28;  // how far the bump rises above the flat bar
+const FAB_R   = 26;  // FAB circle radius
+const NOTCH_W = 36;  // half-width of the curve on each side of centre
+const BAR_H   = 58;  // flat bar height (without safe area)
+const PEAK_Y  = 2;   // peak of curve (small gap from container top)
 
-// ─── SVG path builder ─────────────────────────────────────────────────────────
-function buildPath(w: number, totalH: number): string {
-  const cx = w / 2;
-  return (
-    `M 0,${BUMP_H} ` +
-    `L ${cx - NOTCH_W},${BUMP_H} ` +
-    `C ${cx - NOTCH_W * 0.5},${BUMP_H} ` +
-    `  ${cx - NOTCH_W * 0.5},${PEAK_Y} ` +
-    `  ${cx},${PEAK_Y} ` +
-    `C ${cx + NOTCH_W * 0.5},${PEAK_Y} ` +
-    `  ${cx + NOTCH_W * 0.5},${BUMP_H} ` +
-    `  ${cx + NOTCH_W},${BUMP_H} ` +
-    `L ${w},${BUMP_H} ` +
-    `L ${w},${totalH} ` +
-    `L 0,${totalH} Z`
-  );
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function tabCenterX(visibleIdx: number, w: number, count: number): number {
+  const tabW = w / count;
+  return tabW * visibleIdx + tabW / 2;
 }
 
-// ─── Calculate x-center of each non-scan tab ──────────────────────────────────
-function getIndicatorX(stateIndex: number, w: number): number {
-  const groupW = (w - NOTCH_W * 2) / 2;
-  const tabW   = groupW / 2;
-  switch (stateIndex) {
-    case 0: return tabW * 0.5;                           // Home
-    case 1: return tabW * 1.5;                           // Find
-    case 3: return groupW + NOTCH_W * 2 + tabW * 0.5;   // History
-    case 4: return groupW + NOTCH_W * 2 + tabW * 1.5;   // Profile
-    default: return w / 2;
-  }
-}
-
-// ─── Icon map ──────────────────────────────────────────────────────────────────
-function getIconName(name: string): string {
+function iconForRoute(name: string): string {
   switch (name) {
     case "index":   return "home";
     case "find":    return "map-marker";
+    case "scan":    return "camera";
     case "history": return "list";
     case "profile": return "user";
     default:        return "circle";
   }
 }
 
-// ─── Regular Tab ──────────────────────────────────────────────────────────────
-interface RegularTabProps {
+// ─── Single tab item ──────────────────────────────────────────────────────────
+interface TabItemProps {
   route: any;
   isFocused: boolean;
   options: any;
@@ -73,29 +51,27 @@ interface RegularTabProps {
   colors: any;
 }
 
-function RegularTab({ route, isFocused, options, onPress, colors }: RegularTabProps) {
+function TabItem({ route, isFocused, options, onPress, colors }: TabItemProps) {
   const label = options.title ?? route.name;
   const color = isFocused ? colors.tint : colors.tabIconDefault;
-  const scale = useSharedValue(isFocused ? 1.18 : 1);
 
+  // Fade icon out when focused (FAB shows it instead)
+  const iconOpacity = useSharedValue(isFocused ? 0 : 1);
   useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.18 : 1, { damping: 14, stiffness: 280 });
+    iconOpacity.value = withTiming(isFocused ? 0 : 1, { duration: 180 });
   }, [isFocused]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const iconStyle = useAnimatedStyle(() => ({ opacity: iconOpacity.value }));
 
   return (
     <AnimatedPressable
-      style={styles.regularTab}
+      style={styles.tabItem}
       onPress={onPress}
       scaleValue={0.88}
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}
     >
       <Animated.View style={iconStyle}>
-        <FontAwesome name={getIconName(route.name) as any} size={21} color={color} />
+        <FontAwesome name={iconForRoute(route.name) as any} size={21} color={color} />
       </Animated.View>
       <Text style={[styles.tabLabel, { color, fontWeight: isFocused ? "700" : "500" }]}>
         {label as string}
@@ -104,47 +80,68 @@ function RegularTab({ route, isFocused, options, onPress, colors }: RegularTabPr
   );
 }
 
-// ─── Main curved tab bar ───────────────────────────────────────────────────────
+// ─── Main tab bar ─────────────────────────────────────────────────────────────
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const insets  = useSafeAreaInsets();
+  const { width }  = useWindowDimensions();
+  const insets     = useSafeAreaInsets();
 
   const totalH = BUMP_H + BAR_H + insets.bottom;
-  const path   = useMemo(() => buildPath(width, totalH), [width, totalH]);
 
-  // ── Sliding indicator ──────────────────────────────────────────────────────
-  const isScanActive = state.routes[state.index]?.name === "scan";
-
-  const indicatorX       = useSharedValue(getIndicatorX(state.index, width));
-  const indicatorOpacity = useSharedValue(isScanActive ? 0 : 1);
-
-  useEffect(() => {
-    if (state.routes[state.index]?.name === "scan") {
-      indicatorOpacity.value = withTiming(0, { duration: 150 });
-    } else {
-      indicatorOpacity.value = withTiming(1, { duration: 200 });
-      indicatorX.value = withSpring(getIndicatorX(state.index, width), {
-        damping: 18,
-        stiffness: 220,
-      });
-    }
-  }, [state.index, width]);
-
-  const indicatorStyle = useAnimatedStyle(() => ({
-    opacity:   indicatorOpacity.value,
-    transform: [{ translateX: indicatorX.value }],
-  }));
-
-  // ── Route grouping ─────────────────────────────────────────────────────────
-  const routes = state.routes.filter(
+  // Visible routes (exclude hidden ones)
+  const visibleRoutes = state.routes.filter(
     (r) => !((descriptors[r.key].options as any).href === null || r.name === "two"),
   );
-  const scanIdx    = routes.findIndex((r) => r.name === "scan");
-  const leftRoutes = routes.slice(0, scanIdx);
-  const rightRoutes = routes.slice(scanIdx + 1);
-  const scanRoute  = routes[scanIdx];
+  const TAB_COUNT = visibleRoutes.length; // 5
 
+  const activeVisIdx = visibleRoutes.findIndex(
+    (r) => r.key === state.routes[state.index]?.key,
+  );
+  const activeRoute = visibleRoutes[activeVisIdx];
+
+  // ── Shared values (need to be readable inside Reanimated worklets) ─────────
+  const bumpX  = useSharedValue(tabCenterX(activeVisIdx, width, TAB_COUNT));
+  const svgW   = useSharedValue(width);
+  const svgTH  = useSharedValue(totalH);
+
+  useEffect(() => { svgW.value  = width;  }, [width]);
+  useEffect(() => { svgTH.value = totalH; }, [totalH]);
+
+  // Animate bump to active tab when tab or screen width changes
+  useEffect(() => {
+    bumpX.value = withSpring(tabCenterX(activeVisIdx, width, TAB_COUNT), {
+      damping: 16,
+      stiffness: 180,
+      mass: 0.8,
+    });
+  }, [activeVisIdx, width, TAB_COUNT]);
+
+  // ── Animated SVG path (rebuilds string on every frame from bumpX) ──────────
+  const animatedPathProps = useAnimatedProps(() => {
+    const cx = bumpX.value;
+    const w  = svgW.value;
+    const tH = svgTH.value;
+    const d =
+      `M 0,${BUMP_H} ` +
+      `L ${cx - NOTCH_W},${BUMP_H} ` +
+      `C ${cx - NOTCH_W * 0.5},${BUMP_H} ` +
+      `  ${cx - NOTCH_W * 0.5},${PEAK_Y} ` +
+      `  ${cx},${PEAK_Y} ` +
+      `C ${cx + NOTCH_W * 0.5},${PEAK_Y} ` +
+      `  ${cx + NOTCH_W * 0.5},${BUMP_H} ` +
+      `  ${cx + NOTCH_W},${BUMP_H} ` +
+      `L ${w},${BUMP_H} ` +
+      `L ${w},${tH} ` +
+      `L 0,${tH} Z`;
+    return { d };
+  }) as any;
+
+  // ── Animated FAB position (follows the same spring as the bump) ───────────
+  const fabStyle = useAnimatedStyle(() => ({
+    left: bumpX.value - FAB_R,
+  }));
+
+  // ── Navigation ───────────────────────────────────────────────────────────
   const makePress = (route: any) => () => {
     const focused = state.routes[state.index]?.key === route.key;
     const event = navigation.emit({
@@ -157,92 +154,54 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   return (
     <View style={{ height: totalH, width }}>
-      {/* ── Curved SVG background ── */}
+      {/* ── Animated curved SVG background ── */}
       <Svg width={width} height={totalH} style={StyleSheet.absoluteFillObject}>
-        {/* Fill */}
-        <Path d={path} fill={colors.card} />
-        {/* Hairline border */}
-        <Path
-          d={path}
+        <AnimatedPath animatedProps={animatedPathProps} fill={colors.card} />
+        <AnimatedPath
+          animatedProps={animatedPathProps}
           fill="none"
           stroke={colors.border}
           strokeWidth={StyleSheet.hairlineWidth * 1.5}
         />
       </Svg>
 
-      {/* ── Tab row (below the bump) ── */}
+      {/* ── Tab row ── */}
       <View style={[styles.tabRow, { top: BUMP_H, height: BAR_H }]}>
-        {/* Left tabs */}
-        <View style={styles.tabGroup}>
-          {leftRoutes.map((r) => (
-            <RegularTab
-              key={r.key}
-              route={r}
-              isFocused={state.routes[state.index]?.key === r.key}
-              options={descriptors[r.key].options}
-              onPress={makePress(r)}
-              colors={colors}
-            />
-          ))}
-        </View>
-
-        {/* Centre spacer for FAB */}
-        <View style={{ width: NOTCH_W * 2 }} />
-
-        {/* Right tabs */}
-        <View style={styles.tabGroup}>
-          {rightRoutes.map((r) => (
-            <RegularTab
-              key={r.key}
-              route={r}
-              isFocused={state.routes[state.index]?.key === r.key}
-              options={descriptors[r.key].options}
-              onPress={makePress(r)}
-              colors={colors}
-            />
-          ))}
-        </View>
+        {visibleRoutes.map((r) => (
+          <TabItem
+            key={r.key}
+            route={r}
+            isFocused={r.key === state.routes[state.index]?.key}
+            options={descriptors[r.key].options}
+            onPress={makePress(r)}
+            colors={colors}
+          />
+        ))}
       </View>
 
-      {/* ── Sliding active indicator pill ── */}
+      {/* ── Animated FAB — purely visual, pointerEvents none so taps go to TabItems ── */}
       <Animated.View
-        style={[
-          styles.indicatorPill,
-          { backgroundColor: colors.tint, bottom: insets.bottom + 5 },
-          indicatorStyle,
-        ]}
-      />
-
-      {/* ── Scan FAB (centred in the bump) ── */}
-      {scanRoute && (
-        <AnimatedPressable
+        style={[styles.fabWrap, { top: BUMP_H - FAB_R }, fabStyle]}
+        pointerEvents="none"
+      >
+        <View
           style={[
-            styles.fabWrap,
-            { top: BUMP_H - FAB_R, left: width / 2 - FAB_R },
+            styles.fabCircle,
+            { backgroundColor: colors.tint, shadowColor: colors.tint },
           ]}
-          onPress={makePress(scanRoute)}
-          scaleValue={0.88}
-          accessibilityRole="button"
-          accessibilityState={isScanActive ? { selected: true } : {}}
-          accessibilityLabel={
-            (descriptors[scanRoute.key].options as any).tabBarAccessibilityLabel
-          }
         >
-          <View
-            style={[
-              styles.fabCircle,
-              { backgroundColor: colors.tint, shadowColor: colors.tint },
-            ]}
-          >
-            <FontAwesome name="camera" size={22} color="#FFF" />
-          </View>
-        </AnimatedPressable>
-      )}
+          <FontAwesome
+            name={(activeRoute ? iconForRoute(activeRoute.name) : "circle") as any}
+            size={22}
+            color="#FFF"
+          />
+        </View>
+      </Animated.View>
     </View>
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   tabRow: {
     position: "absolute",
@@ -250,32 +209,16 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
   },
-  tabGroup: {
-    flex: 1,
-    flexDirection: "row",
-  },
-  regularTab: {
+  tabItem: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
+    paddingTop: 6,
+    gap: 3,
   },
   tabLabel: {
     fontSize: 10,
     letterSpacing: 0.1,
   },
-
-  // ── Active indicator pill ─────────────────────────────────────────────────
-  indicatorPill: {
-    position: "absolute",
-    width: PILL_W,
-    height: 3,
-    borderRadius: 2,
-    // x=0 at left edge; translateX centres it on the active tab
-    left: -PILL_W / 2,
-  },
-
-  // ── Scan FAB ──────────────────────────────────────────────────────────────
   fabWrap: {
     position: "absolute",
     width: FAB_R * 2,
