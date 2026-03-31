@@ -12,15 +12,24 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-        {/* 
-          Disable body scrolling on web. This makes ScrollView components work closer to how they do on native. 
+        <title>Tankuy</title>
+        <meta name="description" content="Track your fuel expenses with ease. Scan receipts, view spending charts and find nearby gas stations." />
+
+        {/* Favicon */}
+        <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
+        <link rel="apple-touch-icon" href="/assets/images/icon.png" />
+
+        {/* Browser chrome color — matches the app's orange primary */}
+        <meta name="theme-color" content="#FF9500" />
+
+        {/*
+          Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.
           However, body scrolling is often nice to have for mobile web. If you want to enable it, remove this line.
         */}
         <ScrollViewStyleReset />
 
-        {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
+        {/* Prevent background-color flicker in dark mode — use actual app theme colors */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
-        {/* Add any additional <head> elements that you want globally available on web... */}
       </head>
       <body>{children}</body>
     </html>
@@ -29,10 +38,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
 const responsiveBackground = `
 body {
-  background-color: #fff;
+  background-color: #F2F2F7;
 }
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #000;
+    background-color: #0D0D0D;
   }
 }`;
