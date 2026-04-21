@@ -509,25 +509,25 @@ export default function ScanScreen() {
     if (field === "totalLiters") {
       if (hasLiters) {
         if (hasCost) {
-          newForm.pricePerLiter = (cost / liters).toFixed(3);
+          newForm.pricePerLiter = String(cost / liters);
         } else if (hasPrice) {
-          newForm.totalCost = (liters * price).toFixed(2);
+          newForm.totalCost = String(liters * price);
         }
       }
     } else if (field === "totalCost") {
       if (hasCost) {
         if (hasLiters) {
-          newForm.pricePerLiter = (cost / liters).toFixed(3);
+          newForm.pricePerLiter = String(cost / liters);
         } else if (hasPrice) {
-          newForm.totalLiters = (cost / price).toFixed(2);
+          newForm.totalLiters = String(cost / price);
         }
       }
     } else if (field === "pricePerLiter") {
       if (hasPrice) {
         if (hasLiters) {
-          newForm.totalCost = (liters * price).toFixed(2);
+          newForm.totalCost = String(liters * price);
         } else if (hasCost) {
-          newForm.totalLiters = (cost / price).toFixed(2);
+          newForm.totalLiters = String(cost / price);
         }
       }
     }
