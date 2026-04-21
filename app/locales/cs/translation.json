@@ -18,7 +18,8 @@
       "avgTank": "Prům./Nádrž",
       "fillUps": "Tankování",
       "avgDistBetweenFills": "Průměrně {{unit}} na nádrž",
-      "costPerDist": "Cena/{{unit}}"
+      "costPerDist": "Cena/{{unit}}",
+      "avgConsumption": "Prům. spotřeba"
     },
     "chart": {
       "title": "Přehled výdajů",

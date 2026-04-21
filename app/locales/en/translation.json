@@ -18,7 +18,8 @@
       "avgTank": "Avg/Tank",
       "fillUps": "Fill-ups",
       "avgDistBetweenFills": "Avg {{unit}} between fills",
-      "costPerDist": "Cost/{{unit}}"
+      "costPerDist": "Cost/{{unit}}",
+      "avgConsumption": "Avg Consumption"
     },
     "chart": {
       "title": "Spending Overview",

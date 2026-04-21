@@ -490,47 +490,43 @@ export default function ScanScreen() {
     }
   };
 
-  // Calculate price per liter or total cost automatically
+  // Calculate price per liter or total cost automatically.
+  // Rule: price/liter is always derived (never the anchor).
+  // - Edit liters: if cost known → derive price; else if price known → calc cost
+  // - Edit cost:   if liters known → derive price; else if price known → calc liters
+  // - Edit price:  if liters known → calc cost; else if cost known → calc liters
   const updateManualForm = (field: string, value: string) => {
-    // Basic update
     const newForm = { ...manualForm, [field]: value };
 
-    // Parse current values (using the new value for the field being updated)
     const liters = parseFloat(newForm.totalLiters);
     const cost = parseFloat(newForm.totalCost);
     const price = parseFloat(newForm.pricePerLiter);
 
-    // Logic: Treat Price as anchor if present and positive
+    const hasLiters = !isNaN(liters) && liters > 0;
+    const hasCost = !isNaN(cost) && cost > 0;
+    const hasPrice = !isNaN(price) && price > 0;
+
     if (field === "totalLiters") {
-      if (!isNaN(liters) && liters > 0) {
-        // If we have price, update cost (L * P = C)
-        if (!isNaN(price) && price > 0) {
-          newForm.totalCost = (liters * price).toFixed(2);
-        }
-        // If we have cost but no price, calc price (C / L = P)
-        else if (!isNaN(cost) && cost > 0) {
+      if (hasLiters) {
+        if (hasCost) {
           newForm.pricePerLiter = (cost / liters).toFixed(3);
+        } else if (hasPrice) {
+          newForm.totalCost = (liters * price).toFixed(2);
         }
       }
     } else if (field === "totalCost") {
-      if (!isNaN(cost) && cost > 0) {
-        // If we have price, update liters (C / P = L)
-        if (!isNaN(price) && price > 0) {
-          newForm.totalLiters = (cost / price).toFixed(2);
-        }
-        // If we have liters but no price, calc price (C / L = P)
-        else if (!isNaN(liters) && liters > 0) {
+      if (hasCost) {
+        if (hasLiters) {
           newForm.pricePerLiter = (cost / liters).toFixed(3);
+        } else if (hasPrice) {
+          newForm.totalLiters = (cost / price).toFixed(2);
         }
       }
     } else if (field === "pricePerLiter") {
-      if (!isNaN(price) && price > 0) {
-        // If we have liters, update cost (L * P = C)
-        if (!isNaN(liters) && liters > 0) {
+      if (hasPrice) {
+        if (hasLiters) {
           newForm.totalCost = (liters * price).toFixed(2);
-        }
-        // If we have cost but no liters, calc liters (C / P = L)
-        else if (!isNaN(cost) && cost > 0) {
+        } else if (hasCost) {
           newForm.totalLiters = (cost / price).toFixed(2);
         }
       }

@@ -215,12 +215,22 @@ router.get("/stats", async (req, res) => {
 
     // 2. Cost per km (total cost / total km driven)
     const [costPerKmResult] = await pool.execute(
-      `SELECT 
-        CASE WHEN (MAX(mileage) - MIN(mileage)) > 0 
-        THEN SUM(total_cost) / (MAX(mileage) - MIN(mileage)) 
+      `SELECT
+        CASE WHEN (MAX(mileage) - MIN(mileage)) > 0
+        THEN SUM(total_cost) / (MAX(mileage) - MIN(mileage))
         ELSE NULL END as cost_per_km
-      FROM fuel_entries 
+      FROM fuel_entries
       WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0`,
+      [userId, startStr, endStr],
+    );
+
+    // 3. Average consumption (L/100km)
+    const [avgConsumptionResult] = await pool.execute(
+      `SELECT AVG(consumption) as avg_consumption FROM (
+        SELECT (total_liters / NULLIF(mileage - LAG(mileage) OVER (ORDER BY date ASC, time ASC), 0)) * 100 as consumption
+        FROM fuel_entries
+        WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0 AND total_liters > 0
+      ) t WHERE consumption > 1 AND consumption < 50`,
       [userId, startStr, endStr],
     );
 
@@ -328,6 +338,7 @@ router.get("/stats", async (req, res) => {
         ...totalResult[0],
         avg_km_between_fills: avgKmResult[0]?.avg_km_between_fills ?? null,
         cost_per_km: costPerKmResult[0]?.cost_per_km ?? null,
+        avg_consumption: avgConsumptionResult[0]?.avg_consumption ?? null,
       },
       chart: chartData,
       insights,

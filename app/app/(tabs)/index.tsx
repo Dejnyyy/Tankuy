@@ -64,6 +64,7 @@ export default function HomeScreen() {
     formatPricePerVolume,
     formatCostPerDistance,
     convertCurrency,
+    isImperial,
   } = useUnits();
 
   const loadData = useCallback(async () => {
@@ -197,6 +198,20 @@ export default function HomeScreen() {
           ? `${formatNumber(formatCostPerDistance(stats.summary.cost_per_km), 2)} ${currencySymbol}`
           : "N/A",
       color: "#BF5AF2",
+    },
+    {
+      icon: "leaf",
+      label: t("home.stats.avgConsumption"),
+      value: (() => {
+        const c = stats?.summary?.avg_consumption;
+        if (c == null) return "N/A";
+        if (isImperial) {
+          const mpg = 235.214 / c;
+          return `${formatNumber(mpg, 1)} mpg`;
+        }
+        return `${formatNumber(c, 1)} L/100km`;
+      })(),
+      color: "#34C759",
     },
   ];
 

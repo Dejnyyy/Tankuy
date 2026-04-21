@@ -63,6 +63,7 @@ export interface Stats {
     total_liters: number;
     avg_km_between_fills: number | null;
     cost_per_km: number | null;
+    avg_consumption: number | null;
   };
   chart: {
     labels: string[];
