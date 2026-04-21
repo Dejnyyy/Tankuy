@@ -213,59 +213,26 @@ router.get("/stats", async (req, res) => {
       [userId, startStr, endStr],
     );
 
-    // 2. Cost per km — sum ALL costs between consecutive mileage-bearing entries
+    // 2. Cost per km — total cost / total distance between consecutive mileage entries
     const [costPerKmResult] = await pool.execute(
-      `SELECT SUM(seg_cost) / NULLIF(SUM(km_driven), 0) AS cost_per_km FROM (
+      `SELECT SUM(total_cost) / NULLIF(SUM(km_driven), 0) AS cost_per_km FROM (
         SELECT
-          t.curr_mileage - t.prev_mileage AS km_driven,
-          (
-            SELECT COALESCE(SUM(fe2.total_cost), 0)
-            FROM fuel_entries fe2
-            WHERE fe2.user_id = t.user_id
-              AND fe2.date > t.prev_date
-              AND fe2.date <= t.curr_date
-          ) AS seg_cost
-        FROM (
-          SELECT
-            user_id,
-            date AS curr_date,
-            mileage AS curr_mileage,
-            LAG(mileage) OVER (ORDER BY date ASC, time ASC) AS prev_mileage,
-            LAG(date)    OVER (ORDER BY date ASC, time ASC) AS prev_date
-          FROM fuel_entries
-          WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0
-        ) t
-        WHERE t.prev_mileage IS NOT NULL AND t.curr_mileage > t.prev_mileage
-      ) seg WHERE km_driven > 0`,
+          total_cost,
+          mileage - LAG(mileage) OVER (ORDER BY date ASC, time ASC) AS km_driven
+        FROM fuel_entries
+        WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0
+      ) t WHERE km_driven > 0`,
       [userId, startStr, endStr],
     );
 
-    // 3. Average consumption (L/100km)
-    // For each pair of consecutive mileage-bearing entries (A → B), sum ALL liters
-    // filled between A and B (including fill-ups with no mileage), divide by km driven.
+    // 3. Average consumption (L/100km) — liters / km per segment
     const [avgConsumptionResult] = await pool.execute(
-      `SELECT AVG(consumption) as avg_consumption FROM (
+      `SELECT AVG(consumption) AS avg_consumption FROM (
         SELECT
-          (
-            SELECT COALESCE(SUM(fe2.total_liters), 0)
-            FROM fuel_entries fe2
-            WHERE fe2.user_id = t.user_id
-              AND fe2.date > t.prev_date
-              AND fe2.date <= t.curr_date
-              AND fe2.total_liters > 0
-          ) / NULLIF(t.curr_mileage - t.prev_mileage, 0) * 100 AS consumption
-        FROM (
-          SELECT
-            user_id,
-            date AS curr_date,
-            mileage AS curr_mileage,
-            LAG(mileage) OVER (ORDER BY date ASC, time ASC) AS prev_mileage,
-            LAG(date)    OVER (ORDER BY date ASC, time ASC) AS prev_date
-          FROM fuel_entries
-          WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0
-        ) t
-        WHERE t.prev_mileage IS NOT NULL AND t.curr_mileage > t.prev_mileage
-      ) seg WHERE consumption > 1 AND consumption < 50`,
+          (total_liters / NULLIF(mileage - LAG(mileage) OVER (ORDER BY date ASC, time ASC), 0)) * 100 AS consumption
+        FROM fuel_entries
+        WHERE user_id = ? AND date >= ? AND date <= ? AND mileage IS NOT NULL AND mileage > 0 AND total_liters > 0
+      ) t WHERE consumption > 1 AND consumption < 50`,
       [userId, startStr, endStr],
     );
 
