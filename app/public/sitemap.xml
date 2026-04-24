@@ -2,18 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Update the domain below to match your deployed URL -->
   <url>
-    <loc>https://YOUR_DOMAIN/login</loc>
-    <changefreq>monthly</changefreq>
+    <loc>https://tankuy.dejny.eu/login</loc>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://YOUR_DOMAIN/legal/terms</loc>
-    <changefreq>yearly</changefreq>
+    <loc>https://tankuy.dejny.eu/legal/terms</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://YOUR_DOMAIN/legal/privacy</loc>
-    <changefreq>yearly</changefreq>
+    <loc>https://tankuy.dejny.eu/legal/privacy</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.3</priority>
   </url>
 </urlset>
