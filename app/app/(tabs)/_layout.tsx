@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
-import { Tabs, usePathname, useRouter } from "expo-router";
+import { Tabs, Link, usePathname, useRouter } from "expo-router";
 import { View, Text, StyleSheet, Platform, useWindowDimensions } from "react-native";
+import { ExternalLink } from "@/components/ExternalLink";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Animated, {
   useSharedValue,
@@ -127,6 +128,18 @@ function DesktopSidebar({ colors }: { colors: any }) {
           />
         ))}
       </View>
+
+      <View style={[styles.sidebarFooter, { borderTopColor: colors.border }]}>
+        <ExternalLink href="https://dejny.eu" style={styles.sidebarFooterLink}>
+          <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>dejny.eu</Text>
+        </ExternalLink>
+        <Link href="/legal/terms" style={styles.sidebarFooterLink}>
+          <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>Terms</Text>
+        </Link>
+        <Link href="/legal/privacy" style={styles.sidebarFooterLink}>
+          <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>Privacy</Text>
+        </Link>
+      </View>
     </View>
   );
 }
@@ -156,11 +169,11 @@ export default function TabLayout() {
           }
           screenOptions={{ headerShown: false }}
         >
-          <Tabs.Screen name="index"   options={{ title: "Home"    }} />
-          <Tabs.Screen name="find"    options={{ title: "Find"    }} />
-          <Tabs.Screen name="scan"    options={{ title: "Scan"    }} />
-          <Tabs.Screen name="history" options={{ title: "History" }} />
-          <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+          <Tabs.Screen name="index"   options={{ title: "Tankuy – Fuel Expense Tracker"       }} />
+          <Tabs.Screen name="find"    options={{ title: "Tankuy – Find Nearby Gas Stations"   }} />
+          <Tabs.Screen name="scan"    options={{ title: "Tankuy – Scan Fuel Receipt"          }} />
+          <Tabs.Screen name="history" options={{ title: "Tankuy – Fuel History"               }} />
+          <Tabs.Screen name="profile" options={{ title: "Tankuy – Profile"                    }} />
           <Tabs.Screen name="two"     options={{ href: null } as any} />
         </Tabs>
       </View>
@@ -189,6 +202,20 @@ const styles = StyleSheet.create({
   sidebarContent: {
     paddingHorizontal: 12,
     flex: 1,
+  },
+  sidebarFooter: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  sidebarFooterLink: {
+    textDecorationLine: "none",
+  },
+  sidebarFooterText: {
+    fontSize: 12,
   },
   sidebarItem: {
     flexDirection: "row",

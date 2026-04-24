@@ -12,12 +12,27 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-        <title>Tankuy</title>
+        {/* Title is set per-page via Stack.Screen options to avoid duplicates */}
         <meta name="description" content="Track your fuel expenses with ease. Scan receipts, view spending charts and find nearby gas stations." />
 
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Tankuy – Fuel Expense Tracker" />
+        <meta property="og:description" content="Track your fuel expenses with ease. Scan receipts, view spending charts and find nearby gas stations." />
+        <meta property="og:image" content="/og-image.png" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Tankuy – Fuel Expense Tracker" />
+        <meta name="twitter:description" content="Track your fuel expenses with ease. Scan receipts, view spending charts and find nearby gas stations." />
+        <meta name="twitter:image" content="/og-image.png" />
+
         {/* Favicon */}
-        <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
-        <link rel="apple-touch-icon" href="/assets/images/icon.png" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
 
         {/* Browser chrome color — matches the app's orange primary */}
         <meta name="theme-color" content="#FF9500" />

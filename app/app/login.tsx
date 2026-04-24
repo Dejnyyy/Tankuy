@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Stack } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
@@ -51,6 +52,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ title: 'Tankuy – Fuel Expense Tracker | Scan Receipts & Find Gas Stations', headerShown: false }} />
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Gradient background */}
@@ -72,7 +74,7 @@ export default function LoginScreen() {
 
           <FadeInView delay={160} translateY={12} duration={500}>
             <View style={styles.brandingText}>
-              <Text style={[styles.appName, { color: colors.text }]}>Tankuy</Text>
+              <Text role="heading" aria-level={1} style={[styles.appName, { color: colors.text }]}>Tankuy</Text>
               <Text style={[styles.tagline, { color: colors.textSecondary }]}>
                 Track your fuel expenses{'\n'}with ease
               </Text>
