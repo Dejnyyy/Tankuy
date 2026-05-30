@@ -341,6 +341,59 @@ export default function ScanScreen() {
     }
   };
 
+  const processWebFile = (file: File) => {
+    setScanState("processing");
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const base64 = (ev.target?.result as string).split("base64,")[1];
+        const result = await api.scanReceipt(base64, file.type, undefined, file);
+        const extracted = result.parsed || result;
+        setScanResult(result);
+        setManualForm((prev) => ({
+          ...prev,
+          stationName: extracted.stationName || prev.stationName,
+          date: extracted.date || prev.date,
+          time: extracted.time || prev.time,
+          pricePerLiter:
+            (extracted.pricePerUnit || extracted.pricePerLiter)?.toString() || "",
+          totalLiters:
+            (extracted.totalUnits || extracted.totalLiters)?.toString() || "",
+          totalCost: extracted.totalCost?.toString() || "",
+        }));
+        setScanState("review");
+      } catch (error) {
+        console.error("Failed to scan:", error);
+        Alert.alert("Error", "Failed to scan the image. Please try again.");
+        setScanState("camera");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const takePhotoWeb = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    (input as any).capture = "environment";
+    input.onchange = (e: any) => {
+      const file: File | undefined = e.target.files?.[0];
+      if (file) processWebFile(file);
+    };
+    input.click();
+  };
+
+  const pickImageWeb = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = (e: any) => {
+      const file: File | undefined = e.target.files?.[0];
+      if (file) processWebFile(file);
+    };
+    input.click();
+  };
+
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -1083,21 +1136,31 @@ export default function ScanScreen() {
         <View style={styles.cameraHeader}>
           <Text style={styles.cameraTitle}>Scan Receipt</Text>
           <Text style={styles.cameraSubtitle}>
-            Upload an image of your receipt
+            Take a photo or upload from gallery
           </Text>
         </View>
 
         <View style={styles.webContainer}>
           <View style={styles.webPlaceholder}>
-            <FontAwesome name="camera" size={64} color={colors.textMuted} />
+            <FontAwesome name="camera" size={64} color={colors.tint} />
             <Text style={styles.webPlaceholderText}>
-              Camera not available on web
+              Scan or upload a receipt
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-            <FontAwesome name="image" size={22} color="#FFFFFF" />
-            <Text style={styles.uploadButtonText}>Choose Image</Text>
+          <TouchableOpacity style={styles.uploadButton} onPress={takePhotoWeb}>
+            <FontAwesome name="camera" size={22} color="#FFFFFF" />
+            <Text style={styles.uploadButtonText}>Take Photo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.uploadButton, styles.uploadButtonSecondary]}
+            onPress={pickImageWeb}
+          >
+            <FontAwesome name="image" size={22} color={colors.tint} />
+            <Text style={[styles.uploadButtonText, { color: colors.tint }]}>
+              Choose from Gallery
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -1401,6 +1464,10 @@ const getStyles = (colors: any) =>
       paddingVertical: 16,
       borderRadius: 14,
       gap: 12,
+    },
+    uploadButtonSecondary: {
+      backgroundColor: colors.card,
+      marginTop: 12,
     },
     uploadButtonText: {
       fontSize: 17,

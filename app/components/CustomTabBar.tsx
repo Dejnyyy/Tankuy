@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useWindowDimensions } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -68,14 +68,12 @@ function TabItem({ route, isFocused, options, onPress, colors }: TabItemProps) {
       onPress={onPress}
       scaleValue={0.88}
       accessibilityRole="button"
+      accessibilityLabel={label as string}
       accessibilityState={isFocused ? { selected: true } : {}}
     >
       <Animated.View style={iconStyle}>
         <FontAwesome name={iconForRoute(route.name) as any} size={21} color={color} />
       </Animated.View>
-      <Text style={[styles.tabLabel, { color, fontWeight: isFocused ? "700" : "500" }]}>
-        {label as string}
-      </Text>
     </AnimatedPressable>
   );
 }
@@ -212,12 +210,7 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 6,
-    gap: 3,
-  },
-  tabLabel: {
-    fontSize: 10,
-    letterSpacing: 0.1,
+    justifyContent: "center",
   },
   fabWrap: {
     position: "absolute",
