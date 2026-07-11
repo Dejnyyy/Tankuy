@@ -23,6 +23,8 @@ import {
   AnimatedPressable,
 } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
+import { Card, SectionHeader, EmptyState } from "@/components/ui";
+import { spacing, radii, typography } from "@/constants/Theme";
 
 // Helper function to safely format numbers
 const formatNumber = (value: any, decimals: number = 2): string => {
@@ -155,31 +157,31 @@ export default function HomeScreen() {
       icon: "tint",
       label: t("home.stats.totalVolume", { unit: volumeUnitLabel }),
       value: `${formatNumber(formatVolume(stats?.summary?.total_liters), 1)}${volumeUnit}`,
-      color: "#30D158",
+      color: colors.stats.green,
     },
     {
       icon: "tag",
       label: t("home.stats.avgPrice", { unit: volumeUnit }),
       value: `${formatNumber(formatPricePerVolume(stats?.summary?.avg_price_per_liter), 2)} ${currencySymbol}`,
-      color: "#32ADE6",
+      color: colors.stats.teal,
     },
     {
       icon: "dashboard",
       label: t("home.stats.avgVolume", { unit: volumeUnitLabel }),
       value: `${formatNumber(formatVolume(stats?.summary?.avg_liters_per_tank), 1)}${volumeUnit}`,
-      color: "#5AC8FA",
+      color: colors.stats.lightBlue,
     },
     {
       icon: "bar-chart",
       label: t("home.stats.avgTank"),
       value: `${formatNumber(convertCurrency(stats?.summary?.avg_per_tank), 0)} ${currencySymbol}`,
-      color: "#5E5CE6",
+      color: colors.stats.indigo,
     },
     {
       icon: "hashtag",
       label: t("home.stats.fillUps"),
       value: `${stats?.summary?.total_tanks || 0}`,
-      color: "#FF375F",
+      color: colors.stats.pink,
     },
     {
       icon: "road",
@@ -188,7 +190,7 @@ export default function HomeScreen() {
         stats?.summary?.avg_km_between_fills != null
           ? `${formatNumber(formatDistance(stats.summary.avg_km_between_fills), 0)} ${distanceUnit}`
           : "N/A",
-      color: "#FF9F0A",
+      color: colors.stats.amber,
     },
     {
       icon: "money",
@@ -197,7 +199,7 @@ export default function HomeScreen() {
         stats?.summary?.cost_per_km != null
           ? `${formatNumber(formatCostPerDistance(stats.summary.cost_per_km), 2)} ${currencySymbol}`
           : "N/A",
-      color: "#BF5AF2",
+      color: colors.stats.purple,
     },
     {
       icon: "leaf",
@@ -211,7 +213,8 @@ export default function HomeScreen() {
         }
         return `${formatNumber(c, 1)} L/100km`;
       })(),
-      color: "#34C759",
+      // Duplicate of stats.green — collapses to the palette success color.
+      color: colors.success,
     },
   ];
 
@@ -317,7 +320,7 @@ export default function HomeScreen() {
 
         {/* ── Spending Chart ───────────────────────────────── */}
         <ScaleInView delay={580}>
-          <View style={styles.chartCard}>
+          <Card padded={false} style={styles.chartCard}>
             <Text style={styles.chartTitle}>{t("home.chart.title")}</Text>
             {hasData ? (
               <SpendingChart
@@ -348,13 +351,13 @@ export default function HomeScreen() {
                 </Text>
               </LinearGradient>
             )}
-          </View>
+          </Card>
         </ScaleInView>
 
         {/* ── Recent Entries ───────────────────────────────── */}
         <FadeInView delay={660} translateY={15}>
           <View style={styles.recentSection}>
-            <Text style={styles.sectionTitle}>{t("home.recent.title")}</Text>
+            <SectionHeader title={t("home.recent.title")} />
             {recentEntries.length > 0 ? (
               recentEntries.map((entry, i) => (
                 <FadeInView key={entry.id} delay={700 + i * 70} translateY={10}>
@@ -372,29 +375,13 @@ export default function HomeScreen() {
                 </FadeInView>
               ))
             ) : (
-              <View style={styles.emptyCard}>
-                <View
-                  style={[
-                    styles.emptyIconRing,
-                    { borderColor: `${colors.tint}30` },
-                  ]}
-                >
-                  <FontAwesome name="tint" size={32} color={colors.tint} />
-                </View>
-                <Text style={styles.emptyText}>
-                  {t("home.recent.noEntries")}
-                </Text>
-                <Text style={styles.emptySubtext}>
-                  {t("home.recent.scanFirst")}
-                </Text>
-                <TouchableOpacity
-                  style={[styles.emptyAction, { backgroundColor: colors.tint }]}
-                  onPress={() => router.push("/(tabs)/scan")}
-                >
-                  <FontAwesome name="camera" size={14} color="#FFF" />
-                  <Text style={styles.emptyActionText}>Scan Receipt</Text>
-                </TouchableOpacity>
-              </View>
+              <EmptyState
+                icon={<FontAwesome name="tint" size={48} color={colors.textMuted} />}
+                title={t("home.recent.noEntries")}
+                message={t("home.recent.scanFirst")}
+                ctaLabel={t("home.recent.scanAction")}
+                onCta={() => router.push("/(tabs)/scan")}
+              />
             )}
           </View>
         </FadeInView>
@@ -403,17 +390,15 @@ export default function HomeScreen() {
         {stats?.insights && hasData && (
           <FadeInView delay={800} translateY={20}>
             <View style={styles.insightsSection}>
-              <Text style={styles.sectionTitle}>
-                {t("home.insights.title")}
-              </Text>
+              <SectionHeader title={t("home.insights.title")} />
 
               <View style={styles.insightsGrid}>
                 {/* Favorite Station */}
                 {stats.insights.favoriteStation && (
                   <InsightCard
                     iconName="heart"
-                    iconColor="#FF3B30"
-                    bgColor="rgba(255,59,48,0.1)"
+                    iconColor={colors.error}
+                    bgColor={`${colors.error}1A`}
                     label={t("home.insights.favoriteStation")}
                     value={stats.insights.favoriteStation.name}
                     sub={t("home.insights.favoriteStationDesc", {
@@ -429,8 +414,8 @@ export default function HomeScreen() {
                 {stats.insights.mostExpensive && (
                   <InsightCard
                     iconName="money"
-                    iconColor="#FF9500"
-                    bgColor="rgba(255,149,0,0.1)"
+                    iconColor={colors.primary}
+                    bgColor={`${colors.primary}1A`}
                     label={t("home.insights.mostExpensive")}
                     value={`${formatNumber(convertCurrency(stats.insights.mostExpensive.cost), 0)} ${currencySymbol}`}
                     sub={t("home.insights.mostExpensiveDesc", {
@@ -447,8 +432,8 @@ export default function HomeScreen() {
                 {stats.insights.cheapestLiters && (
                   <InsightCard
                     iconName="tag"
-                    iconColor="#34C759"
-                    bgColor="rgba(52,199,89,0.1)"
+                    iconColor={colors.success}
+                    bgColor={`${colors.success}1A`}
                     label={t("home.insights.cheapest")}
                     value={`${formatNumber(formatPricePerVolume(stats.insights.cheapestLiters.price))} ${currencySymbol}/${volumeUnit}`}
                     sub={t("home.insights.cheapestDesc", {
@@ -465,8 +450,8 @@ export default function HomeScreen() {
                 {stats.insights.mostExpensiveLiter && (
                   <InsightCard
                     iconName="fire"
-                    iconColor="#FF3B30"
-                    bgColor="rgba(255,59,48,0.1)"
+                    iconColor={colors.error}
+                    bgColor={`${colors.error}1A`}
                     label={t("home.insights.mostExpensivePrice", { unit: volumeUnit })}
                     value={`${formatNumber(formatPricePerVolume(stats.insights.mostExpensiveLiter.price))} ${currencySymbol}/${volumeUnit}`}
                     sub={t("home.insights.mostExpensiveLiterDesc", {
@@ -483,8 +468,8 @@ export default function HomeScreen() {
                 {stats.insights.biggestFillUp && (
                   <InsightCard
                     iconName="tachometer"
-                    iconColor="#007AFF"
-                    bgColor="rgba(0,122,255,0.1)"
+                    iconColor={colors.stats.blue}
+                    bgColor={`${colors.stats.blue}1A`}
                     label={t("home.insights.biggest")}
                     value={`${formatNumber(formatVolume(stats.insights.biggestFillUp.liters))} ${volumeUnit}`}
                     sub={t("home.insights.biggestDesc", {
@@ -501,8 +486,8 @@ export default function HomeScreen() {
                 {stats.insights.smallestFillUp && (
                   <InsightCard
                     iconName="battery-1"
-                    iconColor="#5AC8FA"
-                    bgColor="rgba(90,200,250,0.1)"
+                    iconColor={colors.stats.lightBlue}
+                    bgColor={`${colors.stats.lightBlue}1A`}
                     label={t("home.insights.smallest")}
                     value={`${formatNumber(formatVolume(stats.insights.smallestFillUp.liters))} ${volumeUnit}`}
                     sub={t("home.insights.smallestDesc", {
@@ -519,8 +504,8 @@ export default function HomeScreen() {
                 {stats.insights.favoriteDay && (
                   <InsightCard
                     iconName="calendar"
-                    iconColor="#AF52DE"
-                    bgColor="rgba(175,82,222,0.1)"
+                    iconColor={colors.stats.purple}
+                    bgColor={`${colors.stats.purple}1A`}
                     label={t("home.insights.favoriteDay")}
                     value={t(`home.insights.dayName.${stats.insights.favoriteDay.day}`)}
                     sub={t("home.insights.favoriteDayDesc", {
@@ -537,8 +522,8 @@ export default function HomeScreen() {
                 {stats.insights.lastFillUpDays != null && (
                   <InsightCard
                     iconName="history"
-                    iconColor="#5856D6"
-                    bgColor="rgba(88,86,214,0.1)"
+                    iconColor={colors.stats.indigo}
+                    bgColor={`${colors.stats.indigo}1A`}
                     label={t("home.insights.lastFillUp")}
                     value={
                       stats.insights.lastFillUpDays === 0
@@ -584,13 +569,13 @@ function StatsCard({
   styles: any;
 }) {
   return (
-    <View style={styles.statsCard}>
+    <Card style={styles.statsCard}>
       <View style={[styles.statsIconContainer, { backgroundColor: `${color}20` }]}>
         <FontAwesome name={icon as any} size={16} color={color} />
       </View>
       <Text style={styles.statsValue}>{value}</Text>
       <Text style={styles.statsLabel}>{label}</Text>
-    </View>
+    </Card>
   );
 }
 
@@ -676,6 +661,10 @@ function InsightCard({
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
+//
+// Note: values that sit exactly between two spacing/radii tokens (e.g. 10 between
+// spacing.sm=8/md=12) are kept as explicit literals rather than force a directional
+// rounding — same convention used in the login screen migration.
 
 const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
   StyleSheet.create({
@@ -684,84 +673,83 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       backgroundColor: colors.background,
     },
     scrollContent: {
-      maxWidth: 800,
+      maxWidth: 800, // page max-width, not a spacing value
       width: "100%",
       alignSelf: "center",
-      paddingBottom: 32,
+      paddingBottom: spacing.xxxl,
     },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 8,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.sm,
     },
     greeting: {
-      fontSize: 28,
-      fontWeight: "700",
+      ...typography.title,
       color: colors.text,
     },
     subGreeting: {
-      fontSize: 15,
+      ...typography.body,
+      fontSize: 15, // preserved exact; token default (16) is 1px off
       color: colors.textSecondary,
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
     periodSelectorContainer: {
-      marginHorizontal: 20,
-      marginTop: 16,
-      gap: 12,
+      marginHorizontal: spacing.xl,
+      marginTop: spacing.lg,
+      gap: spacing.md,
     },
     periodSwitcher: {
       flexDirection: "row",
       backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 4,
+      borderRadius: radii.md,
+      padding: spacing.xs,
     },
     dateNavigation: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+      borderRadius: radii.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
     },
     navButton: {
-      padding: 8,
-      width: 40,
+      padding: spacing.sm,
+      width: 40, // fixed tap target, not on the spacing scale
       alignItems: "center",
     },
     dateLabel: {
+      ...typography.bodyBold,
       color: colors.text,
-      fontWeight: "600",
-      fontSize: 16,
     },
     periodButton: {
       flex: 1,
-      paddingVertical: 10,
+      paddingVertical: 10, // between spacing.sm(8)/md(12) — kept exact
       alignItems: "center",
-      borderRadius: 8,
+      borderRadius: radii.sm,
     },
     periodButtonActive: {
       backgroundColor: colors.tint,
     },
     periodButtonText: {
+      ...typography.bodyBold,
+      fontSize: 14, // preserved exact; token default (16) would enlarge tab labels
       color: colors.textSecondary,
-      fontWeight: "600",
-      fontSize: 14,
     },
     periodButtonTextActive: {
-      color: "#FFFFFF",
+      color: colors.white,
     },
 
     // ── Stats ──────────────────────────────────────────────
     statsContainer: {
       flexDirection: "row",
       flexWrap: "wrap",
-      paddingHorizontal: 12,
-      marginTop: 20,
-      gap: 8,
+      paddingHorizontal: spacing.md,
+      marginTop: spacing.xl,
+      gap: spacing.sm,
     },
     // Applied to each FadeInView wrapping a StatsCard — carries the layout sizing
     statsCardWrapper: {
@@ -769,196 +757,157 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       flexGrow: 1,
       maxWidth: isLargeScreen ? "25%" : "50%",
     },
-    // Inner card — fills its FadeInView wrapper
+    // Inner card — fills its FadeInView wrapper. Background/radius/padding now
+    // come from the Card component (radii.lg/spacing.lg match the old 16/16 exactly).
     statsCard: {
       flex: 1,
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 16,
     },
     statsIconContainer: {
-      width: 36,
+      width: 36, // icon container, not on the spacing scale
       height: 36,
-      borderRadius: 10,
+      borderRadius: 10, // between radii.sm(8)/md(12) — kept exact
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     statsValue: {
-      fontSize: 22,
-      fontWeight: "700",
+      ...typography.title,
+      fontSize: 22, // preserved exact; token default (28) would be too large for a stat tile
       color: colors.text,
     },
     statsLabel: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textSecondary,
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
 
     // ── Chart ──────────────────────────────────────────────
+    // Background/radius now come from the Card component (radii.lg matches the old 16 exactly).
     chartCard: {
-      marginHorizontal: 20,
-      marginTop: 20,
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      paddingVertical: 16,
+      marginHorizontal: spacing.xl,
+      marginTop: spacing.xl,
+      paddingVertical: spacing.lg,
       overflow: "hidden",
     },
     chartTitle: {
-      fontSize: 17,
-      fontWeight: "600",
+      ...typography.bodyBold,
+      fontSize: 17, // preserved exact; token default (16) is 1px off
       color: colors.text,
-      marginBottom: 16,
-      paddingHorizontal: 16,
+      marginBottom: spacing.lg,
+      paddingHorizontal: spacing.lg,
     },
     emptyChart: {
-      height: 190,
+      height: 190, // chart placeholder height, not a spacing value
       justifyContent: "center",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
 
     // ── Recent Entries ─────────────────────────────────────
     recentSection: {
-      marginTop: 24,
-      paddingHorizontal: 20,
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 16,
+      marginTop: spacing.xxl,
+      paddingHorizontal: spacing.xl,
     },
     entryCard: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
-      marginBottom: 10,
+      borderRadius: 14, // between radii.md(12)/lg(16) — kept exact
+      padding: 14, // between spacing.md(12)/lg(16) — kept exact
+      marginBottom: 10, // between spacing.sm(8)/md(12) — kept exact
     },
     entryIconContainer: {
-      width: 44,
+      width: 44, // icon container, not on the spacing scale
       height: 44,
-      borderRadius: 12,
+      borderRadius: radii.md,
       justifyContent: "center",
       alignItems: "center",
     },
     entryInfo: {
       flex: 1,
-      marginLeft: 14,
+      marginLeft: 14, // between spacing.md(12)/lg(16) — kept exact
     },
     entryStation: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.text,
     },
     entryDate: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textSecondary,
-      marginTop: 2,
+      marginTop: spacing.xs,
     },
     entryAmount: {
       alignItems: "flex-end",
     },
     entryAmountText: {
-      fontSize: 17,
-      fontWeight: "600",
+      ...typography.bodyBold,
+      fontSize: 17, // preserved exact; token default (16) is 1px off
       color: colors.text,
     },
     entryLiters: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textSecondary,
-      marginTop: 2,
+      marginTop: spacing.xs,
     },
 
     // ── Empty states ────────────────────────────────────────
-    emptyCard: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 32,
-      alignItems: "center",
-      gap: 8,
-    },
-    emptyIconRing: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      borderWidth: 2,
-      justifyContent: "center",
-      alignItems: "center",
-      marginBottom: 4,
-    },
+    // Shared by the chart's own "no data" placeholder above (the recent-entries
+    // empty state now uses the EmptyState component instead).
     emptyText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.textSecondary,
     },
     emptySubtext: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textMuted,
       textAlign: "center",
-    },
-    emptyAction: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 24,
-      marginTop: 8,
-    },
-    emptyActionText: {
-      color: "#FFF",
-      fontWeight: "600",
-      fontSize: 14,
     },
 
     // ── Insights ────────────────────────────────────────────
     insightsSection: {
-      marginTop: 24,
-      paddingHorizontal: 20,
-      paddingBottom: 8,
+      marginTop: spacing.xxl,
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.sm,
     },
     insightsGrid: {
-      gap: 12,
+      gap: spacing.md,
     },
     insightCard: {
       backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 16,
+      borderRadius: radii.lg,
+      padding: spacing.lg,
       flexDirection: "row",
       alignItems: "center",
-      shadowColor: "#000",
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.05,
       shadowRadius: 8,
       elevation: 2,
     },
     insightIcon: {
-      width: 48,
+      width: 48, // circular icon avatar, not on the spacing scale
       height: 48,
-      borderRadius: 24,
+      borderRadius: 24, // radius = size / 2, not on the radii scale
       justifyContent: "center",
       alignItems: "center",
-      marginRight: 16,
+      marginRight: spacing.lg,
     },
     insightContent: {
       flex: 1,
     },
     insightLabel: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textSecondary,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     insightValue: {
-      fontSize: 17,
-      fontWeight: "700",
+      ...typography.title,
+      fontSize: 17, // preserved exact; weight-matched to title(700), size kept compact
       color: colors.text,
-      marginBottom: 2,
+      marginBottom: spacing.xs,
     },
     insightSub: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textMuted,
     },
   });

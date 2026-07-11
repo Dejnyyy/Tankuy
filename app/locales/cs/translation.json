@@ -29,7 +29,8 @@
     "recent": {
       "title": "Nedávné záznamy",
       "noEntries": "Zatím žádné záznamy",
-      "scanFirst": "Naskenujte účtenku a přidejte svůj první záznam"
+      "scanFirst": "Naskenujte účtenku a přidejte svůj první záznam",
+      "scanAction": "Naskenovat účtenku"
     },
     "insights": {
       "title": "Zajímavosti",

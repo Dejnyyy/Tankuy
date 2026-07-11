@@ -29,7 +29,8 @@
     "recent": {
       "title": "Recent Entries",
       "noEntries": "No entries yet",
-      "scanFirst": "Scan a receipt to add your first entry"
+      "scanFirst": "Scan a receipt to add your first entry",
+      "scanAction": "Scan Receipt"
     },
     "insights": {
       "title": "Fun Facts",
