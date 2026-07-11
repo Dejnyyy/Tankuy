@@ -490,7 +490,6 @@ export default function ProfileScreen() {
                 trackColor={{ false: "#767577", true: colors.tint }}
                 // @ts-expect-error react-native-web specific props
                 activeThumbColor={colors.tint}
-                // @ts-expect-error react-native-web specific props
                 activeTrackColor={colors.tint + "80"}
                 thumbColor={isDark ? colors.tint : "#f4f3f4"}
               />

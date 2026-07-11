@@ -133,10 +133,10 @@ function DesktopSidebar({ colors }: { colors: any }) {
         <ExternalLink href="https://dejny.eu" style={styles.sidebarFooterLink}>
           <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>dejny.eu</Text>
         </ExternalLink>
-        <Link href="/legal/terms" style={styles.sidebarFooterLink}>
+        <Link href="/(legal)/terms" style={styles.sidebarFooterLink}>
           <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>Terms</Text>
         </Link>
-        <Link href="/legal/privacy" style={styles.sidebarFooterLink}>
+        <Link href="/(legal)/privacy" style={styles.sidebarFooterLink}>
           <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>Privacy</Text>
         </Link>
       </View>
