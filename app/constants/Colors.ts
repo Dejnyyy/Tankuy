@@ -9,6 +9,20 @@ const common = {
   success: '#30D158',
   warning: '#FFD60A',
   error: '#FF453A',
+  info: '#32ADE6',
+  accent: '#BF5AF2',
+  // Categorical accents for stat tiles and charts. Use by role position,
+  // not by literal color meaning.
+  stats: {
+    green: '#30D158',
+    teal: '#32ADE6',
+    lightBlue: '#5AC8FA',
+    indigo: '#5E5CE6',
+    pink: '#FF375F',
+    amber: '#FF9F0A',
+    purple: '#BF5AF2',
+    blue: '#007AFF',
+  },
   white: '#FFFFFF',
   black: '#000000',
 };
