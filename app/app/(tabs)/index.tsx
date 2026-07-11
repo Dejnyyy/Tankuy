@@ -691,8 +691,10 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       color: colors.text,
     },
     subGreeting: {
-      ...typography.body,
-      fontSize: 15, // preserved exact; token default (16) is 1px off
+      // Kept literal (not typography.body): fontSize 15 is off-scale and the
+      // token's lineHeight (22, sized for 16px) would alter the original
+      // natural line height.
+      fontSize: 15,
       color: colors.textSecondary,
       marginTop: spacing.xs,
     },
@@ -735,9 +737,12 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       backgroundColor: colors.tint,
     },
     periodButtonText: {
-      ...typography.bodyBold,
-      fontSize: 14, // preserved exact; token default (16) would enlarge tab labels
+      // Kept literal (not typography.bodyBold): fontSize 14 is off-scale and the
+      // token's lineHeight (22, sized for 16px) would alter the original natural
+      // line height.
       color: colors.textSecondary,
+      fontWeight: "600",
+      fontSize: 14,
     },
     periodButtonTextActive: {
       color: colors.white,
@@ -771,8 +776,10 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       marginBottom: spacing.md,
     },
     statsValue: {
-      ...typography.title,
-      fontSize: 22, // preserved exact; token default (28) would be too large for a stat tile
+      // Kept literal (not typography.title): fontSize 22 is off-scale and the
+      // token's lineHeight (34, sized for 28px) would make each stat tile taller.
+      fontSize: 22,
+      fontWeight: "700",
       color: colors.text,
     },
     statsLabel: {
@@ -790,8 +797,11 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       overflow: "hidden",
     },
     chartTitle: {
-      ...typography.bodyBold,
-      fontSize: 17, // preserved exact; token default (16) is 1px off
+      // Kept literal (not typography.bodyBold): fontSize 17 is off-scale and the
+      // token's lineHeight (22, sized for 16px) would alter the original natural
+      // line height.
+      fontSize: 17,
+      fontWeight: "600",
       color: colors.text,
       marginBottom: spacing.lg,
       paddingHorizontal: spacing.lg,
@@ -840,8 +850,11 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       alignItems: "flex-end",
     },
     entryAmountText: {
-      ...typography.bodyBold,
-      fontSize: 17, // preserved exact; token default (16) is 1px off
+      // Kept literal (not typography.bodyBold): fontSize 17 is off-scale and the
+      // token's lineHeight (22, sized for 16px) would alter the original natural
+      // line height.
+      fontSize: 17,
+      fontWeight: "600",
       color: colors.text,
     },
     entryLiters: {
@@ -901,8 +914,10 @@ const getStyles = (colors: any, _screenWidth: number, isLargeScreen: boolean) =>
       marginBottom: spacing.xs,
     },
     insightValue: {
-      ...typography.title,
-      fontSize: 17, // preserved exact; weight-matched to title(700), size kept compact
+      // Kept literal (not typography.title): fontSize 17 is off-scale and the
+      // token's lineHeight (34, sized for 28px) would make each insight card taller.
+      fontSize: 17,
+      fontWeight: "700",
       color: colors.text,
       marginBottom: spacing.xs,
     },
