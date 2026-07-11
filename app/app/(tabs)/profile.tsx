@@ -36,6 +36,12 @@ import {
   StaggeredChildren,
 } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
+import { Card, SectionHeader, ScreenHeader, ListRow, Button } from "@/components/ui";
+import { spacing, radii, typography } from "@/constants/Theme";
+
+// Standard RN Switch track/thumb defaults — sanctioned hex exception, not tokens.
+const SWITCH_TRACK_FALSE = "#767577";
+const SWITCH_THUMB_FALSE = "#f4f3f4";
 
 type FuelType = "petrol" | "diesel" | "lpg" | "electric" | "hybrid";
 
@@ -366,45 +372,47 @@ export default function ProfileScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#FF9500"
+            tintColor={colors.primary}
           />
         }
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{t("profile.title")}</Text>
-        </View>
+        <ScreenHeader title={t("profile.title")} />
 
         {/* User Card */}
         <ScaleInView delay={100}>
-          <View style={styles.userCard}>
+          <Card padded={false} style={styles.userCard}>
             <View style={styles.avatarContainer}>
               {user?.avatarUrl ? (
                 <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <FontAwesome name="user" size={32} color="#8E8E93" />
+                  <FontAwesome name="user" size={32} color={colors.textSecondary} />
                 </View>
               )}
             </View>
             <Text style={styles.userName}>{user?.name || "User"}</Text>
             <Text style={styles.userEmail}>{user?.email || ""}</Text>
-          </View>
+          </Card>
         </ScaleInView>
 
         {/* Vehicles Section */}
         <View style={styles.section}>
+          {/* Not SectionHeader: the "+" icon has no slot in actionLabel (text-only) */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t("profile.myVehicles")}</Text>
-            <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
-              <FontAwesome name="plus" size={14} color="#FF9500" />
-              <Text style={styles.addButtonText}>{t("profile.add")}</Text>
-            </TouchableOpacity>
+            <Button
+              title={t("profile.add")}
+              onPress={openAddModal}
+              variant="ghost"
+              icon={<FontAwesome name="plus" size={14} color={colors.primary} />}
+              style={styles.addButton}
+            />
           </View>
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#FF9500" />
+              <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : vehicles.length > 0 ? (
             <View style={styles.vehicleList}>
@@ -417,7 +425,7 @@ export default function ProfileScreen() {
                     scaleValue={0.97}
                   >
                     <View style={styles.vehicleIconContainer}>
-                      <FontAwesome name="car" size={20} color="#FF9500" />
+                      <FontAwesome name="car" size={20} color={colors.primary} />
                     </View>
                     <View style={styles.vehicleInfo}>
                       <Text style={styles.vehicleName}>{vehicle.name}</Text>
@@ -446,7 +454,7 @@ export default function ProfileScreen() {
                       style={styles.vehicleAction}
                       onPress={() => handleDeleteVehicle(vehicle)}
                     >
-                      <FontAwesome name="trash-o" size={18} color="#FF453A" />
+                      <FontAwesome name="trash-o" size={18} color={colors.error} />
                     </TouchableOpacity>
                   </AnimatedPressable>
                 ))}
@@ -457,7 +465,7 @@ export default function ProfileScreen() {
               style={styles.emptyVehicles}
               onPress={openAddModal}
             >
-              <FontAwesome name="car" size={32} color="#3A3A3C" />
+              <FontAwesome name="car" size={32} color={colors.elevated} />
               <Text style={styles.emptyText}>{t("profile.noVehicles")}</Text>
               <Text style={styles.emptySubtext}>
                 {t("profile.addFirstVehicle")}
@@ -468,272 +476,273 @@ export default function ProfileScreen() {
 
         {/* Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t("profile.settings.title")}</Text>
+          <SectionHeader title={t("profile.settings.title")} />
 
-          <View style={styles.settingsGroup}>
-            <View style={styles.settingsItem}>
-              <View style={styles.settingsItemLeft}>
-                <View style={styles.settingsIconContainer}>
-                  <FontAwesome
-                    name={isDark ? "moon-o" : "sun-o"}
-                    size={16}
-                    color={colors.textSecondary}
+          <Card padded={false} style={styles.settingsGroup}>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome
+                      name={isDark ? "moon-o" : "sun-o"}
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                }
+                title={t("profile.settings.darkMode")}
+                rightElement={
+                  <Switch
+                    value={isDark}
+                    onValueChange={toggleTheme}
+                    trackColor={{ false: SWITCH_TRACK_FALSE, true: colors.tint }}
+                    // @ts-expect-error react-native-web specific props
+                    activeThumbColor={colors.tint}
+                    activeTrackColor={colors.tint + "80"}
+                    thumbColor={isDark ? colors.tint : SWITCH_THUMB_FALSE}
                   />
-                </View>
-                <Text style={styles.settingsLabel}>
-                  {t("profile.settings.darkMode")}
-                </Text>
-              </View>
-              <Switch
-                value={isDark}
-                onValueChange={toggleTheme}
-                trackColor={{ false: "#767577", true: colors.tint }}
-                // @ts-expect-error react-native-web specific props
-                activeThumbColor={colors.tint}
-                activeTrackColor={colors.tint + "80"}
-                thumbColor={isDark ? colors.tint : "#f4f3f4"}
+                }
               />
             </View>
 
-            <View style={styles.settingsItem}>
-              <View style={styles.settingsItemLeft}>
-                <View style={styles.settingsIconContainer}>
-                  <FontAwesome
-                    name="language"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-                <Text style={styles.settingsLabel}>
-                  {t("profile.settings.language")}
-                </Text>
-              </View>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <TouchableOpacity
-                  onPress={() => changeLanguage("cs")}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    backgroundColor:
-                      i18n.language === "cs" ? colors.tint : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color:
-                        i18n.language === "cs" ? "#FFF" : colors.textSecondary,
-                    }}
-                  >
-                    CS
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => changeLanguage("en")}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    backgroundColor:
-                      i18n.language === "en" ? colors.tint : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color:
-                        i18n.language === "en" ? "#FFF" : colors.textSecondary,
-                    }}
-                  >
-                    EN
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome
+                      name="language"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                }
+                title={t("profile.settings.language")}
+                rightElement={
+                  <View style={styles.pillGroup}>
+                    <TouchableOpacity
+                      onPress={() => changeLanguage("cs")}
+                      style={[
+                        styles.pill,
+                        i18n.language === "cs" && { backgroundColor: colors.tint },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          {
+                            color:
+                              i18n.language === "cs" ? colors.white : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        CS
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => changeLanguage("en")}
+                      style={[
+                        styles.pill,
+                        i18n.language === "en" && { backgroundColor: colors.tint },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          {
+                            color:
+                              i18n.language === "en" ? colors.white : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        EN
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
             </View>
 
-            <SettingsItem
-              icon="bell"
-              label={t("profile.settings.notifications")}
-              value="On"
-              styles={styles}
-              colors={colors}
-            />
-
-            <View style={styles.settingsItem}>
-              <View style={styles.settingsItemLeft}>
-                <View style={styles.settingsIconContainer}>
-                  <FontAwesome
-                    name="money"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-                <Text style={styles.settingsLabel}>
-                  {t("profile.settings.currency")}
-                </Text>
-              </View>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <TouchableOpacity
-                  onPress={() => updateUser({ currency: "CZK" })}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    backgroundColor:
-                      currency === "CZK" ? colors.tint : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: currency === "CZK" ? "#FFF" : colors.textSecondary,
-                    }}
-                  >
-                    CZK
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => updateUser({ currency: "USD" })}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    backgroundColor:
-                      currency === "USD" ? colors.tint : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: currency === "USD" ? "#FFF" : colors.textSecondary,
-                    }}
-                  >
-                    USD
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome name="bell" size={16} color={colors.textSecondary} />
+                  </View>
+                }
+                title={t("profile.settings.notifications")}
+                value="On"
+              />
             </View>
 
-            <View style={styles.settingsItem}>
-              <View style={styles.settingsItemLeft}>
-                <View style={styles.settingsIconContainer}>
-                  <FontAwesome
-                    name="tachometer"
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </View>
-                <Text style={styles.settingsLabel}>
-                  {t("profile.settings.unitSystem")}
-                </Text>
-              </View>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <TouchableOpacity
-                  onPress={() => updateUser({ unitSystem: "metric" })}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    backgroundColor:
-                      unitSystem === "metric" ? colors.tint : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color:
-                        unitSystem === "metric" ? "#FFF" : colors.textSecondary,
-                    }}
-                  >
-                    Metric
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => updateUser({ unitSystem: "imperial" })}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                    backgroundColor:
-                      unitSystem === "imperial" ? colors.tint : "transparent",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color:
-                        unitSystem === "imperial"
-                          ? "#FFF"
-                          : colors.textSecondary,
-                    }}
-                  >
-                    Imperial
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome
+                      name="money"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                }
+                title={t("profile.settings.currency")}
+                rightElement={
+                  <View style={styles.pillGroup}>
+                    <TouchableOpacity
+                      onPress={() => updateUser({ currency: "CZK" })}
+                      style={[
+                        styles.pill,
+                        currency === "CZK" && { backgroundColor: colors.tint },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          { color: currency === "CZK" ? colors.white : colors.textSecondary },
+                        ]}
+                      >
+                        CZK
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => updateUser({ currency: "USD" })}
+                      style={[
+                        styles.pill,
+                        currency === "USD" && { backgroundColor: colors.tint },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          { color: currency === "USD" ? colors.white : colors.textSecondary },
+                        ]}
+                      >
+                        USD
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
             </View>
-          </View>
+
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome
+                      name="tachometer"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                }
+                title={t("profile.settings.unitSystem")}
+                rightElement={
+                  <View style={styles.pillGroup}>
+                    <TouchableOpacity
+                      onPress={() => updateUser({ unitSystem: "metric" })}
+                      style={[
+                        styles.pill,
+                        unitSystem === "metric" && { backgroundColor: colors.tint },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          {
+                            color:
+                              unitSystem === "metric" ? colors.white : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        Metric
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => updateUser({ unitSystem: "imperial" })}
+                      style={[
+                        styles.pill,
+                        unitSystem === "imperial" && { backgroundColor: colors.tint },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          {
+                            color:
+                              unitSystem === "imperial" ? colors.white : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        Imperial
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
+            </View>
+          </Card>
         </View>
 
         {/* About Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t("profile.about.title")}</Text>
+          <SectionHeader title={t("profile.about.title")} />
 
-          <View style={styles.settingsGroup}>
-            <SettingsItem
-              icon="info-circle"
-              label={t("profile.about.version")}
-              value="1.0.3"
-              styles={styles}
-              colors={colors}
-            />
-            <SettingsItem
-              icon="file-text-o"
-              label={t("profile.about.terms")}
-              showArrow
-              styles={styles}
-              colors={colors}
-              onPress={() => router.push("/(legal)/terms")}
-            />
-            <SettingsItem
-              icon="lock"
-              label={t("profile.about.privacy")}
-              showArrow
-              styles={styles}
-              colors={colors}
-              onPress={() => router.push("/(legal)/privacy")}
-            />
-          </View>
+          <Card padded={false} style={styles.settingsGroup}>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome
+                      name="info-circle"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                }
+                title={t("profile.about.version")}
+                value="1.0.3"
+              />
+            </View>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome
+                      name="file-text-o"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                }
+                title={t("profile.about.terms")}
+                onPress={() => router.push("/(legal)/terms")}
+              />
+            </View>
+            <View style={styles.settingsRowBorder}>
+              <ListRow
+                icon={
+                  <View style={styles.settingsIconContainer}>
+                    <FontAwesome name="lock" size={16} color={colors.textSecondary} />
+                  </View>
+                }
+                title={t("profile.about.privacy")}
+                onPress={() => router.push("/(legal)/privacy")}
+              />
+            </View>
+          </Card>
         </View>
 
         {/* Sign Out */}
-        <TouchableOpacity
-          style={styles.signOutButton}
+        <Button
+          title={t("profile.signOut")}
           onPress={handleSignOut}
           disabled={authLoading}
-        >
-          {authLoading ? (
-            <ActivityIndicator size="small" color={colors.error} />
-          ) : (
-            <>
-              <FontAwesome name="sign-out" size={18} color={colors.error} />
-              <Text style={styles.signOutText}>{t("profile.signOut")}</Text>
-            </>
-          )}
-        </TouchableOpacity>
+          loading={authLoading}
+          variant="destructive"
+          icon={<FontAwesome name="sign-out" size={18} color={colors.white} />}
+          style={styles.signOutButton}
+        />
 
         <View style={styles.footer} />
       </ScrollView>
@@ -823,7 +832,7 @@ export default function ProfileScreen() {
                         size={16}
                         color={
                           vehicleForm.fuelType === fuel.value
-                            ? "#FFFFFF"
+                            ? colors.white
                             : colors.textSecondary
                         }
                       />
@@ -1134,82 +1143,26 @@ export default function ProfileScreen() {
             <Text style={styles.confirmMessage}>{confirmConfig.message}</Text>
 
             <View style={styles.confirmActions}>
-              <TouchableOpacity
-                style={styles.confirmCancelBtn}
+              <Button
+                title={confirmConfig.cancelText}
                 onPress={() =>
                   setConfirmConfig((prev) => ({ ...prev, visible: false }))
                 }
-              >
-                <Text style={styles.confirmCancelText}>
-                  {confirmConfig.cancelText}
-                </Text>
-              </TouchableOpacity>
+                variant="secondary"
+                style={styles.confirmCancelBtn}
+              />
 
-              <TouchableOpacity
-                style={[
-                  styles.confirmActionBtn,
-                  confirmConfig.isDestructive &&
-                    styles.confirmActionBtnDestructive,
-                ]}
+              <Button
+                title={confirmConfig.confirmText}
                 onPress={confirmConfig.onConfirm}
-              >
-                <Text style={styles.confirmActionText}>
-                  {confirmConfig.confirmText}
-                </Text>
-              </TouchableOpacity>
+                variant={confirmConfig.isDestructive ? "destructive" : "primary"}
+                style={styles.confirmActionBtn}
+              />
             </View>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
-  );
-}
-
-function SettingsItem({
-  icon,
-  label,
-  value,
-  showArrow,
-  styles,
-  colors,
-  onPress,
-}: {
-  icon: string;
-  label: string;
-  value?: string;
-  showArrow?: boolean;
-  styles: any;
-  colors: any;
-  onPress?: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={styles.settingsItem}
-      activeOpacity={0.7}
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <View style={styles.settingsItemLeft}>
-        <View style={styles.settingsIconContainer}>
-          <FontAwesome
-            name={icon as any}
-            size={16}
-            color={colors.textSecondary}
-          />
-        </View>
-        <Text style={styles.settingsLabel}>{label}</Text>
-      </View>
-      <View style={styles.settingsItemRight}>
-        {value && <Text style={styles.settingsValue}>{value}</Text>}
-        {showArrow && (
-          <FontAwesome
-            name="chevron-right"
-            size={12}
-            color={colors.textMuted}
-          />
-        )}
-      </View>
-    </TouchableOpacity>
   );
 }
 
@@ -1225,21 +1178,11 @@ const getStyles = (colors: any) =>
       alignSelf: "center",
       paddingBottom: 40,
     },
-    header: {
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "700",
-      color: colors.text,
-    },
     userCard: {
       alignItems: "center",
-      paddingVertical: 24,
-      marginHorizontal: 20,
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      paddingVertical: spacing.xxl,
+      marginHorizontal: spacing.xl,
+      borderRadius: 20, // tie, not on radii scale (between lg=16 and full=999)
     },
     avatarContainer: {
       marginBottom: 16,
@@ -1270,43 +1213,39 @@ const getStyles = (colors: any) =>
       marginTop: 4,
     },
     section: {
-      marginTop: 28,
-      paddingHorizontal: 20,
+      marginTop: 28, // tie, not on spacing scale (between xxl=24 and xxxl=32)
+      paddingHorizontal: spacing.xl,
     },
     sectionHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 18, // no exact typography match (heading is 20/600)
       fontWeight: "600",
       color: colors.text,
     },
     addButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    addButtonText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.tint,
+      // Overrides Button's default padding/gap to match the original inline add-action look
+      paddingVertical: 0,
+      paddingHorizontal: 0,
+      gap: 6, // tie, not on spacing scale
     },
     loadingContainer: {
-      padding: 20,
+      padding: spacing.xl,
       alignItems: "center",
     },
     vehicleList: {
-      gap: 10,
+      gap: 10, // tie, not on spacing scale
     },
     vehicleCard: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
+      borderRadius: 14, // tie, not on radii scale
+      padding: 14, // tie, not on spacing scale
     },
     vehicleIconContainer: {
       width: 44,
@@ -1318,15 +1257,14 @@ const getStyles = (colors: any) =>
     },
     vehicleInfo: {
       flex: 1,
-      marginLeft: 14,
+      marginLeft: 14, // tie, not on spacing scale
     },
     vehicleName: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.text,
     },
     vehicleMeta: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textSecondary,
       marginTop: 2,
     },
@@ -1337,79 +1275,69 @@ const getStyles = (colors: any) =>
       marginTop: 3,
     },
     vehicleMileageText: {
-      fontSize: 12,
+      fontSize: 12, // no exact typography match
       color: colors.textMuted,
       fontWeight: "500" as const,
     },
     vehicleAction: {
-      padding: 8,
+      padding: spacing.sm,
     },
     emptyVehicles: {
       backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 32,
+      borderRadius: 14, // tie, not on radii scale
+      padding: spacing.xxxl,
       alignItems: "center",
     },
     emptyText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.textSecondary,
-      marginTop: 12,
+      marginTop: spacing.md,
     },
     emptySubtext: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textMuted,
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
+    // Card supplies backgroundColor (colors.card); SectionHeader above supplies the
+    // top gap, so no marginTop here (avoids doubling the spacing).
     settingsGroup: {
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      marginTop: 12,
+      paddingHorizontal: spacing.lg,
+      borderRadius: 14, // tie, not on radii scale
       overflow: "hidden",
     },
-    settingsItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: 16,
+    // Border wrapper around each ListRow — ListRow itself has no divider slot.
+    settingsRowBorder: {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-    },
-    settingsItemLeft: {
-      flexDirection: "row",
-      alignItems: "center",
     },
     settingsIconContainer: {
       width: 32,
     },
-    settingsLabel: {
-      fontSize: 16,
-      color: colors.text,
-    },
-    settingsItemRight: {
+    pillGroup: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
-    settingsValue: {
-      fontSize: 15,
-      color: colors.textSecondary,
+    pill: {
+      paddingHorizontal: 10, // tie, not on spacing scale
+      paddingVertical: 4, // tie, not on spacing scale
+      borderRadius: radii.md,
+      backgroundColor: "transparent",
     },
-    signOutButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      marginHorizontal: 20,
-      marginTop: 32,
-      backgroundColor: "rgba(255, 69, 58, 0.15)", // Keep red tint for destructive act
-      paddingVertical: 16,
-      borderRadius: 14,
-      gap: 10,
-    },
-    signOutText: {
-      fontSize: 16,
+    pillText: {
+      // no exact typography match; avoid spreading a token and overriding fontSize
+      fontSize: 13,
       fontWeight: "600",
-      color: colors.error,
+    },
+    // Overrides Button's default padding/radius/gap to match the original pill look;
+    // backgroundColor comes from the destructive variant.
+    signOutButton: {
+      marginHorizontal: spacing.xl,
+      marginTop: 32, // tie, not on spacing scale
+      paddingVertical: spacing.lg,
+      paddingHorizontal: 0,
+      borderRadius: 14, // tie, not on radii scale
+      gap: 10, // tie, not on spacing scale
     },
     footer: {
       height: 100,
@@ -1423,48 +1351,49 @@ const getStyles = (colors: any) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     modalCancel: {
-      fontSize: 16,
+      ...typography.body,
       color: colors.textSecondary,
     },
     modalTitle: {
-      fontSize: 17,
+      fontSize: 17, // no exact typography match (bodyBold is 16/600)
       fontWeight: "600",
       color: colors.text,
     },
     modalSave: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.tint,
     },
     modalContent: {
       flex: 1,
-      padding: 20,
+      padding: spacing.xl,
     },
     formSection: {
-      marginBottom: 24,
+      marginBottom: spacing.xxl,
     },
     formLabel: {
-      fontSize: 14,
+      fontSize: 14, // no exact typography match
       fontWeight: "600",
       color: colors.textSecondary,
-      marginBottom: 10,
+      marginBottom: 10, // tie, not on spacing scale
     },
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.inputBackground,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      gap: 12,
+      borderRadius: radii.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 14, // tie, not on spacing scale
+      gap: spacing.md,
     },
     textInput: {
+      // Not spread from typography.body: this is a TextInput, and the token's
+      // lineHeight can alter native input sizing/vertical centering.
       flex: 1,
       fontSize: 16,
       color: colors.text,
@@ -1472,132 +1401,118 @@ const getStyles = (colors: any) =>
     fuelTypeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 10,
+      gap: 10, // tie, not on spacing scale
     },
     fuelTypeOption: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.inputBackground,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      borderRadius: 10,
-      gap: 8,
+      paddingHorizontal: 14, // tie, not on spacing scale
+      paddingVertical: spacing.md,
+      borderRadius: 10, // tie, not on radii scale
+      gap: spacing.sm,
     },
     fuelTypeOptionSelected: {
       backgroundColor: colors.tint,
     },
     fuelTypeText: {
-      fontSize: 14,
+      fontSize: 14, // no exact typography match
       color: colors.text,
       fontWeight: "500",
     },
     fuelTypeTextSelected: {
-      color: "#FFFFFF", // Always white when selected
+      color: colors.white, // Always white when selected
     },
     autocompleteContainer: {
       position: "relative",
     },
     suggestionsContainer: {
       backgroundColor: colors.elevated,
-      borderRadius: 12,
-      marginTop: 8,
+      borderRadius: radii.md,
+      marginTop: spacing.sm,
       overflow: "hidden",
     },
     suggestionItem: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 14,
-      gap: 12,
+      padding: 14, // tie, not on spacing scale
+      gap: spacing.md,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     suggestionText: {
-      fontSize: 15,
+      fontSize: 15, // no exact typography match
       color: colors.text,
       fontWeight: "500",
     },
     // Custom Confirmation Modal Styles
     confirmOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: `${colors.black}80`, // ~50% alpha
       justifyContent: "center",
       alignItems: "center",
-      padding: 20,
+      padding: spacing.xl,
     },
     confirmBox: {
       backgroundColor: colors.card,
-      borderRadius: 24,
-      padding: 24,
+      borderRadius: 24, // tie, not on radii scale
+      padding: spacing.xxl,
       width: "100%",
       maxWidth: 380,
       alignItems: "center",
-      shadowColor: "#000",
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.1,
       shadowRadius: 20,
       elevation: 20,
     },
     confirmHeader: {
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     confirmIconBg: {
       width: 60,
       height: 60,
-      borderRadius: 30,
-      backgroundColor: "rgba(255, 149, 0, 0.1)",
+      borderRadius: 30, // fixed circle (size / 2), not on radii scale
+      backgroundColor: `${colors.primary}1A`, // ~10% alpha
       justifyContent: "center",
       alignItems: "center",
     },
     confirmIconBgDestructive: {
-      backgroundColor: "rgba(255, 69, 58, 0.1)",
+      backgroundColor: `${colors.error}1A`, // ~10% alpha
     },
     confirmTitle: {
-      fontSize: 20,
+      fontSize: 20, // no exact typography match (weight 700 vs heading's 600)
       fontWeight: "700",
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
       textAlign: "center",
     },
     confirmMessage: {
-      fontSize: 15,
+      fontSize: 15, // no exact typography match
       color: colors.textSecondary,
       textAlign: "center",
-      marginBottom: 24,
-      paddingHorizontal: 8,
+      marginBottom: spacing.xxl,
+      paddingHorizontal: spacing.sm,
       lineHeight: 22,
     },
     confirmActions: {
       flexDirection: "row",
-      gap: 12,
+      gap: spacing.md,
       width: "100%",
     },
+    // Overrides Button's default padding/radius/background to match the original pill;
+    // secondary variant's default bg (colors.elevated) differs from inputBackground here.
     confirmCancelBtn: {
       flex: 1,
-      paddingVertical: 14,
-      borderRadius: 14,
+      paddingVertical: 14, // tie, not on spacing scale
+      borderRadius: 14, // tie, not on radii scale
       backgroundColor: colors.inputBackground,
-      alignItems: "center",
-      justifyContent: "center",
     },
-    confirmCancelText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-    },
+    // Overrides Button's default padding/radius; background comes from the variant
+    // (primary/destructive), which already matches the original colors exactly.
     confirmActionBtn: {
       flex: 1,
-      paddingVertical: 14,
-      borderRadius: 14,
-      backgroundColor: colors.tint,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    confirmActionBtnDestructive: {
-      backgroundColor: colors.error,
-    },
-    confirmActionText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: "#FFFFFF",
+      paddingVertical: 14, // tie, not on spacing scale
+      borderRadius: 14, // tie, not on radii scale
     },
   });
