@@ -3,6 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
+  ActivityIndicator,
+  Image,
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +19,7 @@ import {
   FadeInView,
   ScaleInView,
   SlideInView,
+  AnimatedPressable,
 } from '@/components/AnimatedComponents';
 
 export default function LoginScreen() {
@@ -105,13 +108,26 @@ export default function LoginScreen() {
               </FadeInView>
             )}
 
-            <Button
-              title="Continue with Google"
+            <AnimatedPressable
+              style={[styles.googleButton, { backgroundColor: colors.text }]}
               onPress={handleGoogleSignIn}
-              loading={isLoading}
               disabled={isLoading}
-              icon={<FontAwesome name="google" size={18} color={colors.white} />}
-            />
+              scaleValue={0.96}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={isDark ? '#1F1F1F' : '#FFFFFF'} size="small" />
+              ) : (
+                <>
+                  <Image
+                    source={{ uri: 'https://www.google.com/favicon.ico' }}
+                    style={styles.googleIcon}
+                  />
+                  <Text style={[styles.googleButtonText, { color: colors.background }]}>
+                    Continue with Google
+                  </Text>
+                </>
+              )}
+            </AnimatedPressable>
 
             <Button
               title="Continue as Guest"
@@ -230,6 +246,24 @@ const getStyles = (colors: any) =>
       fontSize: 14,
       color: colors.error,
       textAlign: 'center',
+    },
+    googleButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xxl,
+      borderRadius: radii.lg,
+      gap: spacing.md,
+    },
+    googleIcon: {
+      // Matches Google's favicon dimensions; not on the design-system scale.
+      width: 20,
+      height: 20,
+    },
+    googleButtonText: {
+      ...typography.bodyBold,
+      fontSize: 17, // off-scale to match original Google button proportions
     },
     termsText: {
       ...typography.caption,
