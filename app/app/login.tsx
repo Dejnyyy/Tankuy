@@ -3,8 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
-  Image,
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,11 +11,12 @@ import { Stack } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import { Button } from '@/components/ui';
+import { spacing, radii, typography } from '@/constants/Theme';
 import {
   FadeInView,
   ScaleInView,
   SlideInView,
-  AnimatedPressable,
 } from '@/components/AnimatedComponents';
 
 export default function LoginScreen() {
@@ -106,40 +105,23 @@ export default function LoginScreen() {
               </FadeInView>
             )}
 
-            <AnimatedPressable
-              style={[styles.googleButton, { backgroundColor: colors.text }]}
+            <Button
+              title="Continue with Google"
               onPress={handleGoogleSignIn}
+              loading={isLoading}
               disabled={isLoading}
-              scaleValue={0.96}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={isDark ? '#1F1F1F' : '#FFFFFF'} size="small" />
-              ) : (
-                <>
-                  <Image
-                    source={{ uri: 'https://www.google.com/favicon.ico' }}
-                    style={styles.googleIcon}
-                  />
-                  <Text style={[styles.buttonText, { color: colors.background }]}>
-                    Continue with Google
-                  </Text>
-                </>
-              )}
-            </AnimatedPressable>
+              icon={<FontAwesome name="google" size={18} color={colors.white} />}
+            />
 
-            <AnimatedPressable
-              style={[styles.guestButton, { backgroundColor: colors.elevated }]}
+            <Button
+              title="Continue as Guest"
               onPress={handleGuestSignIn}
+              variant="secondary"
               disabled={isLoading}
-              scaleValue={0.96}
-            >
-              <FontAwesome name="user-secret" size={20} color={colors.text} />
-              <Text style={[styles.buttonText, { color: colors.text }]}>
-                Continue as Guest
-              </Text>
-            </AnimatedPressable>
+              icon={<FontAwesome name="user-secret" size={20} color={colors.text} />}
+            />
 
-            <Text style={[styles.termsText, { color: colors.textMuted }]}>
+            <Text style={styles.termsText}>
               By signing in, you agree to our Terms of Service and Privacy Policy
             </Text>
           </View>
@@ -170,15 +152,17 @@ function FeatureItem({
   );
 }
 
-const getStyles = (_colors: any) =>
+const getStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
     },
     content: {
       flex: 1,
-      paddingHorizontal: 32,
+      paddingHorizontal: spacing.xxxl,
       justifyContent: 'space-between',
+      // Screen-specific vertical rhythm (not on the spacing scale) — keeps
+      // branding/features/sign-in evenly spread across the safe area.
       paddingTop: 60,
       paddingBottom: 40,
     },
@@ -189,33 +173,38 @@ const getStyles = (_colors: any) =>
       alignItems: 'center',
     },
     logoContainer: {
+      // Large hero logo — deliberately off the size/radius scale.
       width: 120,
       height: 120,
       borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 24,
+      marginBottom: spacing.xxl,
     },
     appName: {
+      ...typography.title,
       fontSize: 42,
-      fontWeight: '700',
+      lineHeight: 50,
       letterSpacing: 1,
     },
     tagline: {
+      ...typography.body,
       fontSize: 18,
-      textAlign: 'center',
-      marginTop: 12,
       lineHeight: 26,
+      textAlign: 'center',
+      marginTop: spacing.md,
     },
     featuresContainer: {
-      gap: 16,
+      gap: spacing.lg,
     },
     featureItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 16,
+      gap: spacing.lg,
     },
     featureIconContainer: {
+      // 46/14 sit between the sm/md and md/lg tokens; kept literal rather
+      // than forcing a visible size/radius shift.
       width: 46,
       height: 46,
       borderRadius: 14,
@@ -223,53 +212,29 @@ const getStyles = (_colors: any) =>
       alignItems: 'center',
     },
     featureText: {
-      fontSize: 16,
+      ...typography.body,
       fontWeight: '500',
     },
     signInContainer: {
       gap: 14,
     },
     errorContainer: {
-      backgroundColor: 'rgba(255, 69, 58, 0.15)',
-      padding: 12,
-      borderRadius: 12,
+      backgroundColor: `${colors.error}26`, // ~15% alpha, matches Badge convention
+      padding: spacing.md,
+      borderRadius: radii.md,
       borderWidth: 1,
-      borderColor: 'rgba(255, 69, 58, 0.3)',
+      borderColor: `${colors.error}4D`, // ~30% alpha
     },
     errorText: {
-      color: '#FF453A',
+      ...typography.caption,
       fontSize: 14,
+      color: colors.error,
       textAlign: 'center',
-    },
-    googleButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
-      gap: 12,
-    },
-    googleIcon: {
-      width: 20,
-      height: 20,
-    },
-    guestButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
-      gap: 12,
-    },
-    buttonText: {
-      fontSize: 17,
-      fontWeight: '600',
     },
     termsText: {
+      ...typography.caption,
       fontSize: 12,
+      color: colors.textMuted,
       textAlign: 'center',
-      lineHeight: 18,
     },
   });
