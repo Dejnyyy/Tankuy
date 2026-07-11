@@ -36,7 +36,7 @@ import {
   StaggeredChildren,
 } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
-import { Card, SectionHeader, ScreenHeader, ListRow, Button } from "@/components/ui";
+import { Card, SectionHeader, ListRow, Button } from "@/components/ui";
 import { spacing, radii, typography } from "@/constants/Theme";
 
 // Standard RN Switch track/thumb defaults — sanctioned hex exception, not tokens.
@@ -376,8 +376,11 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Header */}
-        <ScreenHeader title={t("profile.title")} />
+        {/* Header — not ScreenHeader: its hardcoded paddingHorizontal (16) misaligns
+            the title against this screen's spacing.xl (20) sections */}
+        <View style={styles.header}>
+          <Text style={styles.title}>{t("profile.title")}</Text>
+        </View>
 
         {/* User Card */}
         <ScaleInView delay={100}>
@@ -465,7 +468,10 @@ export default function ProfileScreen() {
               style={styles.emptyVehicles}
               onPress={openAddModal}
             >
-              <FontAwesome name="car" size={32} color={colors.elevated} />
+              {/* Deviation from the plan's #3A3A3C→colors.elevated mapping: elevated is
+                  #FFFFFF in light mode (invisible on the white card); textMuted keeps
+                  the original muted-gray intent and is visible in both themes. */}
+              <FontAwesome name="car" size={32} color={colors.textMuted} />
               <Text style={styles.emptyText}>{t("profile.noVehicles")}</Text>
               <Text style={styles.emptySubtext}>
                 {t("profile.addFirstVehicle")}
@@ -570,7 +576,9 @@ export default function ProfileScreen() {
                   </View>
                 }
                 title={t("profile.settings.notifications")}
-                value="On"
+                // rightElement (not value): keeps the original secondary value color;
+                // ListRow's value slot hardcodes colors.text
+                rightElement={<Text style={styles.settingsValue}>On</Text>}
               />
             </View>
 
@@ -701,7 +709,9 @@ export default function ProfileScreen() {
                   </View>
                 }
                 title={t("profile.about.version")}
-                value="1.0.3"
+                // rightElement (not value): keeps the original secondary value color;
+                // ListRow's value slot hardcodes colors.text
+                rightElement={<Text style={styles.settingsValue}>1.0.3</Text>}
               />
             </View>
             <View style={styles.settingsRowBorder}>
@@ -1178,6 +1188,14 @@ const getStyles = (colors: any) =>
       alignSelf: "center",
       paddingBottom: 40,
     },
+    header: {
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
+    },
+    title: {
+      ...typography.title,
+      color: colors.text,
+    },
     userCard: {
       alignItems: "center",
       paddingVertical: spacing.xxl,
@@ -1312,6 +1330,10 @@ const getStyles = (colors: any) =>
     },
     settingsIconContainer: {
       width: 32,
+    },
+    settingsValue: {
+      fontSize: 15, // no exact typography match (body is 16)
+      color: colors.textSecondary,
     },
     pillGroup: {
       flexDirection: "row",
