@@ -14,11 +14,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useTranslation } from "react-i18next";
 import api, { FuelEntry, Vehicle } from "@/services/api";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { AnimatedPressable } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
+import { spacing, radii, typography } from "@/constants/Theme";
+import { ScreenHeader, SectionHeader, EmptyState, Button, Card } from "@/components/ui";
 
 // Helper to safely format numbers
 const formatCurrency = (val: any) => {
@@ -34,6 +37,7 @@ const formatDecimal = (val: any, decimals: number = 2) => {
 export default function HistoryScreen() {
   const params = useLocalSearchParams();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const {
     currencySymbol,
@@ -253,16 +257,18 @@ export default function HistoryScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.webContainer}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>History</Text>
-          <TouchableOpacity
-            onPress={() => setSortModalVisible(true)}
-            style={styles.sortButton}
-          >
-            <FontAwesome name="sort" size={16} color={colors.tint} />
-            <Text style={styles.sortButtonText}>Sort</Text>
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader
+          title="History"
+          rightElement={
+            <Button
+              title="Sort"
+              onPress={() => setSortModalVisible(true)}
+              variant="ghost"
+              icon={<FontAwesome name="sort" size={16} color={colors.tint} />}
+              style={styles.sortButton}
+            />
+          }
+        />
 
         {/* Vehicle Filter */}
         <View style={styles.filterContainer}>
@@ -322,23 +328,15 @@ export default function HistoryScreen() {
               ) : null
             }
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <FontAwesome
-                  name="history"
-                  size={48}
-                  color={colors.textMuted}
-                />
-                <Text style={styles.emptyText}>No entries yet</Text>
-                <Text style={styles.emptySubtext}>
-                  Scan a receipt to add your first fuel entry
-                </Text>
-                <TouchableOpacity
-                  style={styles.scanButton}
-                  onPress={() => router.push("/(tabs)/scan")}
-                >
-                  <Text style={styles.scanButtonText}>Scan Receipt</Text>
-                </TouchableOpacity>
-              </View>
+              <EmptyState
+                icon={
+                  <FontAwesome name="history" size={48} color={colors.textMuted} />
+                }
+                title={t("history.empty.title")}
+                message={t("history.empty.message")}
+                ctaLabel={t("history.empty.cta")}
+                onCta={() => router.push("/(tabs)/scan")}
+              />
             }
           />
         )}
@@ -448,7 +446,7 @@ export default function HistoryScreen() {
 
                 {selectedEntry.receiptImageUrl && (
                   <View style={styles.receiptSection}>
-                    <Text style={styles.sectionTitle}>Receipt Image</Text>
+                    <SectionHeader title="Receipt Image" />
                     <Image
                       source={{ uri: selectedEntry.receiptImageUrl }}
                       style={styles.receiptImage}
@@ -459,13 +457,13 @@ export default function HistoryScreen() {
 
                 <View style={{ height: 40 }} />
 
-                <TouchableOpacity
-                  style={styles.deleteButton}
+                <Button
+                  title="Delete Entry"
                   onPress={handleDeleteEntry}
-                >
-                  <FontAwesome name="trash" size={18} color={colors.error} />
-                  <Text style={styles.deleteButtonText}>Delete Entry</Text>
-                </TouchableOpacity>
+                  variant="destructive"
+                  icon={<FontAwesome name="trash" size={18} color={colors.white} />}
+                  style={styles.deleteButton}
+                />
 
                 <View style={{ height: 40 }} />
               </ScrollView>
@@ -484,7 +482,7 @@ export default function HistoryScreen() {
           activeOpacity={1}
           onPress={() => setSortModalVisible(false)}
         >
-          <View style={styles.sortModalContent}>
+          <Card style={styles.sortModalContent}>
             <Text style={styles.sortModalTitle}>Sort By</Text>
 
             <TouchableOpacity
@@ -600,7 +598,7 @@ export default function HistoryScreen() {
                 <FontAwesome name="check" size={14} color={colors.tint} />
               )}
             </TouchableOpacity>
-          </View>
+          </Card>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
@@ -687,56 +685,38 @@ const getStyles = (colors: any) =>
       width: "100%",
       alignSelf: "center",
     },
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: "700",
-      color: colors.text,
-    },
+    // Overrides ScreenHeader's rightElement Button back to the original
+    // compact pill look (bg colors.card, tint text/icon via variant="ghost").
     sortButton: {
-      flexDirection: "row",
-      alignItems: "center",
       backgroundColor: colors.card,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      gap: 6,
-    },
-    sortButtonText: {
-      color: colors.tint,
-      fontWeight: "600",
-      fontSize: 14,
+      paddingHorizontal: spacing.md, // 12
+      paddingVertical: spacing.sm, // 8
+      borderRadius: radii.sm, // 8
     },
     filterContainer: {
-      marginBottom: 8,
+      marginBottom: spacing.sm, // 8
     },
     filterList: {
-      paddingHorizontal: 20,
-      gap: 8,
+      paddingHorizontal: spacing.xl, // 20
+      gap: spacing.sm, // 8
     },
     filterChip: {
       backgroundColor: colors.card,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 20,
-      marginRight: 8,
+      paddingHorizontal: spacing.lg, // 16
+      paddingVertical: 10, // tie between sm(8)/md(12), kept literal
+      borderRadius: 20, // pill shape, not on radii scale (nearest lg=16 would visibly shrink it)
+      marginRight: spacing.sm, // 8
     },
     filterChipActive: {
       backgroundColor: colors.tint,
     },
     filterChipText: {
-      fontSize: 14,
+      fontSize: 14, // no exact token (caption=13); weight 500 isn't a token family either
       fontWeight: "500",
       color: colors.textSecondary,
     },
     filterChipTextActive: {
-      color: "#FFFFFF",
+      color: colors.white,
     },
     loadingContainer: {
       flex: 1,
@@ -744,51 +724,58 @@ const getStyles = (colors: any) =>
       alignItems: "center",
     },
     listContent: {
-      padding: 20,
-      paddingBottom: 100,
+      padding: spacing.xl, // 20
+      paddingBottom: 100, // custom scroll clearance, not a spacing-rhythm value
     },
     entryCard: {
       flexDirection: "row",
       backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
-      marginBottom: 10,
+      borderRadius: 14, // tie between md(12)/lg(16), kept literal
+      padding: 14, // tie between md(12)/lg(16), kept literal
+      marginBottom: 10, // tie between sm(8)/md(12), kept literal
     },
     entryLeft: {},
     entryIconContainer: {
-      width: 44,
+      width: 44, // fixed icon-circle size, not a spacing-rhythm value
       height: 44,
-      borderRadius: 12,
+      borderRadius: radii.md, // 12
       backgroundColor: colors.primaryLight,
       justifyContent: "center",
       alignItems: "center",
     },
     entryCenter: {
       flex: 1,
-      marginLeft: 14,
+      marginLeft: 14, // tie between md(12)/lg(16), kept literal
       justifyContent: "center",
     },
     entryStation: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold, // exact match: 16/600
       color: colors.text,
     },
     entryMeta: {
-      fontSize: 13,
+      ...typography.caption, // exact match: 13/400
       color: colors.textSecondary,
       marginTop: 3,
     },
+    // fontSize 12 is 1px off typography.caption's 13 — kept as a plain
+    // literal (no token spread) per the lineHeight rule: spreading a token
+    // and then overriding fontSize leaves a lineHeight sized for the
+    // token's own fontSize on a different-sized font.
     entryDetails: {
       fontSize: 12,
+      fontWeight: "400",
       color: colors.textMuted,
       marginTop: 3,
     },
     entryMileageRow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
-      gap: 4,
+      gap: spacing.xs, // 4
       marginTop: 3,
     },
+    // fontSize 11 matches typography.label's size, but label adds
+    // uppercase + letterSpacing which would alter the mileage text's
+    // appearance — kept as a plain literal instead.
     entryMileage: {
       fontSize: 11,
       color: colors.textMuted,
@@ -797,47 +784,22 @@ const getStyles = (colors: any) =>
       alignItems: "flex-end",
       justifyContent: "center",
     },
+    // fontSize 17 is 1px off typography.bodyBold's 16 — literal per the
+    // lineHeight rule (see entryDetails comment above).
     entryAmount: {
       fontSize: 17,
       fontWeight: "600",
       color: colors.text,
     },
     receiptBadge: {
-      marginTop: 6,
-      backgroundColor: colors.elevated, // Was #2C2C2E
-      padding: 4,
-      borderRadius: 4,
+      marginTop: 6, // tie between xs(4)/sm(8), kept literal
+      backgroundColor: colors.elevated,
+      padding: spacing.xs, // 4
+      borderRadius: 4, // small badge corner, not on radii scale
     },
     footerLoader: {
-      paddingVertical: 20,
+      paddingVertical: spacing.xl, // 20
       alignItems: "center",
-    },
-    emptyContainer: {
-      paddingVertical: 60,
-      alignItems: "center",
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.textSecondary,
-      marginTop: 16,
-    },
-    emptySubtext: {
-      fontSize: 14,
-      color: colors.textMuted,
-      marginTop: 4,
-      textAlign: "center",
-      marginBottom: 20,
-    },
-    scanButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 8,
-    },
-    scanButtonText: {
-      color: "#FFFFFF",
-      fontWeight: "600",
     },
     // Modal Styles
     modalBackdrop: {
@@ -847,7 +809,7 @@ const getStyles = (colors: any) =>
     modalContainer: {
       flex: 1,
       backgroundColor: colors.card,
-      maxWidth: 600,
+      maxWidth: 600, // screen-specific constraint, not a spacing value
       width: "100%" as any,
       alignSelf: "center" as const,
     },
@@ -855,144 +817,135 @@ const getStyles = (colors: any) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: 20,
+      padding: spacing.xl, // 20
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+    // weight 700 doesn't match typography.heading's 600 — kept literal.
     modalTitle: {
       fontSize: 20,
       fontWeight: "700",
       color: colors.text,
     },
     closeButton: {
-      padding: 5,
+      padding: 5, // tie between xs(4)/sm(8), kept literal
     },
     modalContent: {
       flex: 1,
     },
     amountHeader: {
       alignItems: "center",
-      paddingVertical: 30,
+      paddingVertical: 30, // screen-specific hero spacing, not on scale
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+    // Hero display size, far off the type scale — kept literal.
     bigAmount: {
       fontSize: 42,
       fontWeight: "700",
       color: colors.tint,
     },
     volumeText: {
-      fontSize: 16,
+      ...typography.body, // exact match: 16/400
       color: colors.textSecondary,
       marginTop: 5,
     },
     detailSection: {
-      padding: 20,
+      padding: spacing.xl, // 20
     },
     detailRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 20,
+      marginBottom: spacing.xl, // 20
     },
     detailIcon: {
-      width: 40,
+      width: 40, // fixed icon-column width, not a spacing-rhythm value
       alignItems: "center",
     },
     detailContent: {
       flex: 1,
     },
     detailLabel: {
-      fontSize: 13,
+      ...typography.caption, // exact match: 13/400
       color: colors.textSecondary,
     },
     detailValue: {
-      fontSize: 16,
+      ...typography.body, // exact match: 16/400
       color: colors.text,
       marginTop: 2,
     },
     noteContainer: {
-      marginTop: 10,
+      marginTop: 10, // tie between sm(8)/md(12), kept literal
       backgroundColor: colors.elevated,
-      padding: 15,
-      borderRadius: 10,
+      padding: 15, // tie between md(12)/lg(16), kept literal
+      borderRadius: 10, // tie between sm(8)/md(12), kept literal
     },
     noteLabel: {
-      fontSize: 13,
+      ...typography.caption, // exact match: 13/400
       color: colors.textSecondary,
       marginBottom: 5,
     },
+    // fontSize 15 is 1px off typography.body's 16 — literal per the
+    // lineHeight rule (see entryDetails comment above).
     noteText: {
       fontSize: 15,
       color: colors.text,
     },
     receiptSection: {
-      padding: 20,
+      padding: spacing.xl, // 20
       paddingTop: 0,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-      marginBottom: 15,
     },
     receiptImage: {
       width: "100%",
-      height: 300,
-      borderRadius: 10,
-      backgroundColor: "#000",
+      height: 300, // media dimension, not a spacing value
+      borderRadius: 10, // tie between sm(8)/md(12), kept literal
+      backgroundColor: colors.black,
     },
+    // Only supplies the spacing Button's default padding/radius don't
+    // cover; background/padding/radius/layout now come from the
+    // destructive-variant Button itself.
     deleteButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(255, 59, 48, 0.1)",
-      marginHorizontal: 20,
-      padding: 16,
-      borderRadius: 12,
-    },
-    deleteButtonText: {
-      color: colors.error,
-      fontWeight: "600",
-      marginLeft: 8,
-      fontSize: 16,
+      marginHorizontal: spacing.xl, // 20
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: `${colors.black}80`, // ~50% alpha, matches rgba(0,0,0,0.5)
       justifyContent: "center",
       alignItems: "center",
     },
+    // Card supplies backgroundColor: colors.card and borderRadius: radii.lg
+    // (16, exact match to the original). Only the deltas are listed here.
     sortModalContent: {
-      backgroundColor: colors.card,
       width: "80%",
-      borderRadius: 16,
-      padding: 20,
-      shadowColor: "#000",
+      padding: spacing.xl, // 20, overrides Card's default lg(16) padding
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 8,
     },
+    // fontSize 18 sits between heading(20)/body(16); weight 700 doesn't
+    // match heading's 600 either — kept literal.
     sortModalTitle: {
       fontSize: 18,
       fontWeight: "700",
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg, // 16
       textAlign: "center",
     },
     sortOption: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      borderRadius: 10,
+      paddingVertical: 14, // tie between md(12)/lg(16), kept literal
+      paddingHorizontal: spacing.md, // 12
+      borderRadius: 10, // tie between sm(8)/md(12), kept literal
     },
     activeSortOption: {
       backgroundColor: colors.primaryLight,
     },
     sortOptionText: {
-      fontSize: 16,
+      ...typography.body, // exact match: 16/400
       color: colors.text,
     },
     activeSortText: {
@@ -1000,28 +953,30 @@ const getStyles = (colors: any) =>
       fontWeight: "600",
     },
     sortDivider: {
-      height: 1,
+      height: 1, // hairline
       backgroundColor: colors.border,
-      marginVertical: 8,
+      marginVertical: spacing.sm, // 8
     },
     dateFilterContainer: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginHorizontal: 20,
-      marginTop: 12,
+      marginHorizontal: spacing.xl, // 20
+      marginTop: spacing.md, // 12
       backgroundColor: colors.primaryLight,
-      padding: 12,
-      borderRadius: 8,
+      padding: spacing.md, // 12
+      borderRadius: radii.sm, // 8
       borderWidth: 1,
-      borderColor: "rgba(255, 149, 0, 0.3)",
+      borderColor: `${colors.primary}4D`, // ~30% alpha, matches rgba(255,149,0,0.3)
     },
+    // fontSize 14 is 2px off typography.bodyBold's 16 — literal per the
+    // lineHeight rule (see entryDetails comment above).
     dateFilterText: {
       color: colors.tint,
       fontSize: 14,
       fontWeight: "600",
     },
     clearFilterButton: {
-      padding: 4,
+      padding: spacing.xs, // 4
     },
   });

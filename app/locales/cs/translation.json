@@ -64,7 +64,12 @@
     }
   },
   "history": {
-    "mileage": "Nájezd"
+    "mileage": "Nájezd",
+    "empty": {
+      "title": "Zatím žádné záznamy",
+      "message": "Naskenujte účtenku a přidejte svůj první záznam o tankování",
+      "cta": "Naskenovat účtenku"
+    }
   },
   "profile": {
     "title": "Profil",

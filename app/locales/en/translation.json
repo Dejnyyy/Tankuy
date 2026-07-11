@@ -64,7 +64,12 @@
     }
   },
   "history": {
-    "mileage": "Mileage"
+    "mileage": "Mileage",
+    "empty": {
+      "title": "No entries yet",
+      "message": "Scan a receipt to add your first fuel entry",
+      "cta": "Scan Receipt"
+    }
   },
   "profile": {
     "title": "Profile",
