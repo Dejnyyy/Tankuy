@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Text, type StyleProp, type TextStyle } from 'react-native';
 import {
   runOnJS,
@@ -27,12 +27,17 @@ export function AnimatedNumber({ value, format, style, duration = 600 }: Animate
     });
   }, [value, duration, progress]);
 
+  const updateDisplay = useCallback(
+    (v: number) => setDisplay(format(v)),
+    [format],
+  );
+
   useAnimatedReaction(
     () => progress.value,
     (current) => {
-      runOnJS(setDisplay)(format(current));
+      runOnJS(updateDisplay)(current);
     },
-    [format],
+    [updateDisplay],
   );
 
   return <Text style={style}>{display}</Text>;
