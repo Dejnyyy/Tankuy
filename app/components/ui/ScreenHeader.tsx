@@ -17,8 +17,8 @@ export function ScreenHeader({ title, rightElement }: ScreenHeaderProps) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.sm,
+        paddingHorizontal: spacing.xl,
+        paddingTop: spacing.lg,
         paddingBottom: spacing.lg,
       }}
     >

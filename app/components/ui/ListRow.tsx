@@ -65,7 +65,11 @@ export function ListRow({
 
   if (!onPress) return content;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+    >
       {content}
     </Pressable>
   );

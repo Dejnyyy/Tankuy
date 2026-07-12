@@ -232,7 +232,7 @@ const getStyles = (colors: any) =>
       fontWeight: '500',
     },
     signInContainer: {
-      gap: 14,
+      gap: 14, // tie between md(12)/lg(16), kept literal
     },
     errorContainer: {
       backgroundColor: `${colors.error}26`, // ~15% alpha, matches Badge convention
@@ -242,8 +242,9 @@ const getStyles = (colors: any) =>
       borderColor: `${colors.error}4D`, // ~30% alpha
     },
     errorText: {
-      ...typography.caption,
+      // fontSize 14 has no typography token; kept literal per lineHeight rule
       fontSize: 14,
+      fontWeight: '400',
       color: colors.error,
       textAlign: 'center',
     },
@@ -262,8 +263,9 @@ const getStyles = (colors: any) =>
       height: 20,
     },
     googleButtonText: {
-      ...typography.bodyBold,
-      fontSize: 17, // off-scale to match original Google button proportions
+      // fontSize 17 has no typography token; kept literal per lineHeight rule
+      fontSize: 17,
+      fontWeight: '600',
     },
     termsText: {
       ...typography.caption,

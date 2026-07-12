@@ -5,7 +5,13 @@ import { spacing, radii, typography } from '@/constants/Theme';
 
 interface BadgeProps {
   label: string;
-  /** Accent color, e.g. colors.stats.green. Defaults to colors.primary. */
+  /**
+   * Accent color, e.g. colors.stats.green. Defaults to colors.primary.
+   * Must be a 6-digit hex color (e.g. "#FF9500") — an alpha suffix is
+   * appended to it for the background fill, and that only produces a
+   * valid color when `color` itself is opaque hex. rgba()/hsl() strings
+   * will not compose correctly here.
+   */
   color?: string;
 }
 

@@ -22,7 +22,7 @@ export function SectionHeader({ title, actionLabel, onAction }: SectionHeaderPro
     >
       <Text style={[typography.heading, { color: colors.text }]}>{title}</Text>
       {actionLabel && onAction ? (
-        <Pressable onPress={onAction} hitSlop={spacing.sm}>
+        <Pressable onPress={onAction} accessibilityRole="button" hitSlop={spacing.sm}>
           <Text style={[typography.bodyBold, { color: colors.tint }]}>{actionLabel}</Text>
         </Pressable>
       ) : null}

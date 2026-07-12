@@ -376,8 +376,9 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Header — not ScreenHeader: its hardcoded paddingHorizontal (16) misaligns
-            the title against this screen's spacing.xl (20) sections */}
+        {/* Header — not ScreenHeader: ScreenHeader now uses spacing.xl (matching this
+            screen's title row too), but this header stays custom/inline since it has
+            no rightElement and predates the shared component */}
         <View style={styles.header}>
           <Text style={styles.title}>{t("profile.title")}</Text>
         </View>
