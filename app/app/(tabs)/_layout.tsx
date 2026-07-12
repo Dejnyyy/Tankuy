@@ -174,7 +174,6 @@ export default function TabLayout() {
           <Tabs.Screen name="scan"    options={{ title: "Tankuy – Scan Fuel Receipt"          }} />
           <Tabs.Screen name="history" options={{ title: "Tankuy – Fuel History"               }} />
           <Tabs.Screen name="profile" options={{ title: "Tankuy – Profile"                    }} />
-          <Tabs.Screen name="two"     options={{ href: null } as any} />
         </Tabs>
       </View>
     </View>

@@ -88,7 +88,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   // Visible routes (exclude hidden ones)
   const visibleRoutes = state.routes.filter(
-    (r) => !((descriptors[r.key].options as any).href === null || r.name === "two"),
+    (r) => (descriptors[r.key].options as any).href !== null,
   );
   const TAB_COUNT = visibleRoutes.length; // 5
 
@@ -191,7 +191,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
           <FontAwesome
             name={(activeRoute ? iconForRoute(activeRoute.name) : "circle") as any}
             size={22}
-            color="#FFF"
+            color={colors.white}
           />
         </View>
       </Animated.View>
