@@ -68,14 +68,22 @@ export default function SpendingChart({
 }: SpendingChartProps) {
   const { colors } = useTheme();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  // Ref mirror of activeIndex so touch handlers can read the latest value
+  // without stale closures or impure state updaters.
+  const activeIndexRef = useRef<number | null>(null);
   const containerRef = useRef<View>(null);
   const containerXRef = useRef(0);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const setActive = useCallback((idx: number | null) => {
+    activeIndexRef.current = idx;
+    setActiveIndex(idx);
+  }, []);
+
   // Reset active tooltip when data changes
   React.useEffect(() => {
-    setActiveIndex(null);
-  }, [data, labels]);
+    setActive(null);
+  }, [data, labels, setActive]);
 
   const { width: screenWidth } = useWindowDimensions();
   const PADDING_LEFT = 16;
@@ -149,15 +157,15 @@ export default function SpendingChart({
         hideTimeoutRef.current = null;
       }
 
-      setActiveIndex((prev) => {
-        if (nearest !== prev) {
+      if (nearest !== activeIndexRef.current) {
+        setActive(nearest);
+        if (onScrub) {
           Haptics.selectionAsync(); // light tick per data point — fire-and-forget
-          onScrub?.({ index: nearest, value: data[nearest], label: labels[nearest] });
+          onScrub({ index: nearest, value: data[nearest], label: labels[nearest] });
         }
-        return nearest;
-      });
+      }
     },
-    [points, SVG_WIDTH, data, labels, onScrub],
+    [points, SVG_WIDTH, data, labels, onScrub, setActive],
   );
 
   const onTouchStart = (e: GestureResponderEvent) => {
@@ -167,8 +175,19 @@ export default function SpendingChart({
     findNearest(e.nativeEvent.pageX);
   };
   const onTouchEnd = () => {
-    onScrub?.(null);
-    hideTimeoutRef.current = setTimeout(() => setActiveIndex(null), 2000);
+    if (onScrub) {
+      // Scrub consumers need the chart selection and the hero number to
+      // agree — clear both immediately on release.
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+      setActive(null);
+      onScrub(null);
+    } else {
+      // Pre-existing behavior: tooltip lingers for 2s after release.
+      hideTimeoutRef.current = setTimeout(() => setActive(null), 2000);
+    }
   };
 
   if (data.length === 0 || data.every((d) => d === 0)) return null;
