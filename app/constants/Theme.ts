@@ -18,15 +18,22 @@ export const radii = {
 } as const;
 
 export const typography = {
-  title: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
-  heading: { fontSize: 20, fontWeight: '600', lineHeight: 26 },
+  hero: {
+    fontSize: 40,
+    fontWeight: '800',
+    lineHeight: 46,
+    letterSpacing: -1.5,
+    fontVariant: ['tabular-nums'] as TextStyle['fontVariant'],
+  },
+  title: { fontSize: 28, fontWeight: '800', lineHeight: 34, letterSpacing: -1 },
+  heading: { fontSize: 20, fontWeight: '700', lineHeight: 26 },
   body: { fontSize: 16, fontWeight: '400', lineHeight: 22 },
   bodyBold: { fontSize: 16, fontWeight: '600', lineHeight: 22 },
   caption: { fontSize: 13, fontWeight: '400', lineHeight: 18 },
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
-    lineHeight: 14,
+    lineHeight: 16,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
