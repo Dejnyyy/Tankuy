@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{3,8\\\\}\\\\|rgba\\(\" \"app/\\(tabs\\)/profile.tsx\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{3,8\\\\}\\\\|rgba\\(\" \"app/\\(tabs\\)/find.tsx\")",
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{3,8\\\\}\" \"app/\\(tabs\\)/find.tsx\")",
+      "Bash(awk '/\\\\.\\\\.\\\\.typography\\\\./{print NR\": \"$0; getline; print NR\": \"$0; getline; print NR\": \"$0; print \"---\"}' \"app/\\(tabs\\)/find.tsx\")",
+      "Bash(awk '/\\\\.\\\\.\\\\.typography\\\\./{print NR\": \"$0; getline; print NR\": \"$0; getline; print NR\": \"$0}' \"app/app/\\(tabs\\)/find.tsx\")",
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{3,8\\\\}\\\\|rgba\\(\\\\|rgb\\(\" \"app/\\(tabs\\)/scan.tsx\")",
+      "Bash(awk '/^@@/{print \"----\"; print} !/^@@/{print}' /private/tmp/claude-501/-Users-dejny-Webs-Tankuy/1ae734a7-43e8-415c-a4d3-459dc991df19/scratchpad/scan-diff.txt)",
+      "Bash(git check-ignore *)",
+      "Bash(/Users/dejny/.claude/plugins/cache/claude-plugins-official/superpowers/6.1.1/skills/subagent-driven-development/scripts/review-package 257974e 119df2c)",
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{3,8\\\\}\\\\|rgba\\(\\\\|rgb\\(\" /tmp/scan_after.tsx)",
+      "Bash(grep -n \"#[0-9A-Fa-f]\\\\{3,8\\\\}\" components/CustomTabBar.tsx)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(timeout 90 npx expo export --platform web --output-dir /private/tmp/claude-501/-Users-dejny-Webs-Tankuy/1ae734a7-43e8-415c-a4d3-459dc991df19/scratchpad/tankuy-export-test)"
+    ]
+  }
+}
