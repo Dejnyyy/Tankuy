@@ -9,11 +9,23 @@ interface CardProps extends ViewProps {
 }
 
 export function Card({ padded = true, style, children, ...rest }: CardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   return (
     <View
       style={[
-        { backgroundColor: colors.card, borderRadius: radii.lg },
+        {
+          backgroundColor: colors.card,
+          borderRadius: radii.lg,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+        !isDark && {
+          shadowColor: colors.black,
+          shadowOpacity: 0.04,
+          shadowRadius: 3,
+          shadowOffset: { width: 0, height: 1 },
+          elevation: 1,
+        },
         padded && { padding: spacing.lg },
         style,
       ]}

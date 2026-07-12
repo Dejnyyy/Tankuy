@@ -6,7 +6,7 @@ import { spacing, radii, typography } from '@/constants/Theme';
 interface BadgeProps {
   label: string;
   /**
-   * Accent color, e.g. colors.stats.green. Defaults to colors.primary.
+   * Accent color, e.g. colors.stats.green.
    * Must be a 6-digit hex color (e.g. "#FF9500") — an alpha suffix is
    * appended to it for the background fill, and that only produces a
    * valid color when `color` itself is opaque hex. rgba()/hsl() strings
@@ -17,18 +17,21 @@ interface BadgeProps {
 
 export function Badge({ label, color }: BadgeProps) {
   const { colors } = useTheme();
-  const accent = color ?? colors.primary;
+  const solid = !color;
+  const accent = color ?? colors.buttonPrimary;
   return (
     <View
       style={{
         alignSelf: 'flex-start',
-        backgroundColor: `${accent}26`, // ~15% alpha over card background
+        backgroundColor: solid ? colors.buttonPrimary : `${accent}26`,
         borderRadius: radii.full,
         paddingVertical: spacing.xs,
         paddingHorizontal: spacing.md,
       }}
     >
-      <Text style={[typography.label, { color: accent }]}>{label}</Text>
+      <Text style={[typography.label, { color: solid ? colors.buttonPrimaryText : accent }]}>
+        {label}
+      </Text>
     </View>
   );
 }
