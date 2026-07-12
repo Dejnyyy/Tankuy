@@ -25,6 +25,8 @@ import { router } from "expo-router";
 import api, { ReceiptScanResult, Vehicle } from "@/services/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUnits } from "@/hooks/useUnits";
+import { Card, Button } from "@/components/ui";
+import { spacing, radii, typography } from "@/constants/Theme";
 
 // Conditionally import Camera (not available on web)
 let CameraView: any = null;
@@ -807,7 +809,7 @@ export default function ScanScreen() {
                           size={14}
                           color={
                             selectedVehicle === vehicle.id
-                              ? "#FFFFFF"
+                              ? colors.white
                               : colors.textSecondary
                           }
                         />
@@ -850,28 +852,14 @@ export default function ScanScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                (saving ||
-                  !manualForm.totalCost ||
-                  !manualForm.pricePerLiter) &&
-                  styles.saveButtonDisabled,
-              ]}
+            <Button
+              title="Save Entry"
               onPress={handleSaveManualEntry}
-              disabled={
-                saving || !manualForm.totalCost || !manualForm.pricePerLiter
-              }
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <FontAwesome name="check" size={18} color="#FFFFFF" />
-                  <Text style={styles.saveButtonText}>Save Entry</Text>
-                </>
-              )}
-            </TouchableOpacity>
+              loading={saving}
+              disabled={!manualForm.totalCost || !manualForm.pricePerLiter}
+              icon={<FontAwesome name="check" size={18} color={colors.white} />}
+              style={styles.saveButton}
+            />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -891,7 +879,7 @@ export default function ScanScreen() {
             <View style={{ width: 20 }} />
           </View>
 
-          <View style={styles.resultCard}>
+          <Card style={styles.resultCard}>
             <Text style={styles.resultCardTitle}>Extracted Data</Text>
 
             <DataRow
@@ -950,23 +938,23 @@ export default function ScanScreen() {
               styles={styles}
               colors={colors}
             />
-          </View>
+          </Card>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.secondaryButton}
+            <Button
+              title="Rescan"
               onPress={resetScan}
-            >
-              <FontAwesome name="refresh" size={18} color={colors.tint} />
-              <Text style={styles.secondaryButtonText}>Rescan</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.primaryButton}
+              variant="secondary"
+              icon={<FontAwesome name="refresh" size={18} color={colors.text} />}
+              style={styles.secondaryButton}
+            />
+            <Button
+              title="Confirm"
               onPress={handleConfirmScan}
-            >
-              <FontAwesome name="check" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>Confirm</Text>
-            </TouchableOpacity>
+              variant="primary"
+              icon={<FontAwesome name="check" size={18} color={colors.white} />}
+              style={styles.primaryButton}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -1010,7 +998,7 @@ export default function ScanScreen() {
                           size={14}
                           color={
                             selectedVehicle === vehicle.id
-                              ? "#FFFFFF"
+                              ? colors.white
                               : colors.textSecondary
                           }
                         />
@@ -1052,7 +1040,7 @@ export default function ScanScreen() {
               </View>
             </View>
 
-            <View style={styles.summaryCard}>
+            <Card padded={false} style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Review & Edit Details</Text>
 
               <DataRow
@@ -1106,22 +1094,15 @@ export default function ScanScreen() {
                 styles={styles}
                 colors={colors}
               />
-            </View>
+            </Card>
 
-            <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            <Button
+              title="Save Entry"
               onPress={handleSaveEntry}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <FontAwesome name="check" size={18} color="#FFFFFF" />
-                  <Text style={styles.saveButtonText}>Save Entry</Text>
-                </>
-              )}
-            </TouchableOpacity>
+              loading={saving}
+              icon={<FontAwesome name="check" size={18} color={colors.white} />}
+              style={styles.saveButton}
+            />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -1148,20 +1129,21 @@ export default function ScanScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.uploadButton} onPress={takePhotoWeb}>
-            <FontAwesome name="camera" size={22} color="#FFFFFF" />
-            <Text style={styles.uploadButtonText}>Take Photo</Text>
-          </TouchableOpacity>
+          <Button
+            title="Take Photo"
+            onPress={takePhotoWeb}
+            variant="primary"
+            icon={<FontAwesome name="camera" size={22} color={colors.white} />}
+            style={styles.uploadButton}
+          />
 
-          <TouchableOpacity
-            style={[styles.uploadButton, styles.uploadButtonSecondary]}
+          <Button
+            title="Choose from Gallery"
             onPress={pickImageWeb}
-          >
-            <FontAwesome name="image" size={22} color={colors.tint} />
-            <Text style={[styles.uploadButtonText, { color: colors.tint }]}>
-              Choose from Gallery
-            </Text>
-          </TouchableOpacity>
+            variant="ghost"
+            icon={<FontAwesome name="image" size={22} color={colors.tint} />}
+            style={[styles.uploadButton, styles.uploadButtonSecondary]}
+          />
         </View>
 
         {/* Manual entry link */}
@@ -1186,12 +1168,12 @@ export default function ScanScreen() {
           <Text style={styles.permissionText}>
             We need camera access to scan your fuel receipts
           </Text>
-          <TouchableOpacity
-            style={styles.permissionButton}
+          <Button
+            title="Grant Permission"
             onPress={requestPermission}
-          >
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
-          </TouchableOpacity>
+            variant="primary"
+            style={styles.permissionButton}
+          />
 
           <TouchableOpacity
             style={styles.manualEntryLink}
@@ -1317,69 +1299,65 @@ const getStyles = (colors: any) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      padding: 32,
+      padding: spacing.xxxl, // 32, exact match
     },
     permissionTitle: {
-      fontSize: 20,
-      fontWeight: "600",
+      ...typography.heading, // 20/600, exact match
       color: colors.text,
-      marginTop: 20,
+      marginTop: spacing.xl, // 20, exact match
     },
     permissionText: {
-      fontSize: 15,
+      fontSize: 15, // tie between caption(13)/body(16), kept literal
       color: colors.textSecondary,
       textAlign: "center",
-      marginTop: 8,
+      marginTop: spacing.sm, // 8, exact match
     },
+    // Style override for the Button (variant="primary") — Button owns
+    // background/text, this only restores the original padding rhythm.
     permissionButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 24,
-      paddingVertical: 14,
-      borderRadius: 12,
-      marginTop: 24,
-    },
-    permissionButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: "#FFFFFF",
+      paddingHorizontal: spacing.xxl, // 24, exact match
+      paddingVertical: 14, // tie between md(12)/lg(16), kept literal
+      marginTop: spacing.xxl, // 24, exact match
     },
     processingText: {
-      fontSize: 18,
+      fontSize: 18, // tie between body(16)/heading(20), kept literal
       fontWeight: "600",
       color: colors.text,
-      marginTop: 20,
+      marginTop: spacing.xl, // 20, exact match
     },
     processingSubtext: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16), kept literal
       color: colors.textSecondary,
-      marginTop: 8,
+      marginTop: spacing.sm, // 8, exact match
     },
     cameraHeader: {
-      padding: 20,
+      padding: spacing.xl, // 20, exact match
       alignItems: "center",
     },
     cameraTitle: {
-      fontSize: 24,
+      fontSize: 24, // tie, not on scale (title is 28), kept literal
       fontWeight: "700",
       color: colors.text,
     },
     cameraSubtitle: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16), kept literal
       color: colors.textSecondary,
-      marginTop: 4,
+      marginTop: spacing.xs, // 4, exact match
     },
     cameraContainer: {
       flex: 1,
-      marginHorizontal: 20,
-      borderRadius: 20,
+      marginHorizontal: spacing.xl, // 20, exact match
+      borderRadius: 20, // tie between lg(16)/full(999), kept literal
       overflow: "hidden",
     },
     camera: {
       flex: 1,
     },
+    // Live-camera dimming overlay: fixed black tint for contrast over video,
+    // same "camera chrome" precedent as the frame guide below.
     cameraOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.3)",
+      backgroundColor: `${colors.black}4D`, // ~30% alpha
       justifyContent: "center",
       alignItems: "center",
     },
@@ -1388,16 +1366,19 @@ const getStyles = (colors: any) =>
       height: "70%",
       borderWidth: 2,
       borderColor: colors.tint,
-      borderRadius: 16,
+      borderRadius: radii.lg, // 16, exact match
       borderStyle: "dashed",
     },
     cameraControls: {
       flexDirection: "row",
       justifyContent: "space-around",
       alignItems: "center",
-      paddingVertical: 30,
-      paddingHorizontal: 40,
+      paddingVertical: 30, // tie, not on scale, kept literal
+      paddingHorizontal: 40, // tie, not on scale, kept literal
     },
+    // Camera-chrome controls (icon-only, no label) — kept as custom
+    // TouchableOpacity, not adopted as Button (see report). Fixed circular
+    // sizes, not spacing-scale values.
     galleryButton: {
       width: 50,
       height: 50,
@@ -1414,13 +1395,15 @@ const getStyles = (colors: any) =>
       justifyContent: "center",
       alignItems: "center",
     },
+    // White ring for contrast against the camera preview — camera-chrome
+    // exception per the fixed white/black-over-video precedent.
     captureButtonInner: {
       width: 62,
       height: 62,
       borderRadius: 31,
       backgroundColor: colors.tint,
       borderWidth: 3,
-      borderColor: "#FFFFFF",
+      borderColor: colors.white,
     },
     manualButton: {
       width: 50,
@@ -1430,166 +1413,148 @@ const getStyles = (colors: any) =>
       justifyContent: "center",
       alignItems: "center",
     },
+    // Plain text link (not a filled button) — Button's "ghost" variant
+    // forces colors.tint foreground, which would recolor this from neutral
+    // grey to orange; kept custom, per Task 8's nav-link precedent.
     manualEntryLink: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
-      paddingVertical: 20,
+      gap: spacing.sm, // 8, exact match
+      paddingVertical: spacing.xl, // 20, exact match
     },
     manualEntryText: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16), kept literal
       color: colors.textSecondary,
     },
     webContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      padding: 40,
+      padding: 40, // tie, not on scale, kept literal
     },
     webPlaceholder: {
       alignItems: "center",
-      marginBottom: 32,
+      marginBottom: spacing.xxxl, // 32, exact match
     },
     webPlaceholderText: {
-      fontSize: 16,
+      ...typography.body, // 16/400, exact match
       color: colors.textMuted,
-      marginTop: 16,
+      marginTop: spacing.lg, // 16, exact match
     },
+    // Style override for the "Take Photo" Button (variant="primary") —
+    // restores the original padding/radius/gap rhythm Button's defaults
+    // don't reproduce exactly.
     uploadButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.tint,
-      paddingHorizontal: 32,
-      paddingVertical: 16,
-      borderRadius: 14,
-      gap: 12,
+      paddingHorizontal: spacing.xxxl, // 32, exact match
+      paddingVertical: spacing.lg, // 16, exact match
+      borderRadius: 14, // tie between md(12)/lg(16), kept literal
+      gap: spacing.md, // 12, exact match
     },
+    // Additional override for "Choose from Gallery" (variant="ghost" +
+    // this backgroundColor) — reproduces the original card-bg/tint-text
+    // look with zero color delta, same pattern as Task 9's externalNavButton.
     uploadButtonSecondary: {
       backgroundColor: colors.card,
-      marginTop: 12,
-    },
-    uploadButtonText: {
-      fontSize: 17,
-      fontWeight: "600",
-      color: "#FFFFFF",
+      marginTop: spacing.md, // 12, exact match
     },
     reviewContainer: {
       flex: 1,
-      padding: 20,
+      padding: spacing.xl, // 20, exact match
       width: "100%",
-      maxWidth: 600,
+      maxWidth: 600, // fixed layout width, not a spacing value
       alignSelf: "center",
     },
     reviewHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 24,
+      marginBottom: spacing.xxl, // 24, exact match
     },
     reviewTitle: {
-      fontSize: 20,
-      fontWeight: "600",
+      ...typography.heading, // 20/600, exact match
       color: colors.text,
     },
-    resultCard: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 16,
-    },
+    // Card defaults (radii.lg=16, padding=spacing.lg=16) reproduce the
+    // original exactly, so this style carries no overrides.
+    resultCard: {},
     resultCardTitle: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold, // 16/600, exact match
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg, // 16, exact match
     },
     dataRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 12,
+      paddingVertical: spacing.md, // 12, exact match
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     dataRowHighlighted: {
       backgroundColor: colors.primaryLight,
-      marginHorizontal: -16,
-      paddingHorizontal: 16,
-      borderRadius: 10,
+      marginHorizontal: -spacing.lg, // -16, exact match
+      paddingHorizontal: spacing.lg, // 16, exact match
+      borderRadius: 10, // tie between sm(8)/md(12), kept literal
       borderBottomWidth: 0,
-      marginTop: 8,
+      marginTop: spacing.sm, // 8, exact match
     },
     dataRowIcon: {
-      width: 32,
+      width: 32, // fixed icon-container width, not a spacing value
     },
     dataRowLabel: {
       flex: 1,
-      fontSize: 15,
+      fontSize: 15, // tie between caption(13)/body(16), kept literal
       color: colors.textSecondary,
     },
     dataRowValue: {
-      fontSize: 15,
-      fontWeight: "500",
+      fontSize: 15, // tie, kept literal
+      fontWeight: "500", // doesn't match a typography weight token
       color: colors.text,
     },
     dataRowValueHighlighted: {
-      fontSize: 18,
+      fontSize: 18, // tie, kept literal
       color: colors.tint,
       fontWeight: "700",
     },
     buttonContainer: {
       flexDirection: "row",
-      gap: 12,
-      marginTop: 24,
+      gap: spacing.md, // 12, exact match
+      marginTop: spacing.xxl, // 24, exact match
     },
+    // Style override for the "Rescan" Button (variant="secondary", per
+    // brief). Restores flex/padding/radius rhythm; foreground shifts from
+    // the original colors.tint to secondary's colors.text (flagged in report).
     secondaryButton: {
       flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.card,
-      paddingVertical: 16,
-      borderRadius: 14,
-      gap: 8,
+      paddingVertical: spacing.lg, // 16, exact match
+      borderRadius: 14, // tie between md(12)/lg(16), kept literal
     },
-    secondaryButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.tint,
-    },
+    // Style override for the "Confirm" Button (variant="primary") — exact
+    // color match with the original (tint bg / white fg), only padding/
+    // radius restored.
     primaryButton: {
       flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.tint,
-      paddingVertical: 16,
-      borderRadius: 14,
-      gap: 8,
-    },
-    primaryButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: "#FFFFFF",
+      paddingVertical: spacing.lg, // 16, exact match
+      borderRadius: 14, // tie between md(12)/lg(16), kept literal
     },
     formContainer: {
       flex: 1,
-      padding: 20,
+      padding: spacing.xl, // 20, exact match
       width: "100%",
-      maxWidth: 600,
+      maxWidth: 600, // fixed layout width, not a spacing value
       alignSelf: "center",
     },
     formSection: {
-      marginBottom: 24,
+      marginBottom: spacing.xxl, // 24, exact match
     },
     formSectionTitle: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold, // 16/600, exact match
       color: colors.text,
-      marginBottom: 12,
+      marginBottom: spacing.md, // 12, exact match
     },
     locationBadge: {
-      fontSize: 12,
-      color: "#30D158",
+      fontSize: 12, // tie, not on scale, kept literal
+      color: colors.success,
       fontWeight: "400",
     },
     autocompleteContainer: {
@@ -1598,139 +1563,105 @@ const getStyles = (colors: any) =>
     },
     suggestionsContainer: {
       backgroundColor: colors.elevated,
-      borderRadius: 12,
-      marginTop: 8,
+      borderRadius: radii.md, // 12, exact match
+      marginTop: spacing.sm, // 8, exact match
       overflow: "hidden",
     },
     suggestionItem: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 14,
+      padding: 14, // tie between md(12)/lg(16), kept literal
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      gap: 12,
+      gap: spacing.md, // 12, exact match
     },
     suggestionText: {
       flex: 1,
     },
     suggestionName: {
-      fontSize: 15,
+      fontSize: 15, // tie, kept literal
       fontWeight: "500",
       color: colors.text,
     },
-    suggestionAddress: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    suggestionDistance: {
-      fontSize: 12,
-      color: colors.tint,
-      marginTop: 2,
-    },
     inputRow: {
       flexDirection: "row",
-      gap: 10,
+      gap: 10, // tie between sm(8)/md(12), kept literal
     },
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      gap: 12,
+      borderRadius: radii.md, // 12, exact match
+      paddingHorizontal: spacing.lg, // 16, exact match
+      paddingVertical: 14, // tie between md(12)/lg(16), kept literal
+      gap: spacing.md, // 12, exact match
     },
     highlightedInput: {
       borderWidth: 1,
-      borderColor: "rgba(255, 149, 0, 0.3)",
+      borderColor: `${colors.primary}4D`, // ~30% alpha
       backgroundColor: colors.primaryLight,
     },
+    // Deliberately not spread from typography.body — this is a TextInput,
+    // not Text; spreading the token's lineHeight risks altering its
+    // vertical centering/height (Task 8 precedent).
     textInput: {
       flex: 1,
       fontSize: 16,
       color: colors.text,
     },
     inputUnit: {
-      fontSize: 14,
+      fontSize: 14, // tie, kept literal
       color: colors.textSecondary,
     },
     vehicleListHorizontal: {
       flexDirection: "row",
-      gap: 10,
+      gap: 10, // tie between sm(8)/md(12), kept literal
     },
+    // Segmented pill, not converted to Button — icon+text combo at tight
+    // padding risks clipping against Button's fixed 16px text (Task 8
+    // precedent for segmented pills).
     vehicleChip: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.card,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: 10,
-      gap: 8,
+      paddingHorizontal: 14, // tie between md(12)/lg(16), kept literal
+      paddingVertical: 10, // tie between sm(8)/md(12), kept literal
+      borderRadius: 10, // tie between sm(8)/md(12), kept literal
+      gap: spacing.sm, // 8, exact match
     },
     vehicleChipSelected: {
       backgroundColor: colors.tint,
     },
     vehicleChipText: {
-      fontSize: 14,
+      fontSize: 14, // tie, kept literal
       color: colors.text,
       fontWeight: "500",
     },
     vehicleChipTextSelected: {
-      color: "#FFFFFF",
+      color: colors.white,
     },
     noVehiclesText: {
-      fontSize: 14,
+      fontSize: 14, // tie, kept literal
       color: colors.textSecondary,
     },
+    // Card (padded=false) + this style reproduces the original padding
+    // (20, not Card's default spacing.lg=16) exactly.
     summaryCard: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 24,
+      padding: spacing.xl, // 20, exact match
+      marginBottom: spacing.xxl, // 24, exact match
     },
     summaryTitle: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold, // 16/600, exact match
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: spacing.lg, // 16, exact match
     },
-    summaryRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 8,
-    },
-    summaryLabel: {
-      fontSize: 15,
-      color: colors.textSecondary,
-    },
-    summaryValue: {
-      fontSize: 24,
-      fontWeight: "700",
-      color: colors.tint,
-    },
-    summaryValueSmall: {
-      fontSize: 16,
-      fontWeight: "500",
-      color: colors.text,
-    },
+    // Style override for the "Save Entry" Button (variant="primary") —
+    // exact color match with the original (tint bg / white fg), only
+    // padding/radius/gap/marginBottom restored.
     saveButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.tint,
-      paddingVertical: 18,
-      borderRadius: 14,
-      gap: 10,
-      marginBottom: 40,
-    },
-    saveButtonDisabled: {
-      opacity: 0.6,
-    },
-    saveButtonText: {
-      fontSize: 17,
-      fontWeight: "600",
-      color: "#FFFFFF",
+      paddingVertical: 18, // tie between lg(16)/xl(20), kept literal
+      borderRadius: 14, // tie between md(12)/lg(16), kept literal
+      gap: 10, // tie between sm(8)/md(12), kept literal
+      marginBottom: 40, // tie, not on scale, kept literal
     },
   });
