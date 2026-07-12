@@ -5,3 +5,4 @@ export { Button } from './Button';
 export { ListRow } from './ListRow';
 export { EmptyState } from './EmptyState';
 export { ScreenHeader } from './ScreenHeader';
+export { AnimatedNumber } from './AnimatedNumber';
