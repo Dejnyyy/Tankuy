@@ -10,6 +10,13 @@
       "all": "All"
     },
     "allTime": "All Time",
+    "scanReceipt": "Scan receipt",
+    "enterManually": "Enter manually",
+    "lastEntry": "Last fill-up",
+    "empty": {
+      "title": "No entries yet",
+      "message": "Scan a receipt to add your first entry"
+    },
     "stats": {
       "totalSpent": "Total Spent",
       "totalVolume": "Total {{unit}}",

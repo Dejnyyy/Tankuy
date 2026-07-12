@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import api, { ReceiptScanResult, Vehicle } from "@/services/api";
 import { useTheme } from "@/context/ThemeContext";
 import { useUnits } from "@/hooks/useUnits";
@@ -83,6 +83,7 @@ export default function ScanScreen() {
     toMetricPrice,
   } = useUnits();
 
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [scanState, setScanState] = useState<ScanState>("camera");
   const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -242,6 +243,14 @@ export default function ScanScreen() {
     loadVehicles();
     getUserLocation();
   }, []);
+
+  // Dashboard's "Enter manually" CTA deep-links here with ?mode=manual —
+  // jump straight to the manual entry form instead of the camera.
+  useEffect(() => {
+    if (mode === "manual") {
+      setScanState("manual");
+    }
+  }, [mode]);
 
   // Fetch suggestions when query changes
   useEffect(() => {

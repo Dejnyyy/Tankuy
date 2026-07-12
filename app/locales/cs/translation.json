@@ -10,6 +10,13 @@
       "all": "Vše"
     },
     "allTime": "Za celou dobu",
+    "scanReceipt": "Naskenovat účtenku",
+    "enterManually": "Zadat ručně",
+    "lastEntry": "Poslední tankování",
+    "empty": {
+      "title": "Zatím žádné záznamy",
+      "message": "Naskenujte účtenku a přidejte svůj první záznam"
+    },
     "stats": {
       "totalSpent": "Celkem utraceno",
       "totalVolume": "Celkem {{unit}}",
