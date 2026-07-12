@@ -63,6 +63,9 @@
       }
     }
   },
+  "stats": {
+    "title": "Statistics"
+  },
   "history": {
     "mileage": "Mileage",
     "empty": {

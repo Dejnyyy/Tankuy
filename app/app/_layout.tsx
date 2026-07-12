@@ -81,6 +81,10 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="stats"
+          options={{ presentation: "modal", headerShown: false }}
+        />
       </Stack>
     </NavigationThemeProvider>
   );

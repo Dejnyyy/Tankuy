@@ -63,6 +63,9 @@
       }
     }
   },
+  "stats": {
+    "title": "Statistiky"
+  },
   "history": {
     "mileage": "Nájezd",
     "empty": {
