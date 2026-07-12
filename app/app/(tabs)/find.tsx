@@ -27,6 +27,8 @@ import { AnimatedPressable } from "@/components/AnimatedComponents";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useUnits } from "@/hooks/useUnits";
+import { spacing, radii, typography } from "@/constants/Theme";
+import { Card, Badge, Button } from "@/components/ui";
 
 import StationMap, { StationMapHandle } from "@/components/StationMap";
 import NavigationOverlay, {
@@ -37,6 +39,7 @@ const { width, height } = Dimensions.get("window");
 
 // Pulsating Go Now button component
 function GoNowButton({ onPress }: { onPress: () => void }) {
+  const { colors } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -65,12 +68,12 @@ function GoNowButton({ onPress }: { onPress: () => void }) {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#FF9500",
-          paddingVertical: 14,
-          borderRadius: 12,
-          marginTop: 12,
+          backgroundColor: colors.primary,
+          paddingVertical: spacing.md,
+          borderRadius: radii.md,
+          marginTop: spacing.md,
           gap: 10,
-          shadowColor: "#FF9500",
+          shadowColor: colors.primary,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.5,
           shadowRadius: 10,
@@ -78,8 +81,9 @@ function GoNowButton({ onPress }: { onPress: () => void }) {
           transform: [{ scale: pulseAnim }],
         }}
       >
-        <FontAwesome name="location-arrow" size={18} color="#FFFFFF" />
-        <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 17 }}>
+        <FontAwesome name="location-arrow" size={18} color={colors.white} />
+        {/* fontSize 17 doesn't match a typography token (bodyBold=16); kept literal */}
+        <Text style={{ color: colors.white, fontWeight: "700", fontSize: 17 }}>
           Go Now
         </Text>
       </Animated.View>
@@ -616,7 +620,7 @@ export default function FindScreen() {
               <FontAwesome
                 name="map"
                 size={16}
-                color={viewMode === "map" ? "#FFFFFF" : colors.textSecondary}
+                color={viewMode === "map" ? colors.white : colors.textSecondary}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -629,7 +633,7 @@ export default function FindScreen() {
               <FontAwesome
                 name="list"
                 size={16}
-                color={viewMode === "list" ? "#FFFFFF" : colors.textSecondary}
+                color={viewMode === "list" ? colors.white : colors.textSecondary}
               />
             </TouchableOpacity>
           </View>
@@ -684,7 +688,7 @@ export default function FindScreen() {
 
           {/* Station Details Card - hidden during navigation */}
           {selectedStation && !isNavigating && (
-            <View style={styles.stationCard}>
+            <Card style={styles.stationCard}>
               <View style={styles.stationCardHeader}>
                 <View style={styles.stationIconContainer}>
                   <FontAwesome name="tint" size={20} color={colors.tint} />
@@ -741,9 +745,7 @@ export default function FindScreen() {
                     {mergeFuelTypes(selectedStation.fuelTypes)
                       .slice(0, 3)
                       .map((fuel, idx) => (
-                        <View key={idx} style={styles.fuelBadge}>
-                          <Text style={styles.fuelBadgeText}>{fuel}</Text>
-                        </View>
+                        <Badge key={idx} label={fuel} color={colors.textSecondary} />
                       ))}
                   </View>
                 )}
@@ -772,36 +774,38 @@ export default function FindScreen() {
                       {routeInfo.duration}
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.externalNavButton}
+                  <Button
+                    title="Maps"
+                    variant="ghost"
+                    icon={
+                      <FontAwesome
+                        name="external-link"
+                        size={14}
+                        color={colors.tint}
+                      />
+                    }
                     onPress={() => openNavigation(selectedStation)}
-                    activeOpacity={0.7}
-                  >
+                    style={styles.externalNavButton}
+                  />
+                </View>
+              )}
+              {!routeInfo && (
+                <Button
+                  title="Maps"
+                  variant="ghost"
+                  icon={
                     <FontAwesome
                       name="external-link"
                       size={14}
                       color={colors.tint}
                     />
-                    <Text style={styles.externalNavText}>Maps</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-              {!routeInfo && (
-                <TouchableOpacity
+                  }
+                  onPress={() => openNavigation(selectedStation)}
                   style={[
                     styles.externalNavButton,
-                    { marginTop: 12, alignSelf: "flex-end" },
+                    { marginTop: spacing.md, alignSelf: "flex-end" },
                   ]}
-                  onPress={() => openNavigation(selectedStation)}
-                  activeOpacity={0.7}
-                >
-                  <FontAwesome
-                    name="external-link"
-                    size={14}
-                    color={colors.tint}
-                  />
-                  <Text style={styles.externalNavText}>Maps</Text>
-                </TouchableOpacity>
+                />
               )}
               {/* Go Now button - pulsating */}
               <GoNowButton
@@ -813,7 +817,7 @@ export default function FindScreen() {
                   }
                 }}
               />
-            </View>
+            </Card>
           )}
 
           {/* Navigation Overlay */}
@@ -863,9 +867,7 @@ export default function FindScreen() {
                     {mergeFuelTypes(item.fuelTypes)
                       .slice(0, 3)
                       .map((fuel, idx) => (
-                        <View key={idx} style={styles.fuelBadge}>
-                          <Text style={styles.fuelBadgeText}>{fuel}</Text>
-                        </View>
+                        <Badge key={idx} label={fuel} color={colors.textSecondary} />
                       ))}
                   </View>
                 )}
@@ -882,7 +884,7 @@ export default function FindScreen() {
                   onPress={() => openNavigation(item)}
                   activeOpacity={0.7}
                 >
-                  <FontAwesome name="car" size={14} color="#FFFFFF" />
+                  <FontAwesome name="car" size={14} color={colors.white} />
                 </TouchableOpacity>
               </View>
             </AnimatedPressable>
@@ -922,45 +924,26 @@ const getStyles = (colors: any) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.lg,
     },
     title: {
-      fontSize: 28,
-      fontWeight: "700",
+      ...typography.title,
       color: colors.text,
     },
     viewToggle: {
       flexDirection: "row",
       backgroundColor: colors.card,
-      borderRadius: 10,
-      padding: 4,
+      borderRadius: 10, // tie between radii.sm(8)/radii.md(12)
+      padding: spacing.xs,
     },
     toggleButton: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 8,
+      paddingHorizontal: 14, // off-scale (between radii-adjacent spacing.md/lg)
+      paddingVertical: spacing.sm,
+      borderRadius: radii.sm,
     },
     toggleButtonActive: {
       backgroundColor: colors.tint,
-    },
-    searchContainer: {
-      paddingHorizontal: 20,
-      marginBottom: 12,
-    },
-    searchInputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      gap: 10,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 16,
-      color: colors.text,
     },
     mapContainer: {
       flex: 1,
@@ -969,27 +952,19 @@ const getStyles = (colors: any) =>
     map: {
       flex: 1,
     },
-    markerContainer: {
-      backgroundColor: colors.tint,
-      padding: 8,
-      borderRadius: 20,
-      borderWidth: 2,
-      borderColor: "#FFFFFF",
-    },
     loadingContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
     },
+    // Card supplies backgroundColor/borderRadius/padding; only the floating
+    // position + shadow remain here.
     stationCard: {
       position: "absolute",
-      bottom: 20,
-      left: 20,
-      right: 20,
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 16,
-      shadowColor: "#000",
+      bottom: spacing.xl,
+      left: spacing.xl,
+      right: spacing.xl,
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -1000,137 +975,113 @@ const getStyles = (colors: any) =>
       alignItems: "center",
     },
     stationIconContainer: {
-      width: 44,
+      width: 44, // fixed icon-well size
       height: 44,
-      borderRadius: 12,
+      borderRadius: radii.md,
       backgroundColor: colors.primaryLight,
       justifyContent: "center",
       alignItems: "center",
     },
     stationInfo: {
       flex: 1,
-      marginLeft: 14,
+      marginLeft: 14, // tie between spacing.md(12)/lg(16)
     },
+    // fontSize 17 doesn't match a typography token (bodyBold=16); kept literal
     stationName: {
       fontSize: 17,
       fontWeight: "600",
       color: colors.text,
     },
     stationBrand: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16)
       color: colors.textSecondary,
       marginTop: 2,
     },
     stationAddress: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16)
       color: colors.textSecondary,
-      marginTop: 12,
+      marginTop: spacing.md,
     },
     stationMeta: {
       flexDirection: "row",
-      marginTop: 12,
+      marginTop: spacing.md,
     },
     distanceBadge: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.primaryLight,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 8,
-      gap: 6,
+      paddingHorizontal: 10, // tie between spacing.sm(8)/md(12)
+      paddingVertical: 6, // tie between spacing.xs(4)/sm(8)
+      borderRadius: radii.sm,
+      gap: 6, // tie between spacing.xs(4)/sm(8)
     },
     distanceText: {
-      fontSize: 13,
+      ...typography.caption,
       fontWeight: "600",
       color: colors.tint,
     },
     listContainer: {
-      padding: 20,
-      paddingBottom: 100,
+      padding: spacing.xl,
+      paddingBottom: 100, // fixed scroll clearance
     },
     listItem: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
-      marginBottom: 10,
+      borderRadius: 14, // tie between radii.md(12)/lg(16)
+      padding: 14, // tie between spacing.md(12)/lg(16)
+      marginBottom: 10, // tie between spacing.sm(8)/md(12)
     },
     listItemIcon: {
-      width: 44,
+      width: 44, // fixed icon-well size
       height: 44,
-      borderRadius: 12,
+      borderRadius: radii.md,
       backgroundColor: colors.primaryLight,
       justifyContent: "center",
       alignItems: "center",
     },
     listItemInfo: {
       flex: 1,
-      marginLeft: 14,
+      marginLeft: 14, // tie between spacing.md(12)/lg(16)
     },
     listItemName: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.text,
     },
     listItemAddress: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textSecondary,
       marginTop: 2,
     },
     fuelTypes: {
       flexDirection: "row",
-      marginTop: 8,
-      gap: 6,
-    },
-    fuelBadge: {
-      backgroundColor: colors.elevated,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
-    },
-    fuelBadgeText: {
-      fontSize: 11,
-      color: colors.textSecondary,
-      fontWeight: "500",
+      marginTop: spacing.sm,
+      gap: 6, // tie between spacing.xs(4)/sm(8)
     },
     listItemRight: {
       alignItems: "center",
-      gap: 8,
+      gap: spacing.sm,
     },
     listItemDistance: {
       alignItems: "center",
     },
+    // fontSize 18 doesn't match a typography token (bodyBold=16/heading=20); kept literal
     distanceValue: {
       fontSize: 18,
       fontWeight: "700",
       color: colors.tint,
     },
+    // kept literal rather than spreading typography.label: label adds
+    // uppercase + letterSpacing, which would visibly change "km"/"mi"
     distanceUnit: {
       fontSize: 11,
       color: colors.textSecondary,
     },
-    navigateButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 10,
-      gap: 8,
-      marginTop: 12,
-      alignSelf: "flex-end",
-    },
-    navigateButtonText: {
-      color: "#FFFFFF",
-      fontWeight: "600",
-      fontSize: 14,
-    },
     listNavigateButton: {
       backgroundColor: colors.tint,
-      width: 32,
+      width: 32, // fixed icon-button size
       height: 32,
-      borderRadius: 8,
+      borderRadius: radii.sm,
       justifyContent: "center",
       alignItems: "center",
     },
@@ -1138,91 +1089,42 @@ const getStyles = (colors: any) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.primaryLight,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
-      marginTop: 12,
-      gap: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radii.sm,
+      marginTop: spacing.md,
+      gap: 6, // tie between spacing.xs(4)/sm(8)
     },
     routeInfoText: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16)
       fontWeight: "600",
       color: colors.tint,
     },
     routeInfoDivider: {
-      fontSize: 14,
+      fontSize: 14, // tie between caption(13)/body(16)
       color: colors.textSecondary,
       marginHorizontal: 2,
     },
-    stationActions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginTop: 12,
-      gap: 10,
-    },
+    // "Maps" is now the system Button (variant="ghost"); only the border it
+    // can't express via variants stays here as a style override.
     externalNavButton: {
-      flexDirection: "row",
-      alignItems: "center",
       borderWidth: 1,
       borderColor: colors.tint,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 10,
-      gap: 8,
-    },
-    externalNavText: {
-      color: colors.tint,
-      fontWeight: "600",
-      fontSize: 14,
-    },
-    goNowButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#34C759",
-      paddingVertical: 14,
-      borderRadius: 12,
-      marginTop: 12,
-      gap: 10,
-      shadowColor: "#34C759",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 6,
-      elevation: 4,
-    },
-    goNowText: {
-      color: "#FFFFFF",
-      fontWeight: "700",
-      fontSize: 17,
     },
     emptyList: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      paddingVertical: 80,
+      paddingVertical: 80, // fixed empty-state vertical rhythm
     },
     emptyText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.textSecondary,
-      marginTop: 16,
+      marginTop: spacing.lg,
     },
     emptySubtext: {
-      fontSize: 13,
+      ...typography.caption,
       color: colors.textMuted,
-      marginTop: 4,
-    },
-    switchToListButton: {
-      backgroundColor: colors.tint,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 10,
-      marginTop: 20,
-    },
-    switchToListText: {
-      color: "#FFFFFF",
-      fontWeight: "600",
-      fontSize: 15,
+      marginTop: spacing.xs,
     },
   });
