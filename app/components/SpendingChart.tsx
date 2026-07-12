@@ -15,6 +15,7 @@ import Svg, {
   Circle,
   G,
 } from "react-native-svg";
+import * as Haptics from "expo-haptics";
 import { useTheme } from "@/context/ThemeContext";
 
 interface SpendingChartProps {
@@ -22,6 +23,9 @@ interface SpendingChartProps {
   data: number[];
   period: "week" | "month" | "year" | "all";
   currency?: string;
+  onScrub?: (
+    point: { index: number; value: number; label: string } | null,
+  ) => void;
 }
 
 // Build smooth bezier curve path
@@ -60,8 +64,9 @@ export default function SpendingChart({
   data,
   period,
   currency = "Kč",
+  onScrub,
 }: SpendingChartProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const containerRef = useRef<View>(null);
   const containerXRef = useRef(0);
@@ -143,9 +148,16 @@ export default function SpendingChart({
         clearTimeout(hideTimeoutRef.current);
         hideTimeoutRef.current = null;
       }
-      setActiveIndex(nearest);
+
+      setActiveIndex((prev) => {
+        if (nearest !== prev) {
+          Haptics.selectionAsync(); // light tick per data point — fire-and-forget
+          onScrub?.({ index: nearest, value: data[nearest], label: labels[nearest] });
+        }
+        return nearest;
+      });
     },
-    [points, SVG_WIDTH],
+    [points, SVG_WIDTH, data, labels, onScrub],
   );
 
   const onTouchStart = (e: GestureResponderEvent) => {
@@ -155,6 +167,7 @@ export default function SpendingChart({
     findNearest(e.nativeEvent.pageX);
   };
   const onTouchEnd = () => {
+    onScrub?.(null);
     hideTimeoutRef.current = setTimeout(() => setActiveIndex(null), 2000);
   };
 
@@ -163,10 +176,8 @@ export default function SpendingChart({
   const linePath = buildPath(points, false, CHART_BOTTOM);
   const areaPath = buildPath(points, true, CHART_BOTTOM);
 
-  const accentColor = "#FF9500";
-  const gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
-  const yLabelColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.3)";
-  const xLabelColor = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)";
+  const accentColor = colors.tint;
+  const labelColor = colors.textSecondary;
 
   // Safe active point (bounds check)
   const safeActive =
@@ -195,6 +206,7 @@ export default function SpendingChart({
       onResponderGrant={onTouchStart}
       onResponderMove={onTouchMove}
       onResponderRelease={onTouchEnd}
+      onResponderTerminate={onTouchEnd}
     >
       {/* Y-axis labels above chart as RN Text for perfect readability */}
       <View style={styles.yLabels}>
@@ -204,7 +216,7 @@ export default function SpendingChart({
             style={[
               styles.yLabel,
               {
-                color: yLabelColor,
+                color: labelColor,
                 top: line.y - 14,
                 left: PADDING_LEFT,
               },
@@ -218,24 +230,21 @@ export default function SpendingChart({
       <Svg width={SVG_WIDTH} height={SVG_HEIGHT}>
         <Defs>
           <LinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={accentColor} stopOpacity="0.25" />
-            <Stop offset="0.6" stopColor={accentColor} stopOpacity="0.06" />
+            <Stop offset="0" stopColor={accentColor} stopOpacity="0.08" />
+            <Stop offset="0.6" stopColor={accentColor} stopOpacity="0.02" />
             <Stop offset="1" stopColor={accentColor} stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
-        {/* Horizontal grid lines */}
-        {gridLines.map((line, i) => (
-          <Line
-            key={`grid-${i}`}
-            x1={PADDING_LEFT}
-            y1={line.y}
-            x2={SVG_WIDTH - PADDING_RIGHT}
-            y2={line.y}
-            stroke={gridColor}
-            strokeWidth="1"
-          />
-        ))}
+        {/* Bottom hairline only — Clean Minimal drops the interior gridlines */}
+        <Line
+          x1={PADDING_LEFT}
+          y1={CHART_BOTTOM}
+          x2={SVG_WIDTH - PADDING_RIGHT}
+          y2={CHART_BOTTOM}
+          stroke={colors.border}
+          strokeWidth="1"
+        />
 
         {/* Area fill */}
         <Path d={areaPath} fill="url(#areaGrad)" />
@@ -258,7 +267,7 @@ export default function SpendingChart({
               cx={p.x}
               cy={p.y}
               r={activeIndex === i ? 0 : 3}
-              fill={isDark ? "#1C1C1E" : "#FFFFFF"}
+              fill={colors.card}
               stroke={accentColor}
               strokeWidth={1.5}
             />
@@ -277,14 +286,14 @@ export default function SpendingChart({
               strokeDasharray="4,3"
               opacity={0.4}
             />
-            {/* Active dot — larger, filled */}
+            {/* Active dot — filled with a card-colored ring */}
             <Circle
               cx={activePoint.x}
               cy={activePoint.y}
-              r={7}
+              r={4}
               fill={accentColor}
-              stroke={isDark ? "#1C1C1E" : "#FFFFFF"}
-              strokeWidth={3}
+              stroke={colors.card}
+              strokeWidth={2}
             />
           </G>
         )}
@@ -298,7 +307,7 @@ export default function SpendingChart({
             style={[
               styles.xLabel,
               {
-                color: xLabelColor,
+                color: labelColor,
                 left: points[index]?.x || 0,
               },
             ]}
@@ -316,12 +325,8 @@ export default function SpendingChart({
             {
               left: tooltipLeft,
               top: tooltipTop,
-              backgroundColor: isDark
-                ? "rgba(44,44,46,0.95)"
-                : "rgba(255,255,255,0.97)",
-              borderColor: isDark
-                ? "rgba(255,255,255,0.08)"
-                : "rgba(0,0,0,0.06)",
+              backgroundColor: colors.elevated,
+              borderColor: colors.border,
             },
           ]}
         >
@@ -329,10 +334,7 @@ export default function SpendingChart({
             {data[safeActive].toLocaleString()} {currency}
           </Text>
           <Text
-            style={[
-              styles.tooltipLabel,
-              { color: isDark ? "#8E8E93" : "#6E6E73" },
-            ]}
+            style={[styles.tooltipLabel, { color: colors.textSecondary }]}
           >
             {labels[safeActive]}
           </Text>
