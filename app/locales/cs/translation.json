@@ -1,8 +1,5 @@
 {
   "home": {
-    "greeting": "Ahoj, {{name}}",
-    "greetingDefault": "Ahoj",
-    "subGreeting": "Sleduj své výdaje za palivo",
     "periods": {
       "week": "Týden",
       "month": "Měsíc",
@@ -27,17 +24,6 @@
       "avgDistBetweenFills": "Průměrně {{unit}} na nádrž",
       "costPerDist": "Cena/{{unit}}",
       "avgConsumption": "Prům. spotřeba"
-    },
-    "chart": {
-      "title": "Přehled výdajů",
-      "noData": "Zatím žádná data",
-      "startTracking": "Začněte sledovat pro zobrazení výdajů"
-    },
-    "recent": {
-      "title": "Nedávné záznamy",
-      "noEntries": "Zatím žádné záznamy",
-      "scanFirst": "Naskenujte účtenku a přidejte svůj první záznam",
-      "scanAction": "Naskenovat účtenku"
     },
     "insights": {
       "title": "Zajímavosti",

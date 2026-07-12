@@ -1,8 +1,5 @@
 {
   "home": {
-    "greeting": "Hello, {{name}}",
-    "greetingDefault": "Hello there",
-    "subGreeting": "Track your fuel expenses",
     "periods": {
       "week": "Week",
       "month": "Month",
@@ -27,17 +24,6 @@
       "avgDistBetweenFills": "Avg {{unit}} between fills",
       "costPerDist": "Cost/{{unit}}",
       "avgConsumption": "Avg Consumption"
-    },
-    "chart": {
-      "title": "Spending Overview",
-      "noData": "No data yet",
-      "startTracking": "Start tracking to see your spending"
-    },
-    "recent": {
-      "title": "Recent Entries",
-      "noEntries": "No entries yet",
-      "scanFirst": "Scan a receipt to add your first entry",
-      "scanAction": "Scan Receipt"
     },
     "insights": {
       "title": "Fun Facts",

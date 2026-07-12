@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/context/ThemeContext";
 import api, { Stats } from "@/services/api";
 import { useUnits } from "@/hooks/useUnits";
-import { Card, ScreenHeader } from "@/components/ui";
+import { Card, ScreenHeader, SectionHeader } from "@/components/ui";
 import { spacing, radii, typography } from "@/constants/Theme";
 import { FadeInView } from "@/components/AnimatedComponents";
 
@@ -147,6 +147,8 @@ export default function StatsScreen() {
     },
   ];
 
+  const hasData = stats?.summary?.total_tanks && stats.summary.total_tanks > 0;
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScreenHeader
@@ -187,6 +189,162 @@ export default function StatsScreen() {
                 </FadeInView>
               ))}
         </View>
+
+        {/* ── Insights — ported from the pre-redesign dashboard ── */}
+        {!loading && stats?.insights && hasData && (
+          <FadeInView delay={520} translateY={20}>
+            <View style={styles.insightsSection}>
+              <SectionHeader title={t("home.insights.title")} />
+
+              <View style={styles.insightsGrid}>
+                {/* Favorite Station */}
+                {stats.insights.favoriteStation && (
+                  <InsightCard
+                    iconName="heart"
+                    iconColor={colors.error}
+                    bgColor={`${colors.error}1A`}
+                    label={t("home.insights.favoriteStation")}
+                    value={stats.insights.favoriteStation.name}
+                    sub={t("home.insights.favoriteStationDesc", {
+                      count: stats.insights.favoriteStation.count,
+                    })}
+                    styles={styles}
+                    delay={560}
+                  />
+                )}
+
+                {/* Most Expensive */}
+                {stats.insights.mostExpensive && (
+                  <InsightCard
+                    iconName="money"
+                    iconColor={colors.primary}
+                    bgColor={`${colors.primary}1A`}
+                    label={t("home.insights.mostExpensive")}
+                    value={`${formatNumber(convertCurrency(stats.insights.mostExpensive.cost), 0)} ${currencySymbol}`}
+                    sub={t("home.insights.mostExpensiveDesc", {
+                      cost: "",
+                      date: new Date(stats.insights.mostExpensive.date).toLocaleDateString(),
+                    })}
+                    styles={styles}
+                    delay={620}
+                  />
+                )}
+
+                {/* Cheapest Liters */}
+                {stats.insights.cheapestLiters && (
+                  <InsightCard
+                    iconName="tag"
+                    // Duplicate of stats.green — collapses to the palette success color.
+                    iconColor={colors.success}
+                    bgColor={`${colors.success}1A`}
+                    label={t("home.insights.cheapest")}
+                    value={`${formatNumber(formatPricePerVolume(stats.insights.cheapestLiters.price))} ${currencySymbol}/${volumeUnit}`}
+                    sub={t("home.insights.cheapestDesc", {
+                      price: "",
+                      date: new Date(stats.insights.cheapestLiters.date).toLocaleDateString(),
+                    })}
+                    styles={styles}
+                    delay={680}
+                  />
+                )}
+
+                {/* Most Expensive Liter */}
+                {stats.insights.mostExpensiveLiter && (
+                  <InsightCard
+                    iconName="fire"
+                    iconColor={colors.error}
+                    bgColor={`${colors.error}1A`}
+                    label={t("home.insights.mostExpensivePrice", { unit: volumeUnit })}
+                    value={`${formatNumber(formatPricePerVolume(stats.insights.mostExpensiveLiter.price))} ${currencySymbol}/${volumeUnit}`}
+                    sub={t("home.insights.mostExpensiveLiterDesc", {
+                      price: "",
+                      date: new Date(stats.insights.mostExpensiveLiter.date).toLocaleDateString(),
+                    })}
+                    styles={styles}
+                    delay={720}
+                  />
+                )}
+
+                {/* Biggest Fill-up */}
+                {stats.insights.biggestFillUp && (
+                  <InsightCard
+                    iconName="tachometer"
+                    iconColor={colors.stats.blue}
+                    bgColor={`${colors.stats.blue}1A`}
+                    label={t("home.insights.biggest")}
+                    value={`${formatNumber(formatVolume(stats.insights.biggestFillUp.liters))} ${volumeUnit}`}
+                    sub={t("home.insights.biggestDesc", {
+                      liters: "",
+                      date: new Date(stats.insights.biggestFillUp.date).toLocaleDateString(),
+                    })}
+                    styles={styles}
+                    delay={760}
+                  />
+                )}
+
+                {/* Smallest Fill-up */}
+                {stats.insights.smallestFillUp && (
+                  <InsightCard
+                    iconName="battery-1"
+                    iconColor={colors.stats.lightBlue}
+                    bgColor={`${colors.stats.lightBlue}1A`}
+                    label={t("home.insights.smallest")}
+                    value={`${formatNumber(formatVolume(stats.insights.smallestFillUp.liters))} ${volumeUnit}`}
+                    sub={t("home.insights.smallestDesc", {
+                      liters: "",
+                      date: new Date(stats.insights.smallestFillUp.date).toLocaleDateString(),
+                    })}
+                    styles={styles}
+                    delay={800}
+                  />
+                )}
+
+                {/* Favorite Day */}
+                {stats.insights.favoriteDay && (
+                  <InsightCard
+                    iconName="calendar"
+                    iconColor={colors.stats.purple}
+                    bgColor={`${colors.stats.purple}1A`}
+                    label={t("home.insights.favoriteDay")}
+                    value={t(`home.insights.dayName.${stats.insights.favoriteDay.day}`)}
+                    sub={t("home.insights.favoriteDayDesc", {
+                      count: stats.insights.favoriteDay.count,
+                      day: t(`home.insights.dayName.${stats.insights.favoriteDay.day}`).toLowerCase(),
+                    })}
+                    styles={styles}
+                    delay={840}
+                  />
+                )}
+
+                {/* Last Fill-Up */}
+                {stats.insights.lastFillUpDays != null && (
+                  <InsightCard
+                    iconName="history"
+                    iconColor={colors.stats.indigo}
+                    bgColor={`${colors.stats.indigo}1A`}
+                    label={t("home.insights.lastFillUp")}
+                    value={
+                      stats.insights.lastFillUpDays === 0
+                        ? t("home.insights.lastFillUpToday")
+                        : stats.insights.lastFillUpDays === 1
+                          ? t("home.insights.lastFillUpYesterday")
+                          : t("home.insights.lastFillUpDays", { days: stats.insights.lastFillUpDays })
+                    }
+                    sub={
+                      stats.insights.lastFillUpDays === 0
+                        ? t("home.insights.lastFillUpToday")
+                        : stats.insights.lastFillUpDays === 1
+                          ? t("home.insights.lastFillUpYesterday")
+                          : t("home.insights.lastFillUpDays", { days: stats.insights.lastFillUpDays })
+                    }
+                    styles={styles}
+                    delay={880}
+                  />
+                )}
+              </View>
+            </View>
+          </FadeInView>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -215,6 +373,41 @@ function StatsTile({
       <Text style={styles.tileValue}>{value}</Text>
       <Text style={styles.tileLabel}>{label}</Text>
     </Card>
+  );
+}
+
+function InsightCard({
+  iconName,
+  iconColor,
+  bgColor,
+  label,
+  value,
+  sub,
+  styles,
+  delay,
+}: {
+  iconName: string;
+  iconColor: string;
+  bgColor: string;
+  label: string;
+  value: string;
+  sub: string;
+  styles: any;
+  delay: number;
+}) {
+  return (
+    <FadeInView delay={delay} translateY={12}>
+      <Card style={styles.insightCard}>
+        <View style={[styles.insightIcon, { backgroundColor: bgColor }]}>
+          <FontAwesome name={iconName as any} size={20} color={iconColor} />
+        </View>
+        <View style={styles.insightContent}>
+          <Text style={styles.insightLabel}>{label}</Text>
+          <Text style={styles.insightValue}>{value}</Text>
+          <Text style={styles.insightSub}>{sub}</Text>
+        </View>
+      </Card>
+    </FadeInView>
   );
 }
 
@@ -293,5 +486,48 @@ const getStyles = (colors: any) =>
       height: 13,
       borderRadius: radii.sm,
       backgroundColor: colors.inputBackground,
+    },
+
+    // ── Insights ────────────────────────────────────────────
+    insightsSection: {
+      marginTop: spacing.xxl,
+      paddingBottom: spacing.sm,
+    },
+    insightsGrid: {
+      gap: spacing.md,
+    },
+    // Background/radius/padding/shadow come from the Card component; this
+    // only lays out the icon + text row.
+    insightCard: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    insightIcon: {
+      width: 48, // circular icon avatar, not on the spacing scale
+      height: 48,
+      borderRadius: 24, // radius = size / 2, not on the radii scale
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: spacing.lg,
+    },
+    insightContent: {
+      flex: 1,
+    },
+    insightLabel: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    insightValue: {
+      // Kept literal (not typography.title): fontSize 17 is off-scale and the
+      // token's lineHeight (34, sized for 28px) would make each insight card taller.
+      fontSize: 17,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    insightSub: {
+      ...typography.caption,
+      color: colors.textMuted,
     },
   });

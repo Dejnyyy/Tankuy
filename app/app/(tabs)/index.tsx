@@ -6,6 +6,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -83,8 +84,6 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  // Kept for a future date-navigation control — not wired to any element in
-  // the chart-first header, which now shows only the resolved period label.
   const changeDate = (amount: number) => {
     const newDate = new Date(currentDate);
     if (period === "week") {
@@ -176,6 +175,7 @@ export default function HomeScreen() {
         }
         return `${formatNumber(c, 1)} L/100km`;
       })(),
+      // Duplicate of stats.green — collapses to the palette success color.
       color: colors.success,
     },
     {
@@ -217,7 +217,35 @@ export default function HomeScreen() {
         {/* ── Header: period caption + pills ─────────────────── */}
         <FadeInView delay={0} translateY={12}>
           <View style={styles.header}>
-            <Text style={styles.headerCaption}>{formattedPeriod()}</Text>
+            <View style={styles.dateNav}>
+              {period !== "all" && (
+                <Pressable
+                  onPress={() => changeDate(-1)}
+                  hitSlop={spacing.sm}
+                  accessibilityRole="button"
+                >
+                  <FontAwesome
+                    name="chevron-left"
+                    size={12}
+                    color={colors.textSecondary}
+                  />
+                </Pressable>
+              )}
+              <Text style={styles.headerCaption}>{formattedPeriod()}</Text>
+              {period !== "all" && (
+                <Pressable
+                  onPress={() => changeDate(1)}
+                  hitSlop={spacing.sm}
+                  accessibilityRole="button"
+                >
+                  <FontAwesome
+                    name="chevron-right"
+                    size={12}
+                    color={colors.textSecondary}
+                  />
+                </Pressable>
+              )}
+            </View>
             <View style={styles.periodPills}>
               {(["week", "month", "year", "all"] as const).map((p) => (
                 <TouchableOpacity
@@ -382,6 +410,14 @@ const getStyles = (colors: any) =>
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.lg,
       paddingBottom: spacing.sm,
+    },
+    dateNav: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      // Keeps the pills from crowding the label + chevrons on narrow screens.
+      flexShrink: 1,
+      marginRight: spacing.sm,
     },
     headerCaption: {
       ...typography.caption,
