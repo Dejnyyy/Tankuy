@@ -147,7 +147,7 @@ export default function StatsScreen() {
     },
   ];
 
-  const hasData = stats?.summary?.total_tanks && stats.summary.total_tanks > 0;
+  const hasData = (stats?.summary?.total_tanks ?? 0) > 0;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>

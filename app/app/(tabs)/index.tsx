@@ -133,7 +133,7 @@ export default function HomeScreen() {
     ],
   };
 
-  const hasData = stats?.summary?.total_tanks && stats.summary.total_tanks > 0;
+  const hasData = (stats?.summary?.total_tanks ?? 0) > 0;
 
   // Hero value: the scrubbed chart point while dragging, otherwise the
   // period total. Both are already run through convertCurrency, so the

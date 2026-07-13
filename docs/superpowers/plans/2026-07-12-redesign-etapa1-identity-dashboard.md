@@ -490,6 +490,8 @@ Keep ALL existing data hooks/state (`period`, `stats` fetch, unit/currency helpe
 // 2. Hero: <AnimatedNumber value={heroValue} format={fmtCurrency} style={[typography.hero, { color: colors.text }]} />
 //    where heroValue = scrubPoint ? scrubPoint.value : totalSpent, and
 //    fmtCurrency wraps the existing convertCurrency/formatNumber helpers.
+//    IMPORTANT: fmtCurrency must be wrapped in useCallback (stable reference) —
+//    AnimatedNumber resubscribes its animated reaction when format changes.
 //    Under it the trend line: caption, colors.success + '▼' when spend decreased
 //    vs previous period, colors.tint + '▲' when increased (the API's stats
 //    payload already carries the previous-period comparison the current

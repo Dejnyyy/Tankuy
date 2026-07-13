@@ -1,0 +1,82 @@
+<h2>Layout dashboardu v Clean Minimal stylu</h2>
+<p class="subtitle">Tři uspořádání hlavní obrazovky. Všechny počítají s velkým číslem měsíční útraty jako hero — liší se tím, co následuje a jak se přidává tankování.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="hero-stats-list" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#EFEDE8;padding:16px;display:flex;justify-content:center;">
+      <div style="width:225px;background:#FAF9F7;border-radius:20px;padding:14px;font-family:-apple-system,sans-serif;position:relative;height:340px;overflow:hidden;">
+        <div style="color:#8A8578;font-size:10px;">Červenec</div>
+        <div style="color:#141414;font-size:32px;font-weight:800;letter-spacing:-1.5px;">2 480 Kč</div>
+        <div style="color:#FF9500;font-size:10px;font-weight:600;">▼ 12 %</div>
+        <div style="margin-top:10px;height:30px;"><svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none"><path d="M0,24 C30,20 45,8 70,12 C95,16 110,4 140,7 C165,10 180,16 200,10" stroke="#141414" stroke-width="1.5" fill="none"/></svg></div>
+        <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden;">
+          <div style="min-width:70px;background:#F1EFE9;border-radius:12px;padding:8px;"><div style="color:#141414;font-size:13px;font-weight:700;">142 L</div><div style="color:#8A8578;font-size:8px;">natankováno</div></div>
+          <div style="min-width:70px;background:#F1EFE9;border-radius:12px;padding:8px;"><div style="color:#141414;font-size:13px;font-weight:700;">6,4</div><div style="color:#8A8578;font-size:8px;">L/100 km</div></div>
+          <div style="min-width:70px;background:#F1EFE9;border-radius:12px;padding:8px;"><div style="color:#141414;font-size:13px;font-weight:700;">36,9</div><div style="color:#8A8578;font-size:8px;">Kč/L</div></div>
+        </div>
+        <div style="margin-top:12px;color:#8A8578;font-size:9px;text-transform:uppercase;letter-spacing:1px;">Poslední tankování</div>
+        <div style="border-bottom:1px solid #E3E0D8;padding:8px 0;display:flex;justify-content:space-between;"><span style="color:#141414;font-size:11px;font-weight:600;">Shell · Brno</span><span style="color:#141414;font-size:11px;font-weight:700;">820 Kč</span></div>
+        <div style="border-bottom:1px solid #E3E0D8;padding:8px 0;display:flex;justify-content:space-between;"><span style="color:#141414;font-size:11px;font-weight:600;">Tank ONO</span><span style="color:#141414;font-size:11px;font-weight:700;">640 Kč</span></div>
+        <div style="position:absolute;bottom:14px;right:14px;width:44px;height:44px;background:#141414;border-radius:99px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 6px 16px rgba(0,0,0,.25);">+</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Hero → statistiky → seznam + FAB</h3>
+      <p>Velké číslo, sparkline, vodorovný pás stat karet, poslední tankování jako čistý seznam. Černý floating „+" vpravo dole = přidat tankování odkudkoli (sken i ručně).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="chart-first" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#EFEDE8;padding:16px;display:flex;justify-content:center;">
+      <div style="width:225px;background:#FAF9F7;border-radius:20px;padding:14px;font-family:-apple-system,sans-serif;height:340px;overflow:hidden;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div><div style="color:#8A8578;font-size:10px;">Červenec</div><div style="color:#141414;font-size:26px;font-weight:800;letter-spacing:-1px;">2 480 Kč</div></div>
+          <div style="display:flex;gap:4px;"><span style="background:#141414;color:#fff;border-radius:99px;padding:3px 8px;font-size:8px;">Měsíc</span><span style="background:#F1EFE9;color:#8A8578;border-radius:99px;padding:3px 8px;font-size:8px;">Rok</span></div>
+        </div>
+        <div style="margin-top:12px;height:110px;background:#F5F3EE;border-radius:14px;padding:8px;">
+          <svg width="100%" height="94" viewBox="0 0 200 94" preserveAspectRatio="none">
+            <path d="M0,80 C30,70 45,30 70,42 C95,54 110,14 140,22 C165,28 180,52 200,36" stroke="#FF9500" stroke-width="2.5" fill="none"/>
+            <path d="M0,80 C30,70 45,30 70,42 C95,54 110,14 140,22 C165,28 180,52 200,36 L200,94 L0,94 Z" fill="#FF9500" opacity=".08"/>
+            <circle cx="140" cy="22" r="4" fill="#FF9500"/>
+          </svg>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;">
+          <div style="flex:1;background:#F1EFE9;border-radius:12px;padding:8px;"><div style="color:#141414;font-size:13px;font-weight:700;">142 L</div><div style="color:#8A8578;font-size:8px;">objem</div></div>
+          <div style="flex:1;background:#F1EFE9;border-radius:12px;padding:8px;"><div style="color:#141414;font-size:13px;font-weight:700;">6,4</div><div style="color:#8A8578;font-size:8px;">L/100</div></div>
+        </div>
+        <div style="margin-top:10px;background:#141414;border-radius:14px;padding:12px;text-align:center;color:#fff;font-size:11px;font-weight:700;">📷 Naskenovat účtenku</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Graf jako srdce obrazovky</h3>
+      <p>Interaktivní graf hned pod číslem, přepínač období nahoře, velké černé CTA „Naskenovat účtenku" přímo na dashboardu. Seznam tankování žije jen v Historii.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="cards-feed" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#EFEDE8;padding:16px;display:flex;justify-content:center;">
+      <div style="width:225px;background:#FAF9F7;border-radius:20px;padding:14px;font-family:-apple-system,sans-serif;height:340px;overflow:hidden;">
+        <div style="color:#8A8578;font-size:10px;">Červenec</div>
+        <div style="color:#141414;font-size:32px;font-weight:800;letter-spacing:-1.5px;">2 480 Kč</div>
+        <div style="margin-top:10px;background:#FFF;border:1px solid #E9E6DE;border-radius:16px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+          <div style="color:#8A8578;font-size:8px;text-transform:uppercase;letter-spacing:1px;">Spotřeba</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#141414;font-size:16px;font-weight:800;">6,4 L/100 km</span><span style="color:#30A46C;font-size:9px;font-weight:700;">▼ zlepšení</span></div>
+        </div>
+        <div style="margin-top:8px;background:#FFF;border:1px solid #E9E6DE;border-radius:16px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+          <div style="color:#8A8578;font-size:8px;text-transform:uppercase;letter-spacing:1px;">Tip</div>
+          <div style="color:#141414;font-size:11px;font-weight:600;">Nejlevněji tankuješ u Tank ONO — průměrně o 1,20 Kč/L méně.</div>
+        </div>
+        <div style="margin-top:8px;background:#FFF;border:1px solid #E9E6DE;border-radius:16px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+          <div style="color:#8A8578;font-size:8px;text-transform:uppercase;letter-spacing:1px;">Poslední tankování</div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:#141414;font-size:11px;font-weight:600;">Shell · včera</span><span style="color:#141414;font-size:12px;font-weight:800;">820 Kč</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Feed chytrých karet</h3>
+      <p>Pod hero číslem svislý feed karet: spotřeba, personalizované tipy („kde tankuješ nejlevněji"), poslední tankování. Appka působí, že „myslí za tebe" — ale tipy je potřeba dopočítávat.</p>
+    </div>
+  </div>
+
+</div>
