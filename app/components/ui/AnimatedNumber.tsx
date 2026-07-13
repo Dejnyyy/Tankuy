@@ -14,11 +14,13 @@ interface AnimatedNumberProps {
   format: (n: number) => string;
   style?: StyleProp<TextStyle>;
   duration?: number;
+  /** Optional start value for initial animation. When provided, animates from→value on mount. Only used once; later changes to this prop are ignored. */
+  from?: number;
 }
 
-export function AnimatedNumber({ value, format, style, duration = 600 }: AnimatedNumberProps) {
-  const progress = useSharedValue(value);
-  const [display, setDisplay] = useState(() => format(value));
+export function AnimatedNumber({ value, format, style, duration = 600, from }: AnimatedNumberProps) {
+  const progress = useSharedValue(from !== undefined ? from : value);
+  const [display, setDisplay] = useState(() => format(from !== undefined ? from : value));
 
   useEffect(() => {
     progress.value = withTiming(value, {

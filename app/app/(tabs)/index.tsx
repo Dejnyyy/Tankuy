@@ -283,6 +283,7 @@ export default function HomeScreen() {
                 value={heroValue}
                 format={fmtCurrency}
                 style={[typography.hero, { color: colors.text }]}
+                from={0}
               />
               <Text style={styles.heroCaption}>{heroCaption}</Text>
             </>
