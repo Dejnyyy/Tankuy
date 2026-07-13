@@ -14,6 +14,10 @@
       "title": "No entries yet",
       "message": "Scan a receipt to add your first entry"
     },
+    "emptyPeriod": {
+      "title": "No fill-ups in this period",
+      "message": "Try another period or add a new entry."
+    },
     "stats": {
       "totalSpent": "Total Spent",
       "totalVolume": "Total {{unit}}",

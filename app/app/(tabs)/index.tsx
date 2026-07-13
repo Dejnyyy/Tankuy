@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentEntries, setRecentEntries] = useState<FuelEntry[]>([]);
-  const [_loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<"week" | "month" | "year" | "all">(
     "month",
@@ -275,17 +275,25 @@ export default function HomeScreen() {
 
         {/* ── Hero ─────────────────────────────────────────────── */}
         <View style={styles.heroSection}>
-          <AnimatedNumber
-            value={heroValue}
-            format={fmtCurrency}
-            style={[typography.hero, { color: colors.text }]}
-          />
-          <Text style={styles.heroCaption}>{heroCaption}</Text>
+          {loading && !stats ? (
+            <View style={styles.skeletonHero} />
+          ) : (
+            <>
+              <AnimatedNumber
+                value={heroValue}
+                format={fmtCurrency}
+                style={[typography.hero, { color: colors.text }]}
+              />
+              <Text style={styles.heroCaption}>{heroCaption}</Text>
+            </>
+          )}
         </View>
 
         {/* ── Chart / empty state ──────────────────────────────── */}
         <ScaleInView delay={120}>
-          {hasData ? (
+          {loading && !stats ? (
+            <View style={styles.skeletonChart} />
+          ) : hasData ? (
             <Card padded={false} style={styles.chartCard}>
               <SpendingChart
                 labels={chartData.labels}
@@ -295,6 +303,15 @@ export default function HomeScreen() {
                 onScrub={setScrubPoint}
               />
             </Card>
+          ) : recentEntries.length > 0 ? (
+            // User has data overall, just not in this period — period-neutral
+            // copy, no CTA (the last-entry row below stays visible and isn't
+            // contradictory with this wording).
+            <EmptyState
+              icon={<FontAwesome name="tint" size={48} color={colors.tint} />}
+              title={t("home.emptyPeriod.title")}
+              message={t("home.emptyPeriod.message")}
+            />
           ) : (
             <EmptyState
               icon={<FontAwesome name="tint" size={48} color={colors.tint} />}
@@ -367,7 +384,12 @@ export default function HomeScreen() {
         <Button
           title={t("home.scanReceipt")}
           icon={<FontAwesome name="camera" size={18} color={colors.buttonPrimaryText} />}
-          onPress={() => router.push("/(tabs)/scan")}
+          onPress={() =>
+            router.push({
+              pathname: "/(tabs)/scan",
+              params: { mode: "camera", ts: String(Date.now()) },
+            })
+          }
           style={styles.scanButton}
         />
         <Button
@@ -375,7 +397,10 @@ export default function HomeScreen() {
           variant="ghost"
           size="sm"
           onPress={() =>
-            router.push({ pathname: "/(tabs)/scan", params: { mode: "manual" } })
+            router.push({
+              pathname: "/(tabs)/scan",
+              params: { mode: "manual", ts: String(Date.now()) },
+            })
           }
         />
       </View>
@@ -468,6 +493,23 @@ const getStyles = (colors: any) =>
       marginTop: spacing.xl,
       paddingVertical: spacing.lg,
       overflow: "hidden",
+    },
+
+    // ── Skeleton (loading) ───────────────────────────────────
+    // Same pattern as app/stats.tsx: rounded rects on colors.inputBackground,
+    // no spinner. Roughly hero-height / chart-card-height placeholders.
+    skeletonHero: {
+      width: "60%",
+      height: 40,
+      borderRadius: radii.sm,
+      backgroundColor: colors.inputBackground,
+    },
+    skeletonChart: {
+      height: 180,
+      marginHorizontal: spacing.xl,
+      marginTop: spacing.xl,
+      borderRadius: radii.lg,
+      backgroundColor: colors.inputBackground,
     },
 
     // ── Stat strip ─────────────────────────────────────────

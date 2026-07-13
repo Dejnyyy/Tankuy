@@ -25,7 +25,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
-      .then((v) => setStoredTheme((v as Theme) ?? null))
+      .then((v) => setStoredTheme(v === 'light' || v === 'dark' ? v : null))
       .catch((e) => console.error('Failed to load theme:', e));
   }, []);
 

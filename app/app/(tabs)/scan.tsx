@@ -83,7 +83,7 @@ export default function ScanScreen() {
     toMetricPrice,
   } = useUnits();
 
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { mode, ts } = useLocalSearchParams<{ mode?: string; ts?: string }>();
   const [scanState, setScanState] = useState<ScanState>("camera");
   const [scanResult, setScanResult] = useState<ReceiptScanResult | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -244,13 +244,18 @@ export default function ScanScreen() {
     getUserLocation();
   }, []);
 
-  // Dashboard's "Enter manually" CTA deep-links here with ?mode=manual —
-  // jump straight to the manual entry form instead of the camera.
+  // Dashboard's CTAs deep-link here with ?mode=manual|camera&ts=<nonce> —
+  // jump straight to the manual form or the camera. `ts` is a per-tap nonce
+  // (Date.now()) so repeated taps of the same CTA re-fire this effect even
+  // though `mode` itself didn't change identity, and scanState (which
+  // persists across tab switches) gets forced back to the intended state.
   useEffect(() => {
     if (mode === "manual") {
       setScanState("manual");
+    } else if (mode === "camera") {
+      setScanState("camera");
     }
-  }, [mode]);
+  }, [mode, ts]);
 
   // Fetch suggestions when query changes
   useEffect(() => {
