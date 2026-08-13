@@ -63,6 +63,24 @@ export async function sendPushToUser(userId, payload) {
   return sendPushTo(rows, payload);
 }
 
+// SSRF guard: push endpoints must be HTTPS URLs pointing at a public hostname,
+// never an IP literal or internal name — web-push POSTs to this URL from the server.
+function isValidPushEndpoint(endpoint) {
+  if (typeof endpoint !== 'string' || endpoint.length > 500) return false;
+  let url;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:') return false;
+  const host = url.hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return false;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':')) return false;
+  if (!host.includes('.')) return false;
+  return true;
+}
+
 // GET /api/push/public-key — VAPID public key for the browser
 router.get('/public-key', (req, res) => {
   if (!pushEnabled) return res.status(503).json({ error: 'Push not configured' });
@@ -73,6 +91,10 @@ router.get('/public-key', (req, res) => {
 router.post('/subscribe', authMiddleware, async (req, res) => {
   const sub = req.body && req.body.subscription;
   if (!sub || !sub.endpoint || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) {
+    return res.status(400).json({ error: 'Invalid subscription' });
+  }
+  if (!isValidPushEndpoint(sub.endpoint) ||
+      String(sub.keys.p256dh).length > 255 || String(sub.keys.auth).length > 255) {
     return res.status(400).json({ error: 'Invalid subscription' });
   }
   try {
@@ -88,12 +110,15 @@ router.post('/subscribe', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/push/unsubscribe — remove a subscription by endpoint
-router.post('/unsubscribe', async (req, res) => {
+// POST /api/push/unsubscribe — remove one of the signed-in user's subscriptions
+router.post('/unsubscribe', authMiddleware, async (req, res) => {
   const endpoint = req.body && req.body.endpoint;
   if (!endpoint) return res.status(400).json({ error: 'Missing endpoint' });
   try {
-    await pool.execute('DELETE FROM push_subscriptions WHERE endpoint = ?', [endpoint]);
+    await pool.execute(
+      'DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?',
+      [endpoint, String(req.user.userId)]
+    );
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
