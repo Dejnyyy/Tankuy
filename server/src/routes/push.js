@@ -63,8 +63,17 @@ export async function sendPushToUser(userId, payload) {
   return sendPushTo(rows, payload);
 }
 
-// SSRF guard: push endpoints must be HTTPS URLs pointing at a public hostname,
-// never an IP literal or internal name — web-push POSTs to this URL from the server.
+// SSRF guard: web-push POSTs to this URL from the server, so only accept
+// endpoints hosted by the browsers' real push services (hostname allowlist —
+// a plain "public hostname" check is bypassable via attacker-controlled DNS).
+const PUSH_HOST_ALLOWLIST = [
+  /^fcm\.googleapis\.com$/,                      // Chrome / Chromium
+  /^updates\.push\.services\.mozilla\.com$/,     // Firefox
+  /(^|\.)push\.services\.mozilla\.com$/,         // Firefox (regional)
+  /(^|\.)push\.apple\.com$/,                     // Safari / iOS
+  /(^|\.)notify\.windows\.com$/,                 // Edge (WNS)
+];
+
 function isValidPushEndpoint(endpoint) {
   if (typeof endpoint !== 'string' || endpoint.length > 500) return false;
   let url;
@@ -75,10 +84,7 @@ function isValidPushEndpoint(endpoint) {
   }
   if (url.protocol !== 'https:') return false;
   const host = url.hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return false;
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':')) return false;
-  if (!host.includes('.')) return false;
-  return true;
+  return PUSH_HOST_ALLOWLIST.some((re) => re.test(host));
 }
 
 // GET /api/push/public-key — VAPID public key for the browser
