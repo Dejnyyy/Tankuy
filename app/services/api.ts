@@ -396,6 +396,31 @@ class ApiService {
     );
   }
 
+  // Push notifications (web PWA)
+  async getPushPublicKey() {
+    return this.request<{ key: string }>("/api/push/public-key");
+  }
+
+  async savePushSubscription(subscription: unknown) {
+    return this.request<{ ok: boolean }>("/api/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify({ subscription }),
+    });
+  }
+
+  async deletePushSubscription(endpoint: string) {
+    return this.request<{ ok: boolean }>("/api/push/unsubscribe", {
+      method: "POST",
+      body: JSON.stringify({ endpoint }),
+    });
+  }
+
+  async sendTestPush() {
+    return this.request<{ ok: boolean; sent: number }>("/api/push/test", {
+      method: "POST",
+    });
+  }
+
   async autocompleteStations(query: string, lat?: number, lng?: number) {
     let url = `/api/stations/autocomplete?query=${encodeURIComponent(query)}`;
     if (lat && lng) {

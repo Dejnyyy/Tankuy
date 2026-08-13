@@ -37,6 +37,14 @@ import {
 } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
 import { Card, SectionHeader, ListRow, Button } from "@/components/ui";
+import {
+  isPushSupported,
+  isIosBrowser,
+  isStandalone,
+  getPushSubscription,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/services/push";
 import { spacing, radii, typography } from "@/constants/Theme";
 
 // Standard RN Switch track/thumb defaults — sanctioned hex exception, not tokens.
@@ -68,6 +76,35 @@ export default function ProfileScreen() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+
+  // Web push notifications state
+  const pushSupported = isPushSupported();
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    getPushSubscription().then((sub) => setPushEnabled(Boolean(sub)));
+  }, [pushSupported]);
+
+  const togglePush = async (value: boolean) => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (value) {
+        await subscribeToPush();
+        setPushEnabled(true);
+      } else {
+        await unsubscribeFromPush();
+        setPushEnabled(false);
+      }
+    } catch (err) {
+      console.error("Push toggle failed:", err);
+      setPushEnabled(false);
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   // Custom Confirmation Modal state
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -579,7 +616,26 @@ export default function ProfileScreen() {
                 title={t("profile.settings.notifications")}
                 // rightElement (not value): keeps the original secondary value color;
                 // ListRow's value slot hardcodes colors.text
-                rightElement={<Text style={styles.settingsValue}>On</Text>}
+                rightElement={
+                  pushSupported ? (
+                    <Switch
+                      value={pushEnabled}
+                      disabled={pushBusy}
+                      onValueChange={togglePush}
+                      trackColor={{ false: SWITCH_TRACK_FALSE, true: colors.tint }}
+                      // @ts-expect-error react-native-web specific props
+                      activeThumbColor={colors.tint}
+                      activeTrackColor={colors.tint + "80"}
+                      thumbColor={pushEnabled ? colors.tint : SWITCH_THUMB_FALSE}
+                    />
+                  ) : (
+                    <Text style={styles.settingsValue}>
+                      {Platform.OS === "web" && isIosBrowser() && !isStandalone()
+                        ? t("profile.settings.notificationsIosHint")
+                        : "On"}
+                    </Text>
+                  )
+                }
               />
             </View>
 

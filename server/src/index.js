@@ -12,6 +12,7 @@ import entriesRoutes from "./routes/entries.js";
 import receiptsRoutes from "./routes/receipts.js";
 import stationsRoutes from "./routes/stations.js";
 import exchangeRoutes from "./routes/exchange.js";
+import pushRoutes from "./routes/push.js";
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +38,7 @@ app.use("/api/entries", entriesRoutes);
 app.use("/api/receipts", receiptsRoutes);
 app.use("/api/stations", stationsRoutes);
 app.use("/api/exchange-rates", exchangeRoutes);
+app.use("/api/push", pushRoutes);
 
 // QR Code route for Expo
 app.get("/qr", async (req, res) => {

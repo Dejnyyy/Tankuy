@@ -35,7 +35,8 @@
     "openai": "^6.17.0",
     "qrcode": "^1.5.4",
     "tesseract.js": "^7.0.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

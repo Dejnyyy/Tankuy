@@ -85,7 +85,8 @@
       "english": "English",
       "notifications": "Upozornění",
       "currency": "Měna",
-      "unitSystem": "Jednotky"
+      "unitSystem": "Jednotky",
+      "notificationsIosHint": "Přidej appku na plochu"
     },
     "about": {
       "title": "O aplikaci",

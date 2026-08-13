@@ -34,8 +34,21 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
 
+        {/* PWA: installable on iOS home screen */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Tankuy" />
+
         {/* Browser chrome color — matches the app's orange primary */}
         <meta name="theme-color" content="#FF9500" />
+
+        {/* Register service worker for push notifications */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function (e) { console.error('SW registration failed:', e); }); }); }`,
+          }}
+        />
 
         {/*
           Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.

@@ -85,7 +85,8 @@
       "english": "English",
       "notifications": "Notifications",
       "currency": "Currency",
-      "unitSystem": "Unit System"
+      "unitSystem": "Unit System",
+      "notificationsIosHint": "Add app to Home Screen"
     },
     "about": {
       "title": "About",
