@@ -33,11 +33,20 @@ export const authMiddleware = async (req, res, next) => {
         return res.status(403).json({ error: 'Service token is read-only' });
       }
       const [radky] = await pool.execute(
-        'SELECT id, email FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1',
+        'SELECT id, email FROM users WHERE LOWER(email) = LOWER(?)',
         [String(decoded.email ?? '').trim()],
       );
       if (radky.length === 0) {
         return res.status(404).json({ error: 'User not found' });
+      }
+      // Schema negarantuje unikátní e-mail (unikátní je jen google_id) — kdyby
+      // se shodovalo víc účtů, LIMIT 1 by tiše vybral jeden z nich a servisní
+      // token by mohl dostat data cizího uživatele. Radši odmítnout než hádat.
+      if (radky.length > 1) {
+        console.error(
+          `Servisní token: nejednoznačný e-mail "${decoded.email}" odpovídá ${radky.length} účtům`,
+        );
+        return res.status(409).json({ error: 'Ambiguous user email' });
       }
       req.user = { userId: radky[0].id, email: radky[0].email };
       return next();
