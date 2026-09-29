@@ -1,21 +1,48 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import pool from '../db/connection.js';
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-me';
 
+// Servisní token pro Platee: smí POUZE číst tankování. Nese e-mail, ne userId
+// — uživatele dohledáme za běhu, aby token přežil případnou změnu id.
+// Záměrně úzké: jakákoliv jiná cesta než GET /api/entries skončí 403.
+const jeServisniCteni = (req, decoded) =>
+  decoded?.sub === 'platee' &&
+  decoded?.scope === 'entries:read' &&
+  req.method === 'GET' &&
+  req.baseUrl === '/api/entries' &&
+  (req.path === '/' || req.path === '');
+
 export const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (decoded?.sub === 'platee') {
+      if (!jeServisniCteni(req, decoded)) {
+        return res.status(403).json({ error: 'Service token is read-only' });
+      }
+      const [radky] = await pool.execute(
+        'SELECT id, email FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1',
+        [String(decoded.email ?? '').trim()],
+      );
+      if (radky.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      req.user = { userId: radky[0].id, email: radky[0].email };
+      return next();
+    }
+
     req.user = decoded;
     next();
   } catch (error) {
