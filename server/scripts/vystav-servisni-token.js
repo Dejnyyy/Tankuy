@@ -15,10 +15,15 @@ if (!secret) {
   process.exit(1);
 }
 
-// Deset let: token je servisní, nikdo ho nebude ručně obnovovat. Kdyby unikl,
-// nezmůže víc než číst tankování — proto je ta dlouhá platnost únosná.
+// Rok. Token sice umí jen číst, ale to čtení zahrnuje souřadnice stanic, časy,
+// stav tachometru a poznámky — tedy záznam o tom, kde auto bylo a kdy. Delší
+// platnost by znamenala, že případný únik zůstane využitelný roky.
+//
+// Až vyprší, Platee přestane palivo aktualizovat a v přehledu i v nastavení to
+// přizná ("synchronizace selhává", u čísla bude datum kopie). Nový token se
+// vystaví tímhle skriptem, postup je v NASAZENI.md v repu Platee.
 const token = jwt.sign({ sub: 'platee', scope: 'entries:read', email }, secret, {
-  expiresIn: '3650d',
+  expiresIn: '365d',
 });
 
 console.log(token);
