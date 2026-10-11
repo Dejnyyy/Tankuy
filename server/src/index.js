@@ -13,6 +13,7 @@ import receiptsRoutes from "./routes/receipts.js";
 import stationsRoutes from "./routes/stations.js";
 import exchangeRoutes from "./routes/exchange.js";
 import pushRoutes from "./routes/push.js";
+import najezdRoutes from "./routes/najezd.js";
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,8 @@ app.use("/api/receipts", receiptsRoutes);
 app.use("/api/stations", stationsRoutes);
 app.use("/api/exchange-rates", exchangeRoutes);
 app.use("/api/push", pushRoutes);
+// veřejné čtení nájezdu jednoho auta (vlastní token, viz routes/najezd.js)
+app.use("/api/najezd", najezdRoutes);
 
 // QR Code route for Expo
 app.get("/qr", async (req, res) => {

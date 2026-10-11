@@ -28,6 +28,11 @@ export const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
 
+    // token nájezdu (routes/najezd.js) smí jen tam — nemá userId a nic jiného číst nesmí
+    if (decoded?.sub === 'najezd') {
+      return res.status(403).json({ error: 'Mileage token is not valid here' });
+    }
+
     if (decoded?.sub === 'platee') {
       if (!jeServisniCteni(req, decoded)) {
         return res.status(403).json({ error: 'Service token is read-only' });
