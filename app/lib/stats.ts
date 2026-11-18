@@ -195,7 +195,18 @@ export function normTime(t: unknown): string | null {
 const STATION_NOISE =
   /\b(cash\s*&\s*carry|cash\s+and\s+carry|s\.?\s*r\.?\s*o\.?|a\.?\s*s\.?|spol\.?|cerpaci\s+stanice|cs)\b/g;
 
-/** Merge spelling variants: "makro", "Makro", "Makro Cash & Carry" → "makro". */
+/**
+ * Chains written many ways that are one station brand: any name containing the
+ * word "ono" ("ONO", "Tank ONO", "TANK ONO Teplice") → key "tank ono".
+ */
+const CANONICAL_STATIONS: { word: string; key: string; name: string }[] = [
+  { word: 'ono', key: 'tank ono', name: 'Tank ONO' },
+];
+
+/**
+ * Merge spelling variants: "makro", "Makro", "Makro Cash & Carry" → "makro";
+ * "ONO", "Tank ONO", "TANK ONO …" → "tank ono".
+ */
 export function stationKey(name: string | null | undefined): string | null {
   if (!name) return null;
   const k = name
@@ -205,7 +216,10 @@ export function stationKey(name: string | null | undefined): string | null {
     .replace(STATION_NOISE, ' ')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-  return k || null;
+  if (!k) return null;
+  const words = k.split(' ');
+  const canon = CANONICAL_STATIONS.find((c) => words.includes(c.word));
+  return canon ? canon.key : k;
 }
 
 export function normalizeEntry(r: RawEntry): Entry {
@@ -633,8 +647,9 @@ export function stationStats(entries: Entry[]): StationStat[] {
   const total = entries.filter((e) => e.stationKey).length || 1;
   const out: StationStat[] = [];
   for (const [key, g] of map) {
-    // Display the most frequent spelling; tie → the one with more capitals ("Makro" over "makro").
-    const name = [...g.names.entries()].sort(
+    // Canonical brand name if there is one; otherwise the most frequent spelling,
+    // tie → the one with more capitals ("Makro" over "makro").
+    const name = CANONICAL_STATIONS.find((c) => c.key === key)?.name ?? [...g.names.entries()].sort(
       (a, b) => b[1] - a[1] || caps(b[0]) - caps(a[0]) || a[0].length - b[0].length,
     )[0][0];
     out.push({

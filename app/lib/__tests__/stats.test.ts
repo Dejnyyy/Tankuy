@@ -4,6 +4,7 @@ import {
   normalizeEntries,
   normalizeEntry,
   stationKey,
+  stationStats,
   cleanMileage,
   computeConsumption,
   computeStats,
@@ -54,6 +55,25 @@ test('stationKey merges spelling variants', () => {
   assert.equal(stationKey('A.G. Service S.r.o.'), 'a g service');
   assert.equal(stationKey(''), null);
   assert.equal(stationKey(null), null);
+});
+
+test('stationKey merges ONO variants into Tank ONO', () => {
+  for (const n of ['ONO', 'ono', 'Tank ONO', 'TANK ONO', 'TANK ONO Teplice', 'tank ono s.r.o.']) {
+    assert.equal(stationKey(n), 'tank ono', n);
+  }
+  assert.notEqual(stationKey('Monoplaza'), 'tank ono');
+});
+
+test('stationStats ranks ONO spellings as one station named Tank ONO', () => {
+  const es = normalizeEntries([
+    raw({ date: '2026-01-01', totalCost: 1000, totalLiters: 25, stationName: 'ONO' }),
+    raw({ date: '2026-01-05', totalCost: 1000, totalLiters: 25, stationName: 'ONO' }),
+    raw({ date: '2026-01-10', totalCost: 1000, totalLiters: 25, stationName: 'Tank ONO' }),
+    raw({ date: '2026-01-15', totalCost: 1000, totalLiters: 25, stationName: 'makro' }),
+    raw({ date: '2026-01-20', totalCost: 1000, totalLiters: 25, stationName: 'Makro Cash & Carry' }),
+  ]);
+  const st = stationStats(es);
+  assert.deepEqual(st.map((s) => [s.name, s.count]), [['Tank ONO', 3], ['Makro Cash & Carry', 2]]);
 });
 
 test('cleanMileage drops an extra-digit typo and backwards readings', () => {
