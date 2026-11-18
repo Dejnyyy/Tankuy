@@ -73,7 +73,7 @@
     },
     "empty": "Zatím tu nic není",
     "emptyRange": "V tomhle období nic",
-    "emptyHint": "Statistiky se počítají z tvých tankování. Zkus jiné období nebo přidej záznam.",
+    "emptyHint": "Zkus jiné období nebo přidej tankování.",
     "totalSpent": "Utraceno",
     "fillups": "Tankování",
     "totalLiters": "Natankováno",
@@ -87,11 +87,11 @@
       "price": "Cena paliva",
       "priceCaption": "Cena za litr u každého tankování.",
       "consumption": "Spotřeba a nájezd",
-      "consumptionCaption": "Počítáno metodou plné nádrže ze stavu tachometru a natankovaných litrů.",
+      "consumptionCaption": "Metoda plné nádrže: litry a stav tachometru mezi dvěma tankováními.",
       "habits": "Kdy a jak často",
       "habitsCaption": "Tvoje tankovací zvyky.",
       "stations": "Stanice",
-      "stationsCaption": "{{count}} různých stanic",
+      "stationsCaption": "{{count}} stanic",
       "tank": "Nádrž",
       "tankCaption": "Kolik obvykle bereš.",
       "records": "Rekordy"
@@ -111,7 +111,7 @@
     "trendSub": "{{unit}} za měsíc",
     "trendUp": "Cena, za kterou tankuješ, roste zhruba o {{value}} každý měsíc.",
     "trendDown": "Cena, za kterou tankuješ, klesá zhruba o {{value}} každý měsíc.",
-    "consumptionNeed": "Pro spotřebu zadávej u tankování stav tachometru — stačí dvě po sobě jdoucí tankování.",
+    "consumptionNeed": "Spotřeba se spočítá ze dvou tankování se stavem tachometru.",
     "avgConsumption": "Průměrná spotřeba",
     "fromSegments_one": "z {{count}} úseku",
     "fromSegments_few": "z {{count}} úseků",
@@ -124,7 +124,7 @@
     "kmMonth": "Najeto za měsíc",
     "kmYear": "~{{value}} za rok",
     "kmBetween": "Km mezi tankováním",
-    "perFill": "průměrně na jedno tankování",
+    "perFill": "na tankování",
     "habitSentence": "Nejčastěji tankuješ {{day}}, většinou {{part}}.",
     "habitSentenceDay": "Nejčastěji tankuješ {{day}}.",
     "weekdayIn": [
@@ -181,16 +181,18 @@
       "tracking": "Sleduješ už",
       "since": "od {{date}}"
     },
-    "funEarth": "Za tu dobu jsi ujel {{times}}× kolem Země a natankoval {{liters}} během {{count}} zastávek."
+    "funEarth": "Za tu dobu jsi ujel {{times}}× kolem Země a natankoval {{liters}} během {{count}} zastávek.",
+    "savingsLabel": "Možná úspora",
+    "savingsSub": "při nejnižší ceně z okolních dnů"
   },
   "history": {
     "mileage": "Nájezd",
     "empty": {
       "title": "Zatím žádné záznamy",
-      "message": "Naskenujte účtenku a přidejte svůj první záznam o tankování",
+      "message": "Naskenuj účtenku nebo zadej tankování ručně.",
       "cta": "Naskenovat účtenku"
     },
-    "search": "Hledat stanici, místo, poznámku…",
+    "search": "Hledat stanici, místo, poznámku",
     "noMatch": "Nic nenalezeno",
     "noMatchHint": "Zkus jiný výraz nebo zruš filtry.",
     "clearFilters": "Zrušit filtry",
@@ -201,8 +203,8 @@
     "title": "Profil",
     "myVehicles": "Moje vozidla",
     "add": "Přidat",
-    "noVehicles": "Zatím nepřidána žádná vozidla",
-    "addFirstVehicle": "Klepnutím přidáte první vozidlo",
+    "noVehicles": "Žádné auto",
+    "addFirstVehicle": "Přidej auto, ať jde filtrovat a počítat spotřebu.",
     "settings": {
       "title": "Nastavení",
       "darkMode": "Tmavý režim",
@@ -296,7 +298,7 @@
     "scan": "Naskenovat účtenku",
     "manual": "Ručně",
     "recent": "Poslední tankování",
-    "seeAll": "Celá historie",
+    "seeAll": "Historie",
     "fillups": "tankování",
     "metric": {
       "cost": "Útrata",
@@ -310,9 +312,9 @@
       "year": "Rok"
     },
     "vsPrev": {
-      "week": "oproti min. týdnu",
-      "month": "oproti min. měsíci",
-      "year": "oproti min. roku"
+      "week": "proti min. týdnu",
+      "month": "proti min. měsíci",
+      "year": "proti min. roku"
     },
     "kpi": {
       "thisMonth": "Tento měsíc",
@@ -322,19 +324,20 @@
       "priceRange": "rozpětí {{min}} – {{max}}",
       "last90": "posl. 90 dní",
       "consumption": "Spotřeba",
-      "consumptionSub": "změřeno na {{km}}",
-      "needMileage": "zadávej stav tachometru",
+      "consumptionSub": "z {{km}}",
+      "needMileage": "chybí stav tachometru",
       "costPerKm": "Cena za km",
       "kmPerMonth": "~{{km}} měsíčně",
       "nextFill": "Příště",
       "in": "za",
       "anyDay": "každým dnem",
-      "nextFillSub": "tankuješ zhruba po {{days}} dnech"
+      "nextFillSub": "obvykle po {{days}} dnech"
     },
     "empty": {
-      "title": "Začni první účtenkou",
-      "message": "Vyfoť účtenku z pumpy a Tankuy z ní vytáhne litry, cenu i stanici. Pak ti tady ukáže, kolik tě auto stojí."
-    }
+      "title": "Zatím žádné tankování",
+      "message": "Naskenuj účtenku nebo zadej tankování ručně."
+    },
+    "summary": "Souhrn"
   },
   "entry": {
     "newTitle": "Nové tankování",
@@ -358,13 +361,13 @@
     "mileage": "Stav tachometru",
     "notes": "Poznámka",
     "notesPlaceholder": "Nepovinné",
-    "auto": "DOPOČTENO",
-    "fillIn": "DOPLŇ",
+    "auto": "dopočteno",
+    "fillIn": "doplň",
     "unknownStation": "Neznámá stanice",
-    "noVehicles": "Zatím nemáš auto — přidej ho v Profilu.",
+    "noVehicles": "Žádné auto. Přidej ho v Profilu.",
     "lastMileage": "Naposledy {{value}} ({{date}})",
-    "mileageHint": "Díky tachometru spočítáme spotřebu a cenu za km.",
-    "receiptAttached": "K tankování je přiložená účtenka. Klepni pro zobrazení.",
+    "mileageHint": "Potřeba pro výpočet spotřeby.",
+    "receiptAttached": "Účtenka",
     "notFound": "Tankování se nenašlo.",
     "err": {
       "date": "Datum ve tvaru RRRR-MM-DD",
@@ -386,44 +389,44 @@
   },
   "scan": {
     "title": "Skenovat",
-    "subtitle": "Vyfoť účtenku, zbytek udělá AI.",
+    "subtitle": "",
     "heroTitle": "Naskenuj účtenku",
-    "heroText": "Přečteme stanici, datum, litry, cenu i celkovou částku. Ty jen zkontroluješ a uložíš.",
+    "heroText": "Přečte stanici, datum, litry, cenu a částku.",
     "takePhoto": "Vyfotit účtenku",
     "fromGallery": "Z galerie",
     "manual": "Zadat ručně",
-    "tipsTitle": "Jak na dobrý sken",
+    "tipsTitle": "Tipy",
     "tips": [
-      "Celá účtenka v záběru, ideálně na tmavém podkladu",
-      "Drž telefon rovně nad účtenkou",
-      "Dobré světlo, bez odlesků a stínů"
+      "Celá účtenka v záběru",
+      "Telefon rovně nad účtenkou",
+      "Dobré světlo, bez odlesků"
     ],
     "scanningOverline": "Pracuju na tom",
     "steps": [
-      "Nahrávám účtenku…",
-      "Čtu text…",
-      "Hledám litry a cenu…",
-      "Kontroluju součty…",
-      "Skoro hotovo…"
+      "Nahrávám",
+      "Čtu text",
+      "Hledám litry a cenu",
+      "Kontroluju součty",
+      "Dokončuju"
     ],
-    "scanningHint": "Obvykle to trvá pár vteřin.",
+    "scanningHint": "Obvykle pár sekund.",
     "reviewTitle": "Zkontroluj údaje",
-    "reviewOverline": "AI vyplnila {{count}} polí",
+    "reviewOverline": "Přečteno {{count}} polí",
     "reviewBanner": "Účtenka přečtená",
-    "reviewAll": "Vše vypadá vyplněné. Mrkni a ulož.",
-    "reviewMissing": "Pár údajů chybí — jsou označené žlutě.",
+    "reviewAll": "Zkontroluj a ulož.",
+    "reviewMissing": "Doplň označená pole.",
     "rescan": "Znovu",
-    "savedTitle": "Uloženo!",
+    "savedTitle": "Uloženo",
     "savedSub": "Statistiky jsou aktualizované.",
     "done": "Hotovo",
     "another": "Naskenovat další",
     "errTitle": "Účtenku se nepovedlo přečíst",
-    "unreadable": "Na fotce jsme nenašli dost údajů. Zkus ostřejší fotku, nebo údaje doplň ručně.",
-    "errNetwork": "Spojení se serverem selhalo. Zkontroluj internet a zkus to znovu.",
-    "errAuth": "Přihlášení vypršelo. Odhlas se a přihlas znovu.",
+    "unreadable": "Na fotce chybí čitelné údaje. Zkus ostřejší fotku nebo vyplň ručně.",
+    "errNetwork": "Server neodpovídá. Zkontroluj připojení.",
+    "errAuth": "Přihlášení vypršelo. Přihlas se znovu.",
     "retry": "Zkusit znovu",
     "newPhoto": "Nová fotka",
     "fillManually": "Doplnit ručně",
-    "noCamera": "Bez přístupu k fotoaparátu to nepůjde. Povol ho v nastavení."
+    "noCamera": "Fotoaparát není povolený. Povol ho v nastavení."
   }
 }

@@ -56,7 +56,7 @@ export function ListRow({
             <Text style={[typography.bodyBold, { color: colors.text }]}>{value}</Text>
           ) : null}
           {chevron ? (
-            <FontAwesome name="chevron-right" size={14} color={colors.textMuted} />
+            <FontAwesome name="angle-right" size={16} color={colors.textMuted} />
           ) : null}
         </>
       )}

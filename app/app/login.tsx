@@ -8,29 +8,18 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui';
-import { spacing, radii, typography } from '@/constants/Theme';
-import {
-  FadeInView,
-  ScaleInView,
-  SlideInView,
-  AnimatedPressable,
-} from '@/components/AnimatedComponents';
+import { fonts, spacing, radii, typography } from '@/constants/Theme';
+import { FadeInView, AnimatedPressable } from '@/components/AnimatedComponents';
 
 export default function LoginScreen() {
   const { signInWithGoogle, signInAsGuest, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
-
-  const gradientColors = isDark
-    ? (['rgba(255,106,19,0.13)', 'rgba(255,106,19,0.04)', colors.background] as const)
-    : (['rgba(255,106,19,0.07)', 'rgba(255,106,19,0.02)', colors.background] as const);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -57,114 +46,55 @@ export default function LoginScreen() {
       <Stack.Screen options={{ title: 'Tankuy – Fuel Expense Tracker | Scan Receipts & Find Gas Stations', headerShown: false }} />
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {/* Gradient background */}
-      <LinearGradient
-        colors={gradientColors}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.55 }}
-      />
-
       <View style={styles.content}>
-        {/* ── Branding ─────────────────────────────────────── */}
-        <View style={styles.brandingContainer}>
-          <ScaleInView delay={0} initialScale={0.65} duration={600}>
-            <View style={[styles.logoContainer, { backgroundColor: colors.primaryLight }]}>
-              <FontAwesome name="tint" size={64} color={colors.tint} />
-            </View>
-          </ScaleInView>
-
-          <FadeInView delay={160} translateY={12} duration={500}>
-            <View style={styles.brandingText}>
-              <Text role="heading" aria-level={1} style={[styles.appName, { color: colors.text }]}>Tankuy</Text>
-              <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-                Track your fuel expenses{'\n'}with ease
-              </Text>
-            </View>
-          </FadeInView>
-        </View>
-
-        {/* ── Feature highlights ───────────────────────────── */}
-        <View style={styles.featuresContainer}>
-          <FadeInView delay={320} translateY={14} duration={450}>
-            <FeatureItem icon="camera" text="Scan receipts instantly" colors={colors} styles={styles} />
-          </FadeInView>
-          <FadeInView delay={420} translateY={14} duration={450}>
-            <FeatureItem icon="line-chart" text="Track spending over time" colors={colors} styles={styles} />
-          </FadeInView>
-          <FadeInView delay={520} translateY={14} duration={450}>
-            <FeatureItem icon="map-marker" text="Find nearby gas stations" colors={colors} styles={styles} />
-          </FadeInView>
-        </View>
-
-        {/* ── Sign-in section ──────────────────────────────── */}
-        <SlideInView direction="up" delay={220} distance={50}>
-          <View style={styles.signInContainer}>
-            {error && (
-              <FadeInView delay={0} translateY={0}>
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              </FadeInView>
-            )}
-
-            <AnimatedPressable
-              style={[styles.googleButton, { backgroundColor: colors.text }]}
-              onPress={handleGoogleSignIn}
-              disabled={isLoading}
-              scaleValue={0.96}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={isDark ? '#1F1F1F' : '#FFFFFF'} size="small" />
-              ) : (
-                <>
-                  <Image
-                    source={{ uri: 'https://www.google.com/favicon.ico' }}
-                    style={styles.googleIcon}
-                  />
-                  <Text style={[styles.googleButtonText, { color: colors.background }]}>
-                    Continue with Google
-                  </Text>
-                </>
-              )}
-            </AnimatedPressable>
-
-            <Button
-              title="Continue as Guest"
-              onPress={handleGuestSignIn}
-              variant="secondary"
-              disabled={isLoading}
-              icon={<FontAwesome name="user-secret" size={20} color={colors.text} />}
-            />
-
-            <Text style={styles.termsText}>
-              By signing in, you agree to our Terms of Service and Privacy Policy
+        <FadeInView>
+          <View style={styles.brandingContainer}>
+            <Text role="heading" aria-level={1} style={[styles.appName, { color: colors.text }]}>
+              tankuy
+            </Text>
+            <Text style={[styles.tagline, { color: colors.textSecondary }]}>
+              Fuel spending, consumption and prices from your receipts.
             </Text>
           </View>
-        </SlideInView>
+        </FadeInView>
+
+        <View style={styles.featuresContainer}>
+          {['Scan a receipt, check, save', 'Spending, price per litre, consumption', 'Every fill-up in one list'].map((text, i) => (
+            <View key={text} style={[styles.featureItem, i > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
+              <Text style={[styles.featureText, { color: colors.text }]}>{text}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.signInContainer}>
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          <AnimatedPressable
+            style={[styles.googleButton, { backgroundColor: colors.buttonPrimary }]}
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+            scaleValue={0.98}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={colors.buttonPrimaryText} size="small" />
+            ) : (
+              <>
+                <Image source={{ uri: 'https://www.google.com/favicon.ico' }} style={styles.googleIcon} />
+                <Text style={[styles.googleButtonText, { color: colors.buttonPrimaryText }]}>Continue with Google</Text>
+              </>
+            )}
+          </AnimatedPressable>
+
+          <Button title="Continue as Guest" onPress={handleGuestSignIn} variant="secondary" size="lg" disabled={isLoading} />
+
+          <Text style={styles.termsText}>By signing in, you agree to our Terms of Service and Privacy Policy</Text>
+        </View>
       </View>
     </SafeAreaView>
-  );
-}
-
-function FeatureItem({
-  icon,
-  text,
-  colors,
-  styles,
-}: {
-  icon: string;
-  text: string;
-  colors: any;
-  styles: any;
-}) {
-  return (
-    <View style={styles.featureItem}>
-      <View style={[styles.featureIconContainer, { backgroundColor: colors.primaryLight }]}>
-        <FontAwesome name={icon as any} size={18} color={colors.tint} />
-      </View>
-      <Text style={[styles.featureText, { color: colors.text }]}>{text}</Text>
-    </View>
   );
 }
 
@@ -175,102 +105,69 @@ const getStyles = (colors: any) =>
     },
     content: {
       flex: 1,
-      paddingHorizontal: spacing.xxxl,
+      width: '100%',
+      maxWidth: 440,
+      alignSelf: 'center',
+      paddingHorizontal: spacing.xxl,
       justifyContent: 'space-between',
-      // Screen-specific vertical rhythm (not on the spacing scale) — keeps
-      // branding/features/sign-in evenly spread across the safe area.
-      paddingTop: 60,
-      paddingBottom: 40,
+      paddingTop: spacing.giant,
+      paddingBottom: spacing.xxxl,
     },
     brandingContainer: {
-      alignItems: 'center',
-    },
-    brandingText: {
-      alignItems: 'center',
-    },
-    logoContainer: {
-      // Large hero logo — deliberately off the size/radius scale.
-      width: 120,
-      height: 120,
-      borderRadius: 30,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: spacing.xxl,
+      gap: spacing.md,
     },
     appName: {
-      ...typography.title,
-      fontSize: 42,
-      lineHeight: 50,
-      letterSpacing: 1,
+      fontFamily: fonts.heavy,
+      fontSize: 64,
+      lineHeight: 68,
+      letterSpacing: -3,
     },
     tagline: {
       ...typography.body,
       fontSize: 18,
       lineHeight: 26,
-      textAlign: 'center',
-      marginTop: spacing.md,
+      maxWidth: 320,
     },
     featuresContainer: {
-      gap: spacing.lg,
+      borderTopWidth: 2,
+      borderTopColor: colors.text,
     },
     featureItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.lg,
-    },
-    featureIconContainer: {
-      // 46/14 sit between the sm/md and md/lg tokens; kept literal rather
-      // than forcing a visible size/radius shift.
-      width: 46,
-      height: 46,
-      borderRadius: 14,
-      justifyContent: 'center',
-      alignItems: 'center',
+      paddingVertical: spacing.md,
     },
     featureText: {
-      ...typography.body,
-      fontWeight: '500',
+      ...typography.bodyBold,
     },
     signInContainer: {
-      gap: 14, // tie between md(12)/lg(16), kept literal
+      gap: spacing.md,
     },
     errorContainer: {
-      backgroundColor: `${colors.error}26`, // ~15% alpha, matches Badge convention
-      padding: spacing.md,
-      borderRadius: radii.md,
-      borderWidth: 1,
-      borderColor: `${colors.error}4D`, // ~30% alpha
+      paddingVertical: spacing.sm,
     },
     errorText: {
-      // fontSize 14 has no typography token; kept literal per lineHeight rule
-      fontSize: 14,
-      fontWeight: '400',
+      ...typography.caption,
       color: colors.error,
-      textAlign: 'center',
     },
     googleButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: spacing.lg,
+      height: 56,
       paddingHorizontal: spacing.xxl,
-      borderRadius: radii.lg,
+      borderRadius: radii.md,
       gap: spacing.md,
     },
     googleIcon: {
-      // Matches Google's favicon dimensions; not on the design-system scale.
-      width: 20,
-      height: 20,
+      width: 18,
+      height: 18,
     },
     googleButtonText: {
-      // fontSize 17 has no typography token; kept literal per lineHeight rule
-      fontSize: 17,
-      fontWeight: '600',
+      fontFamily: fonts.semi,
+      fontSize: 16,
     },
     termsText: {
       ...typography.caption,
       fontSize: 12,
       color: colors.textMuted,
-      textAlign: 'center',
     },
   });

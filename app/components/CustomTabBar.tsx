@@ -1,98 +1,75 @@
-import React, { useEffect } from 'react';
-import { Platform, Text, View, useWindowDimensions } from 'react-native';
+import React from 'react';
+import { View, useWindowDimensions } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
-import { elevation, radii } from '@/constants/Theme';
+import { fonts, radii } from '@/constants/Theme';
 import { PressableScale } from '@/components/ui/PressableScale';
+import { AppText } from '@/components/ui/AppText';
 
-export const TAB_META: Record<string, { icon: string; label: string }> = {
-  index: { icon: 'home', label: 'nav.overview' },
-  stats: { icon: 'bar-chart', label: 'nav.stats' },
-  scan: { icon: 'camera', label: 'nav.scan' },
-  history: { icon: 'list-ul', label: 'nav.history' },
-  profile: { icon: 'user-o', label: 'nav.profile' },
+export const TAB_META: Record<string, { label: string }> = {
+  index: { label: 'nav.overview' },
+  stats: { label: 'nav.stats' },
+  scan: { label: 'nav.scan' },
+  history: { label: 'nav.history' },
+  profile: { label: 'nav.profile' },
 };
 
 function TabItem({ name, focused, onPress }: { name: string; focused: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const meta = TAB_META[name];
-  const p = useSharedValue(focused ? 1 : 0);
-  useEffect(() => {
-    p.value = withTiming(focused ? 1 : 0, { duration: 220 });
-  }, [focused, p]);
-  const dot = useAnimatedStyle(() => ({ opacity: p.value, transform: [{ scaleX: 0.3 + p.value * 0.7 }] }));
-  const lift = useAnimatedStyle(() => ({ transform: [{ translateY: -p.value * 1.5 }] }));
-  const color = focused ? colors.text : colors.tabIconDefault;
   return (
     <PressableScale
       onPress={onPress}
-      scaleTo={0.88}
+      scaleTo={1}
       accessibilityRole="tab"
       accessibilityState={{ selected: focused }}
       accessibilityLabel={t(meta.label)}
-      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8, paddingBottom: 6, gap: 3 }}
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 56 }}
     >
-      <Animated.View style={[{ alignItems: 'center', gap: 3 }, lift]}>
-        <FontAwesome name={meta.icon as any} size={19} color={color} />
-        <Text style={{ fontSize: 10.5, fontWeight: focused ? '700' : '500', color }} numberOfLines={1}>
-          {t(meta.label)}
-        </Text>
-      </Animated.View>
-      <Animated.View style={[{ width: 16, height: 3, borderRadius: 2, backgroundColor: colors.tint }, dot]} />
+      <View style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, backgroundColor: focused ? colors.text : 'transparent' }} />
+      <AppText
+        numberOfLines={1}
+        style={{ fontSize: 12, fontFamily: focused ? fonts.semi : fonts.regular, color: focused ? colors.text : colors.textMuted }}
+      >
+        {t(meta.label)}
+      </AppText>
     </PressableScale>
   );
 }
 
 function ScanButton({ focused, onPress }: { focused: boolean; onPress: () => void }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
-  const r = useSharedValue(0);
-  useEffect(() => {
-    r.value = withSpring(focused ? 1 : 0, { damping: 14, stiffness: 180 });
-  }, [focused, r]);
-  const ring = useAnimatedStyle(() => ({ transform: [{ scale: 1 + r.value * 0.06 }] }));
   return (
-    <View style={{ flex: 1, alignItems: 'center' }}>
+    <View style={{ width: 64, alignItems: 'center', justifyContent: 'center', height: 56 }}>
       <PressableScale
         onPress={onPress}
         haptic="medium"
-        scaleTo={0.9}
         accessibilityRole="tab"
         accessibilityLabel={t('nav.scan')}
         accessibilityState={{ selected: focused }}
-        style={{ marginTop: -22 }}
+        style={{
+          width: 48,
+          height: 40,
+          borderRadius: radii.md,
+          backgroundColor: colors.buttonPrimary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
-        <Animated.View
-          style={[
-            {
-              width: 58,
-              height: 58,
-              borderRadius: 20,
-              backgroundColor: colors.tint,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 4,
-              borderColor: colors.background,
-            },
-            elevation(2, colors.tint, isDark),
-            ring,
-          ]}
-        >
-          <FontAwesome name="camera" size={21} color={colors.onTint} />
-        </Animated.View>
+        <FontAwesome name="camera" size={17} color={colors.buttonPrimaryText} />
       </PressableScale>
     </View>
   );
 }
 
-/** Floating bottom bar with a raised scan action in the centre. */
+/** Flat bottom bar: text tabs with an ink indicator, solid scan block in the middle. */
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const order = ['index', 'stats', 'scan', 'history', 'profile'];
@@ -106,35 +83,21 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     if (active !== route.name && !event.defaultPrevented) navigation.navigate(route.name as never);
   };
 
-  const barW = Math.min(width - 24, 520);
   return (
     <View
-      pointerEvents="box-none"
       style={{
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
+        backgroundColor: colors.tabBar,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        paddingBottom: Math.max(insets.bottom, 4),
         alignItems: 'center',
-        paddingBottom: Math.max(insets.bottom, 10),
       }}
     >
-      <View
-        style={[
-          {
-            width: barW,
-            flexDirection: 'row',
-            alignItems: 'center',
-            borderRadius: radii.xl,
-            backgroundColor: colors.tabBar,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingHorizontal: 6,
-          },
-          Platform.OS === 'web' ? ({ backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } as any) : null,
-          elevation(3, colors.shadow, isDark),
-        ]}
-      >
+      <View style={{ flexDirection: 'row', alignItems: 'center', width: Math.min(width, 560), paddingHorizontal: 4 }}>
         {routes.map((r) =>
           r.name === 'scan' ? (
             <ScanButton key={r.key} focused={active === 'scan'} onPress={() => press(r)} />

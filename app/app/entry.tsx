@@ -10,7 +10,7 @@ import { useFormat } from '@/hooks/useFormat';
 import { AppText, Button, PressableScale } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { EntryForm, ReceiptThumb, emptyForm, type FormState } from '@/components/EntryForm';
-import { spacing } from '@/constants/Theme';
+import { radii, spacing } from '@/constants/Theme';
 import { confirmDialog } from '@/lib/dialog';
 import { haptics } from '@/lib/haptics';
 import { normalizeEntry, stationStats } from '@/lib/stats';
@@ -78,28 +78,32 @@ export default function EntryScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, maxWidth: 640, width: '100%', alignSelf: 'center', borderBottomWidth: 1, borderBottomColor: colors.border }}>
           <PressableScale
             onPress={closeModal}
             accessibilityLabel={t('common.close')}
-            style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
+            hitSlop={6}
+            style={{ width: 40, height: 40, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
           >
-            <FontAwesome name="times" size={16} color={colors.text} />
+            <FontAwesome name="times" size={15} color={colors.text} />
           </PressableScale>
-          <AppText variant="heading">{editing ? t('entry.editTitle') : t('entry.newTitle')}</AppText>
+          <AppText variant="bodyBold">{editing ? t('entry.editTitle') : t('entry.newTitle')}</AppText>
           {editing && raw ? (
             <PressableScale
               onPress={onDelete}
               accessibilityLabel={t('common.delete')}
-              style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: colors.negativeSoft, alignItems: 'center', justifyContent: 'center' }}
+              hitSlop={6}
+              style={{ height: 40, minWidth: 40, alignItems: 'flex-end', justifyContent: 'center' }}
             >
-              <FontAwesome name="trash-o" size={16} color={colors.negative} />
+              <AppText variant="captionBold" tone="negative">
+                {t('common.delete')}
+              </AppText>
             </PressableScale>
           ) : (
             <View style={{ width: 40 }} />
           )}
         </View>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.huge, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.huge, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
           {missing ? (
             <View style={{ alignItems: 'center', gap: spacing.md, paddingTop: spacing.huge }}>
               <AppText variant="heading">{t('entry.notFound')}</AppText>

@@ -13,18 +13,18 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
         {/* Title is set per-page via Stack.Screen options to avoid duplicates */}
-        <meta name="description" content="Tankuy – sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku a AI zbytek vyplní." />
+        <meta name="description" content="Tankuy – sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku, zkontroluj, ulož." />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Tankuy – Fuel Expense Tracker" />
-        <meta property="og:description" content="Tankuy – sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku a AI zbytek vyplní." />
+        <meta property="og:description" content="Tankuy – sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku, zkontroluj, ulož." />
         <meta property="og:image" content="/og-image.png" />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Tankuy – Fuel Expense Tracker" />
-        <meta name="twitter:description" content="Tankuy – sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku a AI zbytek vyplní." />
+        <meta name="twitter:description" content="Tankuy – sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku, zkontroluj, ulož." />
         <meta name="twitter:image" content="/og-image.png" />
 
         {/* Favicon */}
@@ -40,9 +40,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Tankuy" />
 
-        {/* Browser chrome colour follows the system theme (ThemeContext keeps it in sync at runtime) */}
-        <meta name="theme-color" content="#F3F1EC" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#0D0E10" media="(prefers-color-scheme: dark)" />
+        {/* Light by default; ThemeContext updates this when the user switches to dark */}
+        <meta name="theme-color" content="#FFFFFF" />
 
         {/* Register service worker for push notifications */}
         <script
@@ -67,13 +66,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
 const responsiveBackground = `
 html, body {
-  background-color: #F3F1EC;
-  color-scheme: light dark;
+  background-color: #FFFFFF;
+  color-scheme: light;
   -webkit-tap-highlight-color: transparent;
 }
-@media (prefers-color-scheme: dark) {
-  html, body {
-    background-color: #0D0E10;
-  }
-}
-input, textarea { caret-color: #FF6A13; }`;
+input, textarea { caret-color: auto; }`;

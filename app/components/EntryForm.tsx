@@ -1,12 +1,13 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, TextInput, View, type KeyboardTypeOptions, type TextInputProps } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 import { useFormat } from '@/hooks/useFormat';
 import { AppText, Button, Chip, PressableScale } from '@/components/ui';
 import { fonts, radii, spacing } from '@/constants/Theme';
+import { stationColors } from '@/constants/Brands';
 import { WEEKDAYS, formatDateLong } from '@/lib/format';
 import { parseDate, toNum, ymd, type Entry, type StationStat } from '@/lib/stats';
 import type { Vehicle } from '@/services/api';
@@ -105,40 +106,34 @@ function Field({
   const { colors } = useTheme();
   const { t } = useTranslation();
   const [focus, setFocus] = useState(false);
-  const borderColor = error ? colors.negative : focus ? colors.text : badge === 'missing' ? colors.warning : colors.border;
+  const borderColor = error ? colors.negative : focus ? colors.text : badge === 'missing' ? colors.text : colors.border;
+  const tag = badge === 'ai' ? 'AI' : badge === 'auto' ? t('entry.auto') : badge === 'missing' ? t('entry.fillIn') : null;
   return (
-    <View style={{ gap: 6, minWidth: 0 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <AppText variant="label" tone="muted">
+    <View style={{ gap: spacing.sm, minWidth: 0 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm }}>
+        <AppText variant="label" tone="secondary">
           {label}
         </AppText>
-        {badge === 'ai' && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 1, borderRadius: radii.full, backgroundColor: colors.tintSoft }}>
-            <FontAwesome name="magic" size={9} color={colors.tint} />
-            <AppText style={{ fontSize: 9, fontWeight: '800', color: colors.tint }}>AI</AppText>
-          </View>
-        )}
-        {badge === 'auto' && (
-          <AppText style={{ fontSize: 9, fontWeight: '800', color: colors.textMuted, letterSpacing: 0.6 }}>{t('entry.auto')}</AppText>
-        )}
-        {badge === 'missing' && (
-          <AppText style={{ fontSize: 9, fontWeight: '800', color: colors.warning, letterSpacing: 0.6 }}>{t('entry.fillIn')}</AppText>
-        )}
+        {tag ? (
+          <AppText variant="caption" tone={badge === 'missing' ? 'primary' : 'muted'} style={badge === 'missing' ? { fontFamily: fonts.semi } : null}>
+            {tag}
+          </AppText>
+        ) : null}
       </View>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: spacing.sm,
-          height: big ? 60 : 50,
+          height: big ? 72 : 48,
           paddingHorizontal: spacing.md,
           borderRadius: radii.md,
           backgroundColor: colors.inputBackground,
-          borderWidth: 1.5,
+          borderWidth: focus || error ? 1.5 : 1,
+          borderStyle: badge === 'missing' && !focus && !error ? 'dashed' : 'solid',
           borderColor,
         }}
       >
-        {icon ? <FontAwesome name={icon as any} size={14} color={colors.textMuted} /> : null}
         <TextInput
           ref={inputRef}
           placeholderTextColor={colors.placeholder}
@@ -154,17 +149,19 @@ function Field({
           style={[
             {
               flex: 1,
+              minWidth: 0,
               height: '100%',
               color: colors.text,
-              fontSize: big ? 22 : 16,
-              fontFamily: big ? fonts.displayBold : undefined,
-              fontWeight: big ? undefined : '500',
+              fontSize: big ? 36 : 16,
+              letterSpacing: big ? -1.2 : 0,
+              fontFamily: big ? fonts.heavy : fonts.regular,
+              fontVariant: ['tabular-nums'],
             },
             { outlineStyle: 'none' } as any,
           ]}
         />
         {suffix ? (
-          <AppText variant="captionBold" tone="muted">
+          <AppText variant={big ? 'heading' : 'captionBold'} tone="muted">
             {suffix}
           </AppText>
         ) : null}
@@ -295,9 +292,9 @@ export function EntryForm({ initial, vehicles, stations, entries, aiFields, miss
     : null;
 
   return (
-    <View style={{ gap: spacing.xl }}>
+    <View style={{ gap: spacing.xxl }}>
       {/* Amount block */}
-      <Animated.View entering={FadeInDown.duration(380)} style={{ gap: spacing.md }}>
+      <View style={{ gap: spacing.md }}>
         <Field
           inputRef={costRef}
           label={t('entry.cost')}
@@ -337,17 +334,16 @@ export function EntryForm({ initial, vehicles, stations, entries, aiFields, miss
           </View>
         </View>
         {priceWarn ? (
-          <Animated.View entering={FadeIn} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <FontAwesome name="exclamation-triangle" size={12} color={colors.warning} />
-            <AppText variant="caption" style={{ color: colors.warning, flex: 1 }}>
+          <Animated.View entering={FadeIn.duration(160)} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+            <AppText variant="captionBold" style={{ flex: 1 }}>
               {priceWarn}
             </AppText>
           </Animated.View>
         ) : null}
-      </Animated.View>
+      </View>
 
       {/* Station */}
-      <Animated.View entering={FadeInDown.delay(60).duration(380)} style={{ gap: spacing.sm }}>
+      <View style={{ gap: spacing.md }}>
         <Field
           label={t('entry.station')}
           icon="tint"
@@ -361,16 +357,26 @@ export function EntryForm({ initial, vehicles, stations, entries, aiFields, miss
         />
         {(stationFocus || !form.station) && suggestions.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: spacing.sm }}>
-            {suggestions.map((s) => (
-              <Chip key={s.key} label={s.name} icon="history" onPress={() => set('station', s.name)} />
-            ))}
+            {suggestions.map((s) => {
+              const c = stationColors(s.name, colors);
+              return (
+                <Chip
+                  key={s.key}
+                  label={s.name}
+                  mark={c.fill}
+                  active={form.station.trim().toLowerCase() === s.name.toLowerCase()}
+                  activeFill={c.brand ? { fill: c.fill, on: c.on } : undefined}
+                  onPress={() => set('station', s.name)}
+                />
+              );
+            })}
           </ScrollView>
         )}
         <Field label={t('entry.address')} icon="map-marker" value={form.address} onChangeText={(v) => set('address', v)} placeholder={t('entry.addressPlaceholder')} />
-      </Animated.View>
+      </View>
 
       {/* When */}
-      <Animated.View entering={FadeInDown.delay(120).duration(380)} style={{ gap: spacing.sm }}>
+      <View style={{ gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <View style={{ flex: 3 }}>
             <Field
@@ -402,17 +408,17 @@ export function EntryForm({ initial, vehicles, stations, entries, aiFields, miss
           <Chip label={t('common.today')} active={form.date === today} onPress={() => set('date', today)} />
           <Chip label={t('common.yesterday')} active={form.date === yesterday} onPress={() => set('date', yesterday)} />
         </View>
-      </Animated.View>
+      </View>
 
       {/* Vehicle + odometer */}
-      <Animated.View entering={FadeInDown.delay(180).duration(380)} style={{ gap: spacing.sm }}>
-        <AppText variant="label" tone="muted">
+      <View style={{ gap: spacing.sm }}>
+        <AppText variant="label" tone="secondary">
           {t('entry.vehicle')}
         </AppText>
         {vehicles.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
             {vehicles.map((v) => (
-              <Chip key={v.id} label={v.name} icon="car" active={form.vehicleId === v.id} onPress={() => set('vehicleId', form.vehicleId === v.id ? null : v.id)} />
+              <Chip key={v.id} label={v.name} active={form.vehicleId === v.id} onPress={() => set('vehicleId', form.vehicleId === v.id ? null : v.id)} />
             ))}
           </ScrollView>
         ) : (
@@ -430,14 +436,14 @@ export function EntryForm({ initial, vehicles, stations, entries, aiFields, miss
           suffix={f.distanceUnit}
           hint={mileageWarn ?? (lastM ? t('entry.lastMileage', { value: f.n(lastM), date: f.date(lastMileage!.date) }) : t('entry.mileageHint'))}
         />
-      </Animated.View>
+      </View>
 
-      <Animated.View entering={FadeInDown.delay(240).duration(380)}>
+      <View>
         <Field label={t('entry.notes')} icon="sticky-note-o" value={form.notes} onChangeText={(v) => set('notes', v)} placeholder={t('entry.notesPlaceholder')} />
-      </Animated.View>
+      </View>
 
       <View style={{ gap: spacing.sm }}>
-        <Button title={submitLabel} icon="check" variant="accent" size="lg" loading={saving} onPress={submit} />
+        <Button title={submitLabel} size="lg" loading={saving} onPress={submit} />
         {submitted && !valid ? (
           <AppText variant="caption" tone="negative" align="center">
             {t('entry.err.fix')}

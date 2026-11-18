@@ -17,15 +17,14 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
-// New key on purpose: the redesign defaults everyone to "follow system";
-// the old '@tankuy_theme' override is ignored.
+// Light is the default regardless of the OS setting; "system" is opt-in.
 const STORAGE_KEY = '@tankuy_theme_pref';
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const systemScheme = useSystemScheme();
-  const [preference, setPref] = useState<ThemePreference>('system');
+  const [preference, setPref] = useState<ThemePreference>('light');
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)

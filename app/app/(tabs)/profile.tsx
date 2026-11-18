@@ -29,14 +29,9 @@ import {
 import { getEngineSuggestions } from "@/data/engineDatabase";
 import { useTranslation } from "react-i18next";
 import { changeLanguage } from "@/i18n";
-import {
-  ScaleInView,
-  FadeInView,
-  AnimatedPressable,
-  StaggeredChildren,
-} from "@/components/AnimatedComponents";
+import { FadeInView, AnimatedPressable } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
-import { Card, SectionHeader, ListRow, Button, Segmented } from "@/components/ui";
+import { ListRow, Button, Segmented, Section } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import {
   isPushSupported,
@@ -48,9 +43,6 @@ import {
 } from "@/services/push";
 import { spacing, radii, typography } from "@/constants/Theme";
 
-// Standard RN Switch track/thumb defaults — sanctioned hex exception, not tokens.
-const SWITCH_TRACK_FALSE = "#767577";
-const SWITCH_THUMB_FALSE = "#f4f3f4";
 
 type FuelType = "petrol" | "diesel" | "lpg" | "electric" | "hybrid";
 
@@ -413,131 +405,81 @@ export default function ProfileScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
+            tintColor={colors.text}
           />
         }
       >
-        {/* Header — not ScreenHeader: ScreenHeader now uses spacing.xl (matching this
-            screen's title row too), but this header stays custom/inline since it has
-            no rightElement and predates the shared component */}
         <View style={styles.header}>
           <Text style={styles.title}>{t("profile.title")}</Text>
         </View>
 
-        {/* User Card */}
-        <ScaleInView delay={100}>
-          <Card padded={false} style={styles.userCard}>
-            <View style={styles.avatarContainer}>
-              {user?.avatarUrl ? (
-                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <FontAwesome name="user" size={32} color={colors.textSecondary} />
-                </View>
-              )}
+        <FadeInView>
+          <View style={styles.userCard}>
+            {user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.avatar} /> : null}
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.userName} numberOfLines={1}>{user?.name || "User"}</Text>
+              {user?.email ? <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text> : null}
             </View>
-            <Text style={styles.userName}>{user?.name || "User"}</Text>
-            <Text style={styles.userEmail}>{user?.email || ""}</Text>
-          </Card>
-        </ScaleInView>
+          </View>
+        </FadeInView>
 
         {/* Vehicles Section */}
         <View style={styles.section}>
-          {/* Not SectionHeader: the "+" icon has no slot in actionLabel (text-only) */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t("profile.myVehicles")}</Text>
-            <Button
-              title={t("profile.add")}
-              onPress={openAddModal}
-              variant="ghost"
-              icon={<FontAwesome name="plus" size={14} color={colors.primary} />}
-              style={styles.addButton}
-            />
-          </View>
-
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : vehicles.length > 0 ? (
-            <View style={styles.vehicleList}>
-              <StaggeredChildren stagger={80} baseDelay={200}>
-                {vehicles.map((vehicle) => (
+          <Section
+            title={t("profile.myVehicles")}
+            right={<Button title={t("profile.add")} onPress={openAddModal} variant="secondary" size="sm" />}
+          >
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.text} />
+              </View>
+            ) : vehicles.length > 0 ? (
+              <View>
+                {vehicles.map((vehicle, i) => (
                   <AnimatedPressable
                     key={vehicle.id}
-                    style={styles.vehicleCard}
+                    style={[styles.vehicleCard, i > 0 && styles.rowDivider]}
                     onPress={() => openEditModal(vehicle)}
-                    scaleValue={0.97}
+                    scaleValue={1}
                   >
-                    <View style={styles.vehicleIconContainer}>
-                      <FontAwesome name="car" size={20} color={colors.primary} />
-                    </View>
                     <View style={styles.vehicleInfo}>
                       <Text style={styles.vehicleName}>{vehicle.name}</Text>
                       <Text style={styles.vehicleMeta}>
-                        {[vehicle.brand, vehicle.model, vehicle.year]
+                        {[vehicle.brand, vehicle.model, vehicle.year, vehicle.licensePlate]
                           .filter(Boolean)
-                          .join(" • ") || vehicle.fuelType}
+                          .join(" ") || vehicle.fuelType}
                       </Text>
-                      {vehicleMileages[vehicle.id] != null && (
-                        <View style={styles.vehicleMileageRow}>
-                          <FontAwesome
-                            name="tachometer"
-                            size={12}
-                            color={colors.textMuted}
-                          />
-                          <Text style={styles.vehicleMileageText}>
-                            {Number(
-                              vehicleMileages[vehicle.id],
-                            ).toLocaleString()}{" "}
-                            {distanceUnit}
-                          </Text>
-                        </View>
-                      )}
                     </View>
+                    {vehicleMileages[vehicle.id] != null && (
+                      <Text style={styles.vehicleMileageText}>
+                        {Number(vehicleMileages[vehicle.id]).toLocaleString("cs-CZ")} {distanceUnit}
+                      </Text>
+                    )}
                     <TouchableOpacity
                       style={styles.vehicleAction}
                       onPress={() => handleDeleteVehicle(vehicle)}
+                      accessibilityLabel={t("common.delete")}
                     >
-                      <FontAwesome name="trash-o" size={18} color={colors.error} />
+                      <FontAwesome name="trash-o" size={16} color={colors.textMuted} />
                     </TouchableOpacity>
                   </AnimatedPressable>
                 ))}
-              </StaggeredChildren>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.emptyVehicles}
-              onPress={openAddModal}
-            >
-              {/* Deviation from the plan's #3A3A3C→colors.elevated mapping: elevated is
-                  #FFFFFF in light mode (invisible on the white card); textMuted keeps
-                  the original muted-gray intent and is visible in both themes. */}
-              <FontAwesome name="car" size={32} color={colors.textMuted} />
-              <Text style={styles.emptyText}>{t("profile.noVehicles")}</Text>
-              <Text style={styles.emptySubtext}>
-                {t("profile.addFirstVehicle")}
-              </Text>
-            </TouchableOpacity>
-          )}
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.emptyVehicles} onPress={openAddModal}>
+                <Text style={styles.emptyText}>{t("profile.noVehicles")}</Text>
+                <Text style={styles.emptySubtext}>{t("profile.addFirstVehicle")}</Text>
+              </TouchableOpacity>
+            )}
+          </Section>
         </View>
 
         {/* Settings Section */}
         <View style={styles.section}>
-          <SectionHeader title={t("profile.settings.title")} />
-
-          <Card padded={false} style={styles.settingsGroup}>
+          <Section title={t("profile.settings.title")}>
+          <View style={styles.settingsGroup}>
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome
-                      name={preference === "system" ? "adjust" : isDark ? "moon-o" : "sun-o"}
-                      size={16}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                }
                 title={t("profile.settings.appearance")}
                 rightElement={
                   <Segmented
@@ -557,15 +499,6 @@ export default function ProfileScreen() {
 
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome
-                      name="language"
-                      size={16}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                }
                 title={t("profile.settings.language")}
                 rightElement={
                   <Segmented
@@ -584,11 +517,6 @@ export default function ProfileScreen() {
 
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome name="bell" size={16} color={colors.textSecondary} />
-                  </View>
-                }
                 title={t("profile.settings.notifications")}
                 // rightElement (not value): keeps the original secondary value color;
                 // ListRow's value slot hardcodes colors.text
@@ -598,11 +526,11 @@ export default function ProfileScreen() {
                       value={pushEnabled}
                       disabled={pushBusy}
                       onValueChange={togglePush}
-                      trackColor={{ false: SWITCH_TRACK_FALSE, true: colors.tint }}
+                      trackColor={{ false: colors.border, true: colors.text }}
                       // @ts-expect-error react-native-web specific props
-                      activeThumbColor={colors.tint}
-                      activeTrackColor={colors.tint + "80"}
-                      thumbColor={pushEnabled ? colors.tint : SWITCH_THUMB_FALSE}
+                      activeThumbColor={colors.background}
+                      activeTrackColor={colors.text}
+                      thumbColor={pushEnabled ? colors.background : colors.textSecondary}
                     />
                   ) : (
                     <Text style={styles.settingsValue}>
@@ -617,15 +545,6 @@ export default function ProfileScreen() {
 
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome
-                      name="money"
-                      size={16}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                }
                 title={t("profile.settings.currency")}
                 rightElement={
                   <Segmented
@@ -644,15 +563,6 @@ export default function ProfileScreen() {
 
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome
-                      name="tachometer"
-                      size={16}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                }
                 title={t("profile.settings.unitSystem")}
                 rightElement={
                   <Segmented
@@ -668,25 +578,16 @@ export default function ProfileScreen() {
                 }
               />
             </View>
-          </Card>
+          </View>
+          </Section>
         </View>
 
         {/* About Section */}
         <View style={styles.section}>
-          <SectionHeader title={t("profile.about.title")} />
-
-          <Card padded={false} style={styles.settingsGroup}>
+          <Section title={t("profile.about.title")}>
+          <View style={styles.settingsGroup}>
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome
-                      name="info-circle"
-                      size={16}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                }
                 title={t("profile.about.version")}
                 // rightElement (not value): keeps the original secondary value color;
                 // ListRow's value slot hardcodes colors.text
@@ -695,31 +596,18 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome
-                      name="file-text-o"
-                      size={16}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                }
                 title={t("profile.about.terms")}
                 onPress={() => router.push("/(legal)/terms")}
               />
             </View>
             <View style={styles.settingsRowBorder}>
               <ListRow
-                icon={
-                  <View style={styles.settingsIconContainer}>
-                    <FontAwesome name="lock" size={16} color={colors.textSecondary} />
-                  </View>
-                }
                 title={t("profile.about.privacy")}
                 onPress={() => router.push("/(legal)/privacy")}
               />
             </View>
-          </Card>
+          </View>
+          </Section>
         </View>
 
         {/* Sign Out */}
@@ -729,7 +617,6 @@ export default function ProfileScreen() {
           disabled={authLoading}
           loading={authLoading}
           variant="destructive"
-          icon={<FontAwesome name="sign-out" size={18} color={colors.white} />}
           style={styles.signOutButton}
         />
 
@@ -821,7 +708,7 @@ export default function ProfileScreen() {
                         size={16}
                         color={
                           vehicleForm.fuelType === fuel.value
-                            ? colors.white
+                            ? colors.buttonPrimaryText
                             : colors.textSecondary
                         }
                       />
@@ -1107,27 +994,6 @@ export default function ProfileScreen() {
       >
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmBox}>
-            <View style={styles.confirmHeader}>
-              <View
-                style={[
-                  styles.confirmIconBg,
-                  confirmConfig.isDestructive &&
-                    styles.confirmIconBgDestructive,
-                ]}
-              >
-                <FontAwesome
-                  name={
-                    confirmConfig.isDestructive
-                      ? "exclamation-triangle"
-                      : "info"
-                  }
-                  size={24}
-                  color={
-                    confirmConfig.isDestructive ? colors.error : colors.tint
-                  }
-                />
-              </View>
-            </View>
             <Text style={styles.confirmTitle}>{confirmConfig.title}</Text>
             <Text style={styles.confirmMessage}>{confirmConfig.message}</Text>
 
@@ -1162,99 +1028,72 @@ const getStyles = (colors: any) =>
       backgroundColor: colors.background,
     },
     scrollContent: {
-      maxWidth: 800,
+      maxWidth: 720,
       width: "100%",
       alignSelf: "center",
       paddingBottom: 40,
+      paddingHorizontal: spacing.lg,
     },
     header: {
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.lg,
+      paddingTop: Platform.OS === "web" ? spacing.xxl : spacing.lg,
+      paddingBottom: spacing.xxl,
     },
     title: {
       ...typography.title,
       color: colors.text,
     },
     userCard: {
+      flexDirection: "row",
       alignItems: "center",
-      paddingVertical: spacing.xxl,
-      marginHorizontal: spacing.xl,
-      borderRadius: 20, // tie, not on radii scale (between lg=16 and full=999)
+      gap: spacing.lg,
     },
-    avatarContainer: {
-      marginBottom: 16,
-    },
+    avatarContainer: {},
     avatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      borderWidth: 3,
-      borderColor: colors.tint,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
     },
-    avatarPlaceholder: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.elevated,
-      justifyContent: "center",
-      alignItems: "center",
-    },
+    avatarPlaceholder: {},
     userName: {
-      fontSize: 22,
-      fontWeight: "600",
+      ...typography.heading,
+      fontSize: 24,
+      lineHeight: 28,
       color: colors.text,
     },
     userEmail: {
-      fontSize: 15,
+      ...typography.caption,
       color: colors.textSecondary,
-      marginTop: 4,
+      marginTop: spacing.xs,
     },
     section: {
-      marginTop: 28, // tie, not on spacing scale (between xxl=24 and xxxl=32)
-      paddingHorizontal: spacing.xl,
+      marginTop: spacing.huge,
     },
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing.md,
-    },
+    sectionHeader: {},
     sectionTitle: {
-      fontSize: 18, // no exact typography match (heading is 20/600)
-      fontWeight: "600",
+      ...typography.heading,
       color: colors.text,
     },
-    addButton: {
-      // Overrides Button's default padding/gap to match the original inline add-action look
-      paddingVertical: 0,
-      paddingHorizontal: 0,
-      gap: 6, // tie, not on spacing scale
-    },
+    addButton: {},
     loadingContainer: {
       padding: spacing.xl,
-      alignItems: "center",
+      alignItems: "flex-start",
     },
-    vehicleList: {
-      gap: 10, // tie, not on spacing scale
+    vehicleList: {},
+    rowDivider: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
     vehicleCard: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderRadius: 14, // tie, not on radii scale
-      padding: 14, // tie, not on spacing scale
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      minHeight: 56,
     },
-    vehicleIconContainer: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      backgroundColor: colors.primaryLight,
-      justifyContent: "center",
-      alignItems: "center",
-    },
+    vehicleIconContainer: {},
     vehicleInfo: {
       flex: 1,
-      marginLeft: 14, // tie, not on spacing scale
+      minWidth: 0,
     },
     vehicleName: {
       ...typography.bodyBold,
@@ -1262,56 +1101,37 @@ const getStyles = (colors: any) =>
     },
     vehicleMeta: {
       ...typography.caption,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    vehicleMileageRow: {
-      flexDirection: "row" as const,
-      alignItems: "center" as const,
-      gap: 4,
-      marginTop: 3,
-    },
-    vehicleMileageText: {
-      fontSize: 12, // no exact typography match
       color: colors.textMuted,
-      fontWeight: "500" as const,
+    },
+    vehicleMileageRow: {},
+    vehicleMileageText: {
+      ...typography.statSm,
+      color: colors.text,
     },
     vehicleAction: {
       padding: spacing.sm,
     },
     emptyVehicles: {
-      backgroundColor: colors.card,
-      borderRadius: 14, // tie, not on radii scale
-      padding: spacing.xxxl,
-      alignItems: "center",
+      paddingVertical: spacing.lg,
     },
     emptyText: {
       ...typography.bodyBold,
-      color: colors.textSecondary,
-      marginTop: spacing.md,
+      color: colors.text,
     },
     emptySubtext: {
       ...typography.caption,
-      color: colors.textMuted,
+      color: colors.textSecondary,
       marginTop: spacing.xs,
     },
-    // Card supplies backgroundColor (colors.card); SectionHeader above supplies the
-    // top gap, so no marginTop here (avoids doubling the spacing).
-    settingsGroup: {
-      paddingHorizontal: spacing.lg,
-      borderRadius: 14, // tie, not on radii scale
-      overflow: "hidden",
-    },
-    // Border wrapper around each ListRow — ListRow itself has no divider slot.
+    settingsGroup: {},
+    // Hairline under each settings row.
     settingsRowBorder: {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    settingsIconContainer: {
-      width: 32,
-    },
+    settingsIconContainer: {},
     settingsValue: {
-      fontSize: 15, // no exact typography match (body is 16)
+      ...typography.body,
       color: colors.textSecondary,
     },
     pillGroup: {
@@ -1319,26 +1139,11 @@ const getStyles = (colors: any) =>
       alignItems: "center",
       gap: spacing.sm,
     },
-    pill: {
-      paddingHorizontal: 10, // tie, not on spacing scale
-      paddingVertical: 4, // tie, not on spacing scale
-      borderRadius: radii.md,
-      backgroundColor: "transparent",
-    },
-    pillText: {
-      // no exact typography match; avoid spreading a token and overriding fontSize
-      fontSize: 13,
-      fontWeight: "600",
-    },
-    // Overrides Button's default padding/radius/gap to match the original pill look;
-    // backgroundColor comes from the destructive variant.
+    pill: {},
+    pillText: {},
     signOutButton: {
-      marginHorizontal: spacing.xl,
-      marginTop: 32, // tie, not on spacing scale
-      paddingVertical: spacing.lg,
-      paddingHorizontal: 0,
-      borderRadius: 14, // tie, not on radii scale
-      gap: 10, // tie, not on spacing scale
+      marginTop: spacing.huge,
+      alignSelf: "flex-start",
     },
     footer: {
       height: 100,
@@ -1362,13 +1167,13 @@ const getStyles = (colors: any) =>
       color: colors.textSecondary,
     },
     modalTitle: {
-      fontSize: 17, // no exact typography match (bodyBold is 16/600)
-      fontWeight: "600",
+      ...typography.bodyBold,
       color: colors.text,
     },
     modalSave: {
       ...typography.bodyBold,
-      color: colors.tint,
+      color: colors.text,
+      textDecorationLine: "underline",
     },
     modalContent: {
       flex: 1,
@@ -1378,18 +1183,19 @@ const getStyles = (colors: any) =>
       marginBottom: spacing.xxl,
     },
     formLabel: {
-      fontSize: 14, // no exact typography match
-      fontWeight: "600",
+      ...typography.label,
       color: colors.textSecondary,
-      marginBottom: 10, // tie, not on spacing scale
+      marginBottom: spacing.sm,
     },
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.inputBackground,
       borderRadius: radii.md,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: 14, // tie, not on spacing scale
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      height: 48,
       gap: spacing.md,
     },
     textInput: {
@@ -1397,7 +1203,10 @@ const getStyles = (colors: any) =>
       // lineHeight can alter native input sizing/vertical centering.
       flex: 1,
       fontSize: 16,
+      fontFamily: typography.body.fontFamily,
       color: colors.text,
+      height: "100%",
+      ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as any) : null),
     },
     fuelTypeGrid: {
       flexDirection: "row",
@@ -1407,28 +1216,31 @@ const getStyles = (colors: any) =>
     fuelTypeOption: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.inputBackground,
-      paddingHorizontal: 14, // tie, not on spacing scale
-      paddingVertical: spacing.md,
-      borderRadius: 10, // tie, not on radii scale
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      height: 36,
+      borderRadius: radii.md,
       gap: spacing.sm,
     },
     fuelTypeOptionSelected: {
-      backgroundColor: colors.tint,
+      backgroundColor: colors.buttonPrimary,
+      borderColor: colors.buttonPrimary,
     },
     fuelTypeText: {
-      fontSize: 14, // no exact typography match
+      ...typography.captionBold,
       color: colors.text,
-      fontWeight: "500",
     },
     fuelTypeTextSelected: {
-      color: colors.white, // Always white when selected
+      color: colors.buttonPrimaryText,
     },
     autocompleteContainer: {
       position: "relative",
     },
     suggestionsContainer: {
-      backgroundColor: colors.elevated,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
       borderRadius: radii.md,
       marginTop: spacing.sm,
       overflow: "hidden",
@@ -1442,9 +1254,8 @@ const getStyles = (colors: any) =>
       borderBottomColor: colors.border,
     },
     suggestionText: {
-      fontSize: 15, // no exact typography match
+      ...typography.body,
       color: colors.text,
-      fontWeight: "500",
     },
     // Custom Confirmation Modal Styles
     confirmOverlay: {
@@ -1455,17 +1266,13 @@ const getStyles = (colors: any) =>
       padding: spacing.xl,
     },
     confirmBox: {
-      backgroundColor: colors.card,
-      borderRadius: 24, // tie, not on radii scale
+      backgroundColor: colors.background,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
       padding: spacing.xxl,
       width: "100%",
       maxWidth: 380,
-      alignItems: "center",
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.1,
-      shadowRadius: 20,
-      elevation: 20,
     },
     confirmHeader: {
       marginBottom: spacing.lg,
@@ -1482,19 +1289,14 @@ const getStyles = (colors: any) =>
       backgroundColor: `${colors.error}1A`, // ~10% alpha
     },
     confirmTitle: {
-      fontSize: 20, // no exact typography match (weight 700 vs heading's 600)
-      fontWeight: "700",
+      ...typography.heading,
       color: colors.text,
       marginBottom: spacing.sm,
-      textAlign: "center",
     },
     confirmMessage: {
-      fontSize: 15, // no exact typography match
+      ...typography.body,
       color: colors.textSecondary,
-      textAlign: "center",
       marginBottom: spacing.xxl,
-      paddingHorizontal: spacing.sm,
-      lineHeight: 22,
     },
     confirmActions: {
       flexDirection: "row",
@@ -1505,15 +1307,10 @@ const getStyles = (colors: any) =>
     // secondary variant's default bg (colors.elevated) differs from inputBackground here.
     confirmCancelBtn: {
       flex: 1,
-      paddingVertical: 14, // tie, not on spacing scale
-      borderRadius: 14, // tie, not on radii scale
-      backgroundColor: colors.inputBackground,
     },
     // Overrides Button's default padding/radius; background comes from the variant
     // (primary/destructive), which already matches the original colors exactly.
     confirmActionBtn: {
       flex: 1,
-      paddingVertical: 14, // tie, not on spacing scale
-      borderRadius: 14, // tie, not on radii scale
     },
   });

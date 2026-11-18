@@ -6,16 +6,11 @@ import { FontAwesome } from '@expo/vector-icons';
 import Animated, {
   Easing,
   FadeIn,
-  FadeInDown,
-  FadeInUp,
   FadeOut,
-  ZoomIn,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
-  withDelay,
   withRepeat,
-  withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -23,10 +18,10 @@ import { useTheme } from '@/context/ThemeContext';
 import { useData, type EntryInput } from '@/context/DataContext';
 import { useFormat } from '@/hooks/useFormat';
 import api, { type ReceiptScanResult } from '@/services/api';
-import { AppText, Button, Card, PressableScale, Screen } from '@/components/ui';
+import { AppText, Button, PressableScale, Rule, Screen, StationMark } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { EntryForm, emptyForm, type FieldKey, type FormState } from '@/components/EntryForm';
-import { elevation, radii, spacing } from '@/constants/Theme';
+import { fonts, radii, spacing, typography } from '@/constants/Theme';
 import { haptics } from '@/lib/haptics';
 import { saveWithDuplicateCheck } from '@/lib/entryHelpers';
 import { stationStats, toNum } from '@/lib/stats';
@@ -80,59 +75,32 @@ function fromScan(res: ReceiptScanResult, base: FormState) {
 
 function ScanningView({ uri, step }: { uri: string; step: string }) {
   const { colors } = useTheme();
+  const reduce = useReducedMotion();
   const y = useSharedValue(0);
   const [h, setH] = useState(320);
   useEffect(() => {
-    y.value = withRepeat(withSequence(withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: 1400, easing: Easing.inOut(Easing.quad) })), -1);
-  }, [y]);
-  const line = useAnimatedStyle(() => ({ transform: [{ translateY: y.value * (h - 4) }] }));
-  const glow = useAnimatedStyle(() => ({ transform: [{ translateY: y.value * (h - 60) }] }));
+    if (reduce) return;
+    y.value = withRepeat(withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.quad) }), -1, true);
+  }, [y, reduce]);
+  const line = useAnimatedStyle(() => ({ transform: [{ translateY: y.value * (h - 2) }] }));
   return (
-    <Animated.View entering={FadeIn.duration(300)} style={{ alignItems: 'center', gap: spacing.xl, width: '100%' }}>
+    <View style={{ gap: spacing.xl, width: '100%', maxWidth: 320 }}>
       <View
         onLayout={(e) => setH(e.nativeEvent.layout.height)}
-        style={{ width: '78%', maxWidth: 300, aspectRatio: 0.72, borderRadius: radii.lg, overflow: 'hidden', backgroundColor: colors.sunken, borderWidth: 1, borderColor: colors.border }}
+        style={{ width: '100%', aspectRatio: 0.75, borderRadius: radii.sm, overflow: 'hidden', backgroundColor: colors.sunken }}
       >
-        <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.25)' }} />
-        <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: 0, height: 60, backgroundColor: colors.tint, opacity: 0.18 }, glow]} />
-        <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: 0, height: 3, backgroundColor: colors.tint }, line]} />
-        {/* corner brackets */}
-        {[
-          { top: 12, left: 12, borderTopWidth: 3, borderLeftWidth: 3 },
-          { top: 12, right: 12, borderTopWidth: 3, borderRightWidth: 3 },
-          { bottom: 12, left: 12, borderBottomWidth: 3, borderLeftWidth: 3 },
-          { bottom: 12, right: 12, borderBottomWidth: 3, borderRightWidth: 3 },
-        ].map((s, i) => (
-          <View key={i} style={[{ position: 'absolute', width: 26, height: 26, borderColor: '#fff', borderRadius: 4 }, s]} />
-        ))}
+        <Image source={{ uri }} style={{ width: '100%', height: '100%', opacity: 0.85 }} resizeMode="cover" />
+        {!reduce && <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: 0, height: 2, backgroundColor: colors.text }, line]} />}
       </View>
-      <Animated.View key={step} entering={FadeInUp.duration(300)} exiting={FadeOut.duration(150)} style={{ alignItems: 'center', gap: 4 }}>
-        <AppText variant="heading">{step}</AppText>
-      </Animated.View>
-    </Animated.View>
-  );
-}
-
-function SuccessMark() {
-  const { colors } = useTheme();
-  const ring = useSharedValue(0.6);
-  useEffect(() => {
-    ring.value = withDelay(120, withSpring(1, { damping: 9, stiffness: 120 }));
-  }, [ring]);
-  const ringStyle = useAnimatedStyle(() => ({ transform: [{ scale: ring.value }], opacity: 2 - ring.value * 1.4 }));
-  return (
-    <View style={{ width: 120, height: 120, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View style={[{ position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: colors.positiveSoft }, ringStyle]} />
-      <Animated.View entering={ZoomIn.springify().damping(12)} style={{ width: 84, height: 84, borderRadius: 42, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' }}>
-        <FontAwesome name="check" size={38} color="#fff" />
+      <Animated.View key={step} entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)}>
+        <AppText variant="bodyBold">{step}</AppText>
       </Animated.View>
     </View>
   );
 }
 
 export default function ScanScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const f = useFormat();
   const toast = useToast();
@@ -261,13 +229,11 @@ export default function ScanScreen() {
   // ── Phases ──
   if (phase === 'scanning' && picked) {
     return (
-      <Screen title={t('scan.title')} overline={t('scan.scanningOverline')}>
-        <View style={{ paddingTop: spacing.lg, gap: spacing.xl, alignItems: 'center', width: '100%' }}>
+      <Screen title={t('scan.title')}>
+        <View style={{ gap: spacing.xl, alignItems: 'flex-start', maxWidth: 560, width: '100%' }}>
           <ScanningView uri={picked.uri} step={steps[stepIdx] ?? ''} />
-          <AppText tone="secondary" align="center" style={{ maxWidth: 300 }}>
-            {t('scan.scanningHint')}
-          </AppText>
-          <Button title={t('common.cancel')} variant="ghost" onPress={reset} />
+          <AppText tone="secondary">{t('scan.scanningHint')}</AppText>
+          <Button title={t('common.cancel')} variant="secondary" onPress={reset} />
         </View>
       </Screen>
     );
@@ -278,30 +244,18 @@ export default function ScanScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Screen
           title={t('scan.reviewTitle')}
-          overline={t('scan.reviewOverline', { count: scan.ai.size })}
-          right={
-            <PressableScale onPress={reset} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 }}>
-              <FontAwesome name="refresh" size={13} color={colors.textSecondary} />
-              <AppText variant="captionBold" tone="secondary">
-                {t('scan.rescan')}
-              </AppText>
-            </PressableScale>
-          }
+          right={<Button title={t('scan.rescan')} size="sm" variant="secondary" onPress={reset} />}
         >
-          <View style={{ maxWidth: 640, width: '100%', alignSelf: 'center', gap: spacing.xl }}>
-            <Animated.View entering={FadeInDown.duration(350)}>
-              <Card tone="sunken" style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-                {picked ? (
-                  <Image source={{ uri: picked.uri }} style={{ width: 52, height: 68, borderRadius: radii.sm, backgroundColor: colors.sunken }} />
-                ) : null}
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText variant="bodyBold">{t('scan.reviewBanner')}</AppText>
-                  <AppText variant="caption" tone="secondary">
-                    {scan.missing.size ? t('scan.reviewMissing') : t('scan.reviewAll')}
-                  </AppText>
-                </View>
-              </Card>
-            </Animated.View>
+          <View style={{ maxWidth: 640, width: '100%', gap: spacing.xxl }}>
+            <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+              {picked ? <Image source={{ uri: picked.uri }} style={{ width: 40, height: 52, borderRadius: radii.xs, backgroundColor: colors.sunken }} /> : null}
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyBold">{t('scan.reviewOverline', { count: scan.ai.size })}</AppText>
+                <AppText variant="caption" tone="secondary">
+                  {scan.missing.size ? t('scan.reviewMissing') : t('scan.reviewAll')}
+                </AppText>
+              </View>
+            </View>
             <EntryForm
               initial={scan.form}
               aiFields={scan.ai}
@@ -321,40 +275,31 @@ export default function ScanScreen() {
 
   if (phase === 'saved' && saved) {
     return (
-      <Screen>
-        <View style={{ alignItems: 'center', gap: spacing.xl, paddingTop: spacing.huge, maxWidth: 440, width: '100%', alignSelf: 'center' }}>
-          <SuccessMark />
-          <Animated.View entering={FadeInDown.delay(150).duration(400)} style={{ alignItems: 'center', gap: 6 }}>
-            <AppText variant="title" align="center">
-              {t('scan.savedTitle')}
-            </AppText>
-            <AppText tone="secondary" align="center">
-              {t('scan.savedSub')}
-            </AppText>
-          </Animated.View>
-          <Animated.View entering={FadeInDown.delay(250).duration(400)} style={{ alignSelf: 'stretch' }}>
-            <Card style={{ gap: spacing.md }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <AppText variant="bodyBold" numberOfLines={1} style={{ flex: 1 }}>
+      <Screen title={t('scan.savedTitle')}>
+        <View style={{ gap: spacing.xxl, maxWidth: 480, width: '100%' }}>
+          <View style={{ gap: spacing.md }}>
+            <Rule strong />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <StationMark name={saved.stationName} height={40} />
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyBold" numberOfLines={1}>
                   {saved.stationName ?? t('entry.unknownStation')}
                 </AppText>
                 <AppText variant="mono" tone="muted">
                   {f.date(saved.date)}
+                  {saved.time ? `, ${saved.time}` : ''}
                 </AppText>
               </View>
-              <AppText variant="hero" style={{ fontSize: 38, lineHeight: 42 }}>
-                {f.money(saved.totalCost)}
-              </AppText>
-              <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-                <AppText tone="secondary">{f.volume(saved.totalLiters)}</AppText>
-                <AppText tone="secondary">{f.price(saved.pricePerLiter)}</AppText>
-              </View>
-            </Card>
-          </Animated.View>
-          <Animated.View entering={FadeInDown.delay(350).duration(400)} style={{ alignSelf: 'stretch', gap: spacing.sm }}>
+            </View>
+            <AppText style={typography.display}>{f.money(saved.totalCost).replace(/\u202F/g, '\u00A0')}</AppText>
+            <AppText variant="statSm" tone="secondary">
+              {[saved.totalLiters ? f.volume(saved.totalLiters) : null, saved.pricePerLiter ? f.price(saved.pricePerLiter) : null].filter(Boolean).join(' ')}
+            </AppText>
+          </View>
+          <View style={{ gap: spacing.sm }}>
             <Button title={t('scan.done')} size="lg" onPress={() => { reset(); router.navigate('/'); }} />
-            <Button title={t('scan.another')} size="lg" variant="secondary" icon="camera" onPress={reset} />
-          </Animated.View>
+            <Button title={t('scan.another')} size="lg" variant="secondary" onPress={reset} />
+          </View>
         </View>
       </Screen>
     );
@@ -363,34 +308,26 @@ export default function ScanScreen() {
   if (phase === 'error') {
     return (
       <Screen title={t('scan.title')}>
-        <Animated.View entering={FadeInDown.duration(380)} style={{ maxWidth: 480, width: '100%', alignSelf: 'center' }}>
-          <Card style={{ alignItems: 'center', gap: spacing.lg, paddingVertical: spacing.xxxl }}>
-            <View style={{ width: 72, height: 72, borderRadius: 24, backgroundColor: colors.negativeSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <FontAwesome name="exclamation" size={30} color={colors.negative} />
-            </View>
-            <AppText variant="heading" align="center">
-              {t('scan.errTitle')}
-            </AppText>
-            <AppText tone="secondary" align="center">
-              {errorMsg}
-            </AppText>
-            <View style={{ alignSelf: 'stretch', gap: spacing.sm }}>
-              {picked && <Button title={t('scan.retry')} icon="refresh" variant="accent" size="lg" onPress={() => run(picked)} />}
-              <Button title={t('scan.newPhoto')} icon="camera" variant="secondary" size="lg" onPress={() => pick(true)} />
-              <Button
-                title={t('scan.fillManually')}
-                variant="ghost"
-                icon="pencil"
-                onPress={() => {
-                  // Keep whatever was read (and the uploaded receipt) and let the user finish.
-                  const mapped = scan ?? { form: baseForm(), ai: new Set<FieldKey>(), missing: new Set<FieldKey>(), readable: false };
-                  setScan(mapped);
-                  setPhase('review');
-                }}
-              />
-            </View>
-          </Card>
-        </Animated.View>
+        <View style={{ maxWidth: 480, width: '100%', gap: spacing.xxl }}>
+          <View style={{ gap: spacing.sm }}>
+            <AppText variant="heading">{t('scan.errTitle')}</AppText>
+            <AppText tone="secondary">{errorMsg}</AppText>
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            {picked && <Button title={t('scan.retry')} size="lg" onPress={() => run(picked)} />}
+            <Button title={t('scan.newPhoto')} icon="camera" variant="secondary" size="lg" onPress={() => pick(true)} />
+            <Button
+              title={t('scan.fillManually')}
+              variant="ghost"
+              onPress={() => {
+                // Keep whatever was read (and the uploaded receipt) and let the user finish.
+                const mapped = scan ?? { form: baseForm(), ai: new Set<FieldKey>(), missing: new Set<FieldKey>(), readable: false };
+                setScan(mapped);
+                setPhase('review');
+              }}
+            />
+          </View>
+        </View>
       </Screen>
     );
   }
@@ -398,89 +335,46 @@ export default function ScanScreen() {
   // idle
   const tips = t('scan.tips', { returnObjects: true }) as string[];
   return (
-    <Screen title={t('scan.title')} subtitle={t('scan.subtitle')}>
-      <View style={{ maxWidth: 560, width: '100%', alignSelf: 'center', gap: spacing.xl }}>
-        <Animated.View entering={FadeInDown.duration(420)}>
-          <PressableScale onPress={() => pick(true)} haptic="medium" scaleTo={0.985}>
-            <View
-              style={[
-                {
-                  borderRadius: radii.xl,
-                  backgroundColor: colors.card,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  padding: spacing.xxl,
-                  alignItems: 'center',
-                  gap: spacing.lg,
-                  overflow: 'hidden',
-                },
-                elevation(2, colors.shadow, isDark),
-              ]}
-            >
-              <ReceiptIllustration />
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <AppText variant="heading" style={{ fontSize: 20 }}>
-                  {t('scan.heroTitle')}
-                </AppText>
-                <AppText tone="secondary" align="center" style={{ maxWidth: 320 }}>
-                  {t('scan.heroText')}
-                </AppText>
+    <Screen title={t('scan.title')}>
+      <View style={{ maxWidth: 560, width: '100%', gap: spacing.xxxl }}>
+        <PressableScale
+          onPress={() => pick(true)}
+          haptic="medium"
+          accessibilityRole="button"
+          accessibilityLabel={t('scan.takePhoto')}
+          style={{
+            backgroundColor: colors.buttonPrimary,
+            borderRadius: radii.lg,
+            padding: spacing.xxl,
+            minHeight: 220,
+            justifyContent: 'space-between',
+          }}
+        >
+          <FontAwesome name="camera" size={28} color={colors.buttonPrimaryText} />
+          <View style={{ gap: spacing.sm }}>
+            <AppText style={{ fontFamily: fonts.heavy, fontSize: 32, lineHeight: 34, letterSpacing: -1.2, color: colors.buttonPrimaryText }}>
+              {t('scan.takePhoto')}
+            </AppText>
+            <AppText variant="body" style={{ color: colors.buttonPrimaryText, opacity: 0.7 }}>
+              {t('scan.heroText')}
+            </AppText>
+          </View>
+        </PressableScale>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <Button title={t('scan.fromGallery')} variant="secondary" size="lg" onPress={() => pick(false)} style={{ flex: 1 }} />
+          <Button title={t('scan.manual')} variant="secondary" size="lg" onPress={() => router.push('/entry')} style={{ flex: 1 }} />
+        </View>
+        <View style={{ gap: spacing.md }}>
+          <AppText variant="bodyBold">{t('scan.tipsTitle')}</AppText>
+          <View>
+            {tips.map((tip, i) => (
+              <View key={i} style={{ paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.border }}>
+                <AppText tone="secondary">{tip}</AppText>
               </View>
-              <View style={{ alignSelf: 'stretch' }}>
-                <Button title={t('scan.takePhoto')} icon="camera" variant="accent" size="lg" onPress={() => pick(true)} />
-              </View>
-            </View>
-          </PressableScale>
-        </Animated.View>
-        <Animated.View entering={FadeInDown.delay(80).duration(420)} style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <Button title={t('scan.fromGallery')} icon="image" variant="secondary" onPress={() => pick(false)} style={{ flex: 1 }} />
-          <Button title={t('scan.manual')} icon="pencil" variant="secondary" onPress={() => router.push('/entry')} style={{ flex: 1 }} />
-        </Animated.View>
-        <Animated.View entering={FadeInDown.delay(160).duration(420)} style={{ gap: spacing.sm }}>
-          <AppText variant="label" tone="muted">
-            {t('scan.tipsTitle')}
-          </AppText>
-          {tips.map((tip, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-              <AppText variant="mono" tone="tint">
-                {String(i + 1).padStart(2, '0')}
-              </AppText>
-              <AppText tone="secondary" style={{ flex: 1 }}>
-                {tip}
-              </AppText>
-            </View>
-          ))}
-        </Animated.View>
+            ))}
+          </View>
+        </View>
       </View>
     </Screen>
-  );
-}
-
-/** A little receipt that gently floats — sets the tone of the screen. */
-function ReceiptIllustration() {
-  const { colors } = useTheme();
-  const y = useSharedValue(0);
-  useEffect(() => {
-    y.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, [y]);
-  const float = useAnimatedStyle(() => ({ transform: [{ translateY: -6 * y.value }, { rotate: `${-4 + y.value * 2}deg` }] }));
-  return (
-    <View style={{ height: 150, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: colors.tintSoft }} />
-      <Animated.View style={[{ width: 92, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 6, backgroundColor: colors.elevated, borderWidth: 1, borderColor: colors.border, gap: 7 }, float]}>
-        <View style={{ height: 6, width: '60%', borderRadius: 3, backgroundColor: colors.text, alignSelf: 'center' }} />
-        {[0.9, 0.7, 0.8, 0.5].map((w, i) => (
-          <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <View style={{ height: 4, width: `${w * 55}%`, borderRadius: 2, backgroundColor: colors.borderStrong }} />
-            <View style={{ height: 4, width: '18%', borderRadius: 2, backgroundColor: colors.borderStrong }} />
-          </View>
-        ))}
-        <View style={{ height: 1, borderTopWidth: 1, borderStyle: 'dashed', borderColor: colors.borderStrong }} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ height: 6, width: '35%', borderRadius: 3, backgroundColor: colors.text }} />
-          <View style={{ height: 6, width: '28%', borderRadius: 3, backgroundColor: colors.tint }} />
-        </View>
-      </Animated.View>
-    </View>
   );
 }

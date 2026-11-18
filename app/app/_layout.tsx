@@ -9,10 +9,9 @@ import "react-native-reanimated";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { ToastProvider } from "@/components/ui/Toast";
-import { Archivo_600SemiBold } from "@expo-google-fonts/archivo/600SemiBold";
-import { Archivo_700Bold } from "@expo-google-fonts/archivo/700Bold";
-import { Archivo_800ExtraBold } from "@expo-google-fonts/archivo/800ExtraBold";
-import { JetBrainsMono_500Medium } from "@expo-google-fonts/jetbrains-mono/500Medium";
+import { Geist_400Regular } from "@expo-google-fonts/geist/400Regular";
+import { Geist_600SemiBold } from "@expo-google-fonts/geist/600SemiBold";
+import { Geist_800ExtraBold } from "@expo-google-fonts/geist/800ExtraBold";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 
 import {
@@ -66,7 +65,7 @@ function RootLayoutNav() {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="small" color={colors.text} />
       </View>
     );
   }
@@ -88,7 +87,7 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="entry"
-          options={{ presentation: "modal", headerShown: false, animation: "slide_from_bottom" }}
+          options={{ presentation: "modal", headerShown: false, animation: "fade_from_bottom" }}
         />
       </Stack>
     </NavigationThemeProvider>
@@ -100,10 +99,9 @@ import { initI18n } from "@/i18n";
 export default function RootLayout() {
   // ... (fonts loading logic same as before)
   const [loaded, error] = useFonts({
-    Archivo_600SemiBold,
-    Archivo_700Bold,
-    Archivo_800ExtraBold,
-    JetBrainsMono_500Medium,
+    Geist_400Regular,
+    Geist_600SemiBold,
+    Geist_800ExtraBold,
     ...FontAwesome.font,
   });
   const [i18nInitialized, setI18nInitialized] = useState(false);

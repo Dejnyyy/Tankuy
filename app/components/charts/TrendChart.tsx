@@ -1,6 +1,6 @@
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Platform, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import Animated, {
   Easing,
   useAnimatedProps,
@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '@/context/ThemeContext';
-import { radii } from '@/constants/Theme';
+import { fonts, radii } from '@/constants/Theme';
 import { AppText } from '@/components/ui/AppText';
 import { haptics } from '@/lib/haptics';
 
@@ -42,13 +42,16 @@ interface Props {
   animationKey?: string;
   /** Line charts: zero-based Y axis instead of fitting min..max. */
   zeroBased?: boolean;
+  /** Per-point dot colour (e.g. station brand) for line charts. */
+  pointColors?: (string | null)[];
 }
 
-const PAD_L = 44;
+const PAD_L = 40;
 const PAD_R = 8;
-const PAD_T = 14;
+const PAD_T = 12;
 const PAD_B = 24;
-const SVG_FONT = Platform.OS === 'web' ? '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : undefined;
+const SVG_FONT = fonts.regular;
+const SVG_FONT_BOLD = fonts.semi;
 
 function niceStep(range: number, ticks: number) {
   const raw = range / Math.max(1, ticks);
@@ -67,7 +70,7 @@ function scaleY(values: number[], zeroBased: boolean) {
     max = max + (Math.abs(max) * 0.1 || 1);
     min = zeroBased ? 0 : min - (Math.abs(min) * 0.1 || 1);
   }
-  const step = niceStep(max - min, 4);
+  const step = niceStep(max - min, 3);
   const lo = Math.floor(min / step) * step;
   const hi = Math.ceil(max / step) * step;
   const ticks: number[] = [];
@@ -118,6 +121,7 @@ export function TrendChart({
   animationKey,
   zeroBased,
   alwaysTooltip,
+  pointColors,
 }: Props) {
   const { colors } = useTheme();
   const c = color ?? colors.chartLine;
@@ -125,7 +129,6 @@ export function TrendChart({
   const [sel, setSel] = useState<number | null>(() => lastIndex(points));
   const [touched, setTouched] = useState(false);
   const progress = useSharedValue(0);
-  const gradId = `area${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   const dataSig = `${animationKey ?? ''}|${points.length}|${kind}`;
   useEffect(() => {
@@ -134,7 +137,7 @@ export function TrendChart({
     setTouched(false);
     onSelect?.(li);
     progress.value = 0;
-    progress.value = withDelay(60, withTiming(1, { duration: 750, easing: Easing.out(Easing.cubic) }));
+    progress.value = withDelay(40, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataSig]);
 
@@ -148,6 +151,7 @@ export function TrendChart({
   const yAt = (v: number) => PAD_T + plotH - ((v - yS.min) / (yS.max - yS.min || 1)) * plotH;
 
   const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  const avgLabel = avg !== null ? `${averageLabel} ${formatAxis(avg)}` : '';
 
   // Line geometry (null values break the line)
   const lineGeo = useMemo(() => {
@@ -178,7 +182,6 @@ export function TrendChart({
   const lineProps = useAnimatedProps(() => ({
     strokeDashoffset: lineGeo.length * (1 - progress.value),
   }));
-  const areaProps = useAnimatedProps(() => ({ fillOpacity: progress.value }));
 
   const pickAt = (x: number) => {
     if (!slot) return;
@@ -214,7 +217,7 @@ export function TrendChart({
   const selPoint = sel !== null ? points[sel] : null;
   const tipX = sel !== null ? xAt(sel) : 0;
   const tipY = selPoint?.value != null ? yAt(selPoint.value) : 0;
-  const TIP_W = 132;
+  const TIP_W = 176;
   const tipLeft = Math.max(0, Math.min(w - TIP_W, tipX - TIP_W / 2));
 
   return (
@@ -222,12 +225,6 @@ export function TrendChart({
       {w > 0 && (
         <>
           <Svg width={w} height={height}>
-            <Defs>
-              <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={c} stopOpacity={0.28} />
-                <Stop offset="1" stopColor={c} stopOpacity={0} />
-              </LinearGradient>
-            </Defs>
             {/* grid + y labels */}
             {yS.ticks.map((t) => (
               <React.Fragment key={t}>
@@ -241,12 +238,11 @@ export function TrendChart({
             {points.map((p, i) =>
               (n - 1 - i) % every === 0 ? (
                 <SvgText
-                  fontFamily={SVG_FONT}
                   key={`x${i}`}
                   x={xAt(i)}
                   y={height - 6}
                   fontSize={10}
-                  fontWeight={i === sel ? '700' : '400'}
+                  fontFamily={i === sel ? SVG_FONT_BOLD : SVG_FONT}
                   fill={i === sel ? colors.text : colors.textMuted}
                   textAnchor="middle"
                 >
@@ -256,38 +252,29 @@ export function TrendChart({
             )}
             {/* selection guide */}
             {sel !== null && selPoint?.value != null && (
-              <Line x1={tipX} x2={tipX} y1={PAD_T} y2={PAD_T + plotH} stroke={colors.borderStrong} strokeWidth={1} strokeDasharray="3,3" />
+              <Line x1={tipX} x2={tipX} y1={PAD_T} y2={PAD_T + plotH} stroke={kind === 'bar' ? 'transparent' : colors.border} strokeWidth={1} />
             )}
             {kind === 'line' && (
               <>
-                {lineGeo.area ? <AnimatedPath d={lineGeo.area} fill={`url(#${gradId})`} animatedProps={areaProps} /> : null}
                 <AnimatedPath
                   d={lineGeo.d}
                   stroke={c}
-                  strokeWidth={2.5}
+                  strokeWidth={1.75}
                   fill="none"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeDasharray={`${lineGeo.length},${lineGeo.length}`}
                   animatedProps={lineProps}
                 />
-                {lineGeo.dots.map((d) =>
-                  d.i === sel ? null : <Circle key={d.i} cx={d.x} cy={d.y} r={n > 30 ? 0 : 2.5} fill={colors.card} stroke={c} strokeWidth={1.5} />,
-                )}
+                {lineGeo.dots.map((d) => {
+                  const pc = pointColors?.[d.i] ?? null;
+                  if (d.i === sel) return null;
+                  if (pc) return <Circle key={d.i} cx={d.x} cy={d.y} r={n > 40 ? 3 : 4} fill={pc} stroke={colors.background} strokeWidth={1} />;
+                  return n > 30 ? null : <Circle key={d.i} cx={d.x} cy={d.y} r={2.5} fill={colors.background} stroke={c} strokeWidth={1.5} />;
+                })}
                 {sel !== null && selPoint?.value != null && (
-                  <>
-                    <Circle cx={tipX} cy={tipY} r={9} fill={c} opacity={0.18} />
-                    <Circle cx={tipX} cy={tipY} r={4.5} fill={c} stroke={colors.card} strokeWidth={2} />
-                  </>
+                  <Circle cx={tipX} cy={tipY} r={5.5} fill={pointColors?.[sel] ?? c} stroke={colors.text} strokeWidth={2} />
                 )}
-              </>
-            )}
-            {showAverage && avg !== null && values.length > 1 && (
-              <>
-                <Line x1={PAD_L} x2={w - PAD_R} y1={yAt(avg)} y2={yAt(avg)} stroke={colors.textMuted} strokeWidth={1} strokeDasharray="5,4" opacity={0.7} />
-                <SvgText fontFamily={SVG_FONT} x={w - PAD_R - 2} y={yAt(avg) - 4} fontSize={9} fontWeight="700" fill={colors.textMuted} textAnchor="end">
-                  {`${averageLabel} ${formatAxis(avg)}`}
-                </SvgText>
               </>
             )}
           </Svg>
@@ -296,14 +283,24 @@ export function TrendChart({
             points.map((p, i) => (
               <Bar
                 key={`${dataSig}-${i}`}
-                x={PAD_L + slot * i + slot * 0.18}
-                width={Math.max(2, slot * 0.64)}
+                x={PAD_L + slot * i + slot * 0.14}
+                width={Math.max(2, slot * 0.72)}
                 bottom={PAD_B}
                 h={p.value ? ((p.value - yS.min) / (yS.max - yS.min || 1)) * plotH : 0}
                 color={i === sel ? c : colors.chartBar}
-                delay={i * 22}
+                delay={i * 12}
               />
             ))}
+
+          {showAverage && avg !== null && values.length > 1 && (
+            <Svg width={w} height={height} style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
+              <Line x1={PAD_L} x2={w - PAD_R} y1={yAt(avg)} y2={yAt(avg)} stroke={colors.text} strokeOpacity={0.55} strokeWidth={1} strokeDasharray="2,3" />
+              <Rect x={w - PAD_R - avgLabel.length * 6 - 8} y={yAt(avg) - 17} width={avgLabel.length * 6 + 8} height={15} fill={colors.background} />
+              <SvgText fontFamily={SVG_FONT_BOLD} x={w - PAD_R - 4} y={yAt(avg) - 6} fontSize={10} fill={colors.text} textAnchor="end">
+                {avgLabel}
+              </SvgText>
+            </Svg>
+          )}
 
           {/* touch layer (leaf view so locationX is relative to it) */}
           <View
@@ -329,21 +326,23 @@ export function TrendChart({
             >
               <View
                 style={{
-                  backgroundColor: colors.buttonPrimary,
+                  backgroundColor: colors.background,
+                  borderWidth: 1,
+                  borderColor: colors.text,
                   borderRadius: radii.sm,
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
                   alignItems: 'center',
                 }}
               >
-                <AppText variant="label" style={{ color: colors.buttonPrimaryText, opacity: 0.7, fontSize: 9 }} numberOfLines={1}>
+                <AppText variant="caption" tone="secondary" style={{ fontSize: 11, lineHeight: 14 }} numberOfLines={1}>
                   {selPoint.longLabel ?? selPoint.label}
                 </AppText>
-                <AppText variant="statSm" style={{ color: colors.buttonPrimaryText, fontSize: 14, lineHeight: 18 }} numberOfLines={1}>
+                <AppText variant="statSm" style={{ fontSize: 14, lineHeight: 18 }} numberOfLines={1}>
                   {formatValue(selPoint.value)}
                 </AppText>
                 {formatMeta && sel !== null && formatMeta(sel) ? (
-                  <AppText style={{ color: colors.buttonPrimaryText, opacity: 0.7, fontSize: 10 }} numberOfLines={1}>
+                  <AppText variant="caption" tone="muted" style={{ fontSize: 11, lineHeight: 14 }} numberOfLines={1}>
                     {formatMeta(sel)}
                   </AppText>
                 ) : null}
@@ -359,9 +358,9 @@ export function TrendChart({
 function Bar({ x, width, bottom, h, color, delay }: { x: number; width: number; bottom: number; h: number; color: string; delay: number }) {
   const p = useSharedValue(0);
   useEffect(() => {
-    p.value = withDelay(delay, withTiming(1, { duration: 560, easing: Easing.out(Easing.cubic) }));
+    p.value = withDelay(delay, withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }));
   }, [p, delay]);
-  const style = useAnimatedStyle(() => ({ height: Math.max(h > 0 ? 3 : 0, h * p.value) }), [h]);
+  const style = useAnimatedStyle(() => ({ height: Math.max(h > 0 ? 2 : 0, h * p.value) }), [h]);
   return (
     <Animated.View
       pointerEvents="none"
@@ -372,10 +371,8 @@ function Bar({ x, width, bottom, h, color, delay }: { x: number; width: number; 
           bottom,
           width,
           backgroundColor: color,
-          borderTopLeftRadius: Math.min(6, width / 2),
-          borderTopRightRadius: Math.min(6, width / 2),
-          borderBottomLeftRadius: 2,
-          borderBottomRightRadius: 2,
+          borderTopLeftRadius: 1,
+          borderTopRightRadius: 1,
         },
         style,
       ]}

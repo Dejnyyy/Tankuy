@@ -1,16 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 import { useData } from '@/context/DataContext';
 import { useFormat } from '@/hooks/useFormat';
-import { AppText, Button, Card, Chip, Screen, Segmented, Skeleton, StatTile, useLayout } from '@/components/ui';
+import { AppText, Button, Chip, Figure, Screen, Section, Segmented, Skeleton, StatTable, StationMark, useLayout } from '@/components/ui';
 import { TrendChart } from '@/components/charts/TrendChart';
 import { DistributionBars, RankList } from '@/components/charts/MiniCharts';
-import { radii, spacing } from '@/constants/Theme';
+import { stationColors } from '@/constants/Brands';
+import { spacing } from '@/constants/Theme';
 import { bucketLabel, plural, WEEKDAYS_SHORT } from '@/lib/format';
 import {
   buildSeries,
@@ -24,70 +23,20 @@ import {
   type RangeKey,
 } from '@/lib/stats';
 
-function Section({ n, title, caption, children, delay = 0 }: { n: string; title: string; caption?: string; children: React.ReactNode; delay?: number }) {
+function Columns({ wide, children }: { wide: boolean; children: React.ReactNode }) {
+  if (!wide) return <View style={{ gap: spacing.huge }}>{children}</View>;
   return (
-    <Animated.View entering={FadeInDown.delay(delay).duration(450)} style={{ gap: spacing.md }}>
-      <View style={{ gap: 2, marginTop: spacing.lg }}>
-        <AppText variant="mono" tone="tint">
-          {n}
-        </AppText>
-        <AppText variant="heading" style={{ fontSize: 21, lineHeight: 26 }}>
-          {title}
-        </AppText>
-        {caption ? (
-          <AppText variant="caption" tone="secondary">
-            {caption}
-          </AppText>
-        ) : null}
-      </View>
+    <View style={{ flexDirection: 'row', gap: spacing.huge, alignItems: 'flex-start' }}>
+      {React.Children.map(children, (c) => (c ? <View style={{ flex: 1, minWidth: 0 }}>{c}</View> : null))}
+    </View>
+  );
+}
+
+function Note({ children }: { children: React.ReactNode }) {
+  return (
+    <AppText variant="caption" tone="secondary" style={{ maxWidth: 520 }}>
       {children}
-    </Animated.View>
-  );
-}
-
-function Row({ children, quarter }: { children: React.ReactNode; quarter?: boolean }) {
-  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>{React.Children.map(children, (c) => (c ? <View style={{ flexBasis: quarter ? '22%' : '46%', flexGrow: 1 }}>{c}</View> : null))}</View>;
-}
-
-function Insight({ icon, text, tone = 'default' }: { icon: string; text: string; tone?: 'default' | 'tint' }) {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        gap: spacing.md,
-        alignItems: 'center',
-        padding: spacing.lg,
-        borderRadius: radii.lg,
-        backgroundColor: tone === 'tint' ? colors.tintSoft : colors.surface2,
-        borderWidth: 1,
-        borderColor: tone === 'tint' ? 'transparent' : colors.border,
-      }}
-    >
-      <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: tone === 'tint' ? colors.tint : colors.card, alignItems: 'center', justifyContent: 'center' }}>
-        <FontAwesome name={icon as any} size={15} color={tone === 'tint' ? colors.onTint : colors.text} />
-      </View>
-      <AppText style={{ flex: 1 }}>{text}</AppText>
-    </View>
-  );
-}
-
-function RecordRow({ label, value, sub, last }: { label: string; value: string; sub?: string | null; last?: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: spacing.md, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.border, borderStyle: 'dashed' }}>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <AppText variant="body" numberOfLines={1}>
-          {label}
-        </AppText>
-        {sub ? (
-          <AppText variant="mono" tone="muted" numberOfLines={1}>
-            {sub}
-          </AppText>
-        ) : null}
-      </View>
-      <AppText variant="statSm">{value}</AppText>
-    </View>
+    </AppText>
   );
 }
 
@@ -116,7 +65,6 @@ export default function StatsScreen() {
   const prices = useMemo(() => priceSeries(scoped), [scoped]);
 
   const daysWord = (n: number) => plural(n, [t('units.day1'), t('units.day2'), t('units.day5')], f.lang);
-  const timesWord = (n: number) => plural(n, [t('units.time1'), t('units.time2'), t('units.time5')], f.lang);
   const weekdayIn = t('stats.weekdayIn', { returnObjects: true }) as string[];
   const dayparts = t('stats.dayparts', { returnObjects: true }) as string[];
 
@@ -129,13 +77,13 @@ export default function StatsScreen() {
   ];
 
   const filters = (
-    <View style={{ gap: spacing.sm }}>
-      <Segmented options={ranges} value={range} onChange={setRange} />
-      {vehicles.length > 0 && (
+    <View style={{ gap: spacing.md }}>
+      <Segmented options={ranges} value={range} onChange={setRange} style={{ maxWidth: 420 }} />
+      {vehicles.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-          <Chip label={t('stats.allVehicles')} icon="th-large" active={vehicleId === 'all'} onPress={() => setVehicleId('all')} />
+          <Chip label={t('stats.allVehicles')} active={vehicleId === 'all'} onPress={() => setVehicleId('all')} />
           {vehicles.map((v) => (
-            <Chip key={v.id} label={v.name} icon="car" active={vehicleId === v.id} onPress={() => setVehicleId(v.id)} />
+            <Chip key={v.id} label={v.name} active={vehicleId === v.id} onPress={() => setVehicleId(v.id)} />
           ))}
         </ScrollView>
       )}
@@ -145,10 +93,10 @@ export default function StatsScreen() {
   if (loading && !loaded) {
     return (
       <Screen title={t('nav.stats')}>
-        <View style={{ gap: spacing.lg }}>
-          <Skeleton height={38} />
-          <Skeleton height={110} radius={radii.lg} />
-          <Skeleton height={260} radius={radii.lg} />
+        <View style={{ gap: spacing.xl }}>
+          <Skeleton height={36} />
+          <Skeleton height={64} width="60%" />
+          <Skeleton height={240} />
         </View>
       </Screen>
     );
@@ -158,16 +106,15 @@ export default function StatsScreen() {
     return (
       <Screen title={t('nav.stats')} refreshing={refreshing} onRefresh={() => refresh()}>
         {filters}
-        <Card style={{ alignItems: 'center', gap: spacing.md, paddingVertical: spacing.huge, marginTop: spacing.lg }}>
-          <FontAwesome name="bar-chart" size={34} color={colors.textMuted} />
-          <AppText variant="heading" align="center">
-            {entries.length ? t('stats.emptyRange') : t('stats.empty')}
-          </AppText>
-          <AppText tone="secondary" align="center" style={{ maxWidth: 340 }}>
-            {t('stats.emptyHint')}
-          </AppText>
-          {!entries.length && <Button title={t('dash.scan')} icon="camera" variant="accent" onPress={() => router.push('/scan')} />}
-        </Card>
+        <View style={{ gap: spacing.md, paddingTop: spacing.huge, maxWidth: 420 }}>
+          <AppText variant="heading">{entries.length ? t('stats.emptyRange') : t('stats.empty')}</AppText>
+          <AppText tone="secondary">{t('stats.emptyHint')}</AppText>
+          {!entries.length && (
+            <View style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}>
+              <Button title={t('dash.scan')} icon="camera" onPress={() => router.push('/scan')} />
+            </View>
+          )}
+        </View>
       </Screen>
     );
   }
@@ -176,265 +123,262 @@ export default function StatsScreen() {
   const topDp = s.dayparts.top;
   const cons = s.consumption;
   const trend = s.priceTrendPerMonth;
+  const withStation = (date: string, station: string | null | undefined, long = true) => `${f.date(date, long)}${station ? `, ${station}` : ''}`;
 
-  // ── Sections ──
-  const summary = (
-    <Row quarter={isWide}>
-      <StatTile label={t('stats.totalSpent')} value={f.money(s.totalCost)} sub={t('stats.avgPerFill', { value: f.money(s.avgCost) })} icon="money" accent={colors.tint} />
-      <StatTile label={t('stats.fillups')} value={f.n(s.count)} sub={s.avgMonthlyFills ? t('stats.perMonth', { value: f.n(s.avgMonthlyFills, 1) }) : null} icon="tint" />
-      <StatTile label={t('stats.totalLiters')} value={f.volume(s.totalLiters, 0)} sub={t('stats.avgPerFill', { value: f.volume(s.avgLiters) })} icon="flask" />
-      <StatTile
-        label={t('stats.distance')}
-        value={cons.totalKm ? f.distance(cons.totalKm) : '–'}
-        sub={s.latestMileage ? t('stats.odometer', { value: f.distance(s.latestMileage) }) : t('dash.kpi.needMileage')}
-        icon="road"
+  // ── Summary: one hero number + three supporting figures ──
+  const summary = isWide ? (
+    <View style={{ flexDirection: 'row', gap: spacing.huge, alignItems: 'flex-end' }}>
+      <View style={{ flex: 1.4 }}>
+        <Figure size="lg" label={t('stats.totalSpent')} value={f.money(s.totalCost)} sub={t('stats.avgPerFill', { value: f.money(s.avgCost) })} />
+      </View>
+      <View style={{ flex: 2, flexDirection: 'row', gap: spacing.xl }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Figure label={t('stats.fillups')} value={f.n(s.count)} sub={s.avgMonthlyFills ? t('stats.perMonth', { value: f.n(s.avgMonthlyFills, 1) }) : null} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Figure label={t('stats.totalLiters')} value={f.volume(s.totalLiters, 0)} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Figure label={t('stats.distance')} value={cons.totalKm ? f.distance(cons.totalKm) : '–'} />
+        </View>
+      </View>
+    </View>
+  ) : (
+    <View style={{ gap: spacing.lg }}>
+      <Figure size="lg" label={t('stats.totalSpent')} value={f.money(s.totalCost)} sub={t('stats.avgPerFill', { value: f.money(s.avgCost) })} />
+      <StatTable
+        rows={[
+          { label: t('stats.fillups'), value: f.n(s.count), sub: s.avgMonthlyFills ? t('stats.perMonth', { value: f.n(s.avgMonthlyFills, 1) }) : null },
+          { label: t('stats.totalLiters'), value: f.volume(s.totalLiters, 0) },
+          { label: t('stats.distance'), value: cons.totalKm ? f.distance(cons.totalKm) : '–' },
+        ]}
       />
-    </Row>
+    </View>
   );
 
   const spend = (
-    <Section n="01" title={t('stats.sec.spend')} caption={t('stats.sec.spendCaption')} delay={60}>
-      <Card style={{ paddingHorizontal: spacing.sm }}>
-        <TrendChart alwaysTooltip
-          kind="bar"
-          height={isWide ? 260 : 210}
-          animationKey={`m-${range}-${vehicleId}`}
-          points={monthly.map((p) => ({
-            label: bucketLabel(p.start, 'month', f.lang),
-            longLabel: bucketLabel(p.start, 'month', f.lang, true),
-            value: f.moneyValue(p.value),
-          }))}
-          formatAxis={(v) => (v >= 1000 ? `${f.n(v / 1000, v % 1000 ? 1 : 0)}k` : f.n(v))}
-          formatValue={(v) => (v === null ? '–' : `${f.n(v)} ${f.currencySymbol}`)}
-          formatMeta={(i) => (monthly[i]?.count ? `${monthly[i].count}× ${t('dash.fillups')}` : null)}
-        />
-      </Card>
-      <Row>
-        <StatTile size="sm" label={t('stats.avgMonth')} value={f.money(s.avgMonthlyCost)} />
-        <StatTile size="sm" label={t('stats.projection', { year: proj.year })} value={f.money(proj.projected)} sub={t('stats.ytd', { value: f.money(proj.ytd) })} />
-        <StatTile size="sm" label={t('stats.perYear')} value={f.money((s.avgMonthlyCost ?? 0) * 12)} sub={t('stats.basedOnAvg')} />
-        <StatTile
-          size="sm"
-          label={t('stats.priciestMonth')}
-          value={s.priciestMonth ? f.money(s.priciestMonth.cost) : '–'}
-          sub={s.priciestMonth ? f.month(s.priciestMonth.key) : null}
-        />
-      </Row>
+    <Section title={t('stats.sec.spend')}>
+      <TrendChart
+        alwaysTooltip
+        kind="bar"
+        height={isWide ? 240 : 200}
+        animationKey={`m-${range}-${vehicleId}`}
+        points={monthly.map((p) => ({
+          label: bucketLabel(p.start, 'month', f.lang),
+          longLabel: bucketLabel(p.start, 'month', f.lang, true),
+          value: f.moneyValue(p.value),
+        }))}
+        formatAxis={(v) => (v >= 1000 ? `${f.n(v / 1000, v % 1000 ? 1 : 0)}k` : f.n(v))}
+        formatValue={(v) => (v === null ? '–' : `${f.n(v)} ${f.currencySymbol}`)}
+        formatMeta={(i) => (monthly[i]?.count ? `${monthly[i].count}× ${t('dash.fillups')}` : null)}
+      />
+      <StatTable
+        rows={[
+          { label: t('stats.avgMonth'), value: f.money(s.avgMonthlyCost) },
+          { label: t('stats.projection', { year: proj.year }), value: f.money(proj.projected), sub: t('stats.ytd', { value: f.money(proj.ytd) }) },
+          { label: t('stats.perYear'), value: f.money((s.avgMonthlyCost ?? 0) * 12), sub: t('stats.basedOnAvg') },
+          { label: t('stats.priciestMonth'), value: s.priciestMonth ? f.money(s.priciestMonth.cost) : '–', sub: s.priciestMonth ? f.month(s.priciestMonth.key) : null },
+        ]}
+      />
     </Section>
   );
 
   const price = (
-    <Section n="02" title={t('stats.sec.price')} caption={t('stats.sec.priceCaption')} delay={100}>
+    <Section title={t('stats.sec.price')}>
       {prices.length >= 2 ? (
-        <Card style={{ paddingHorizontal: spacing.sm }}>
-          <TrendChart alwaysTooltip
-            kind="line"
-            height={isWide ? 240 : 200}
-            animationKey={`p-${range}-${vehicleId}`}
-            color={colors.series[1]}
-            points={prices.map((p) => ({ label: f.date(p.date, false), longLabel: `${f.date(p.date)}${p.station ? ` · ${p.station}` : ''}`, value: f.units.formatPricePerVolume(p.value) }))}
-            formatAxis={(v) => f.n(v, 0)}
-            formatValue={(v) => (v === null ? '–' : `${f.n(v, 2)} ${f.metricUnit('price')}`)}
-          />
-        </Card>
+        <TrendChart
+          alwaysTooltip
+          kind="line"
+          height={isWide ? 240 : 200}
+          animationKey={`p-${range}-${vehicleId}`}
+          points={prices.map((p) => ({ label: f.date(p.date, false), longLabel: withStation(p.date, p.station), value: f.units.formatPricePerVolume(p.value) }))}
+          pointColors={prices.map((p) => stationColors(p.station, colors).fill)}
+          formatAxis={(v) => f.n(v, Number.isInteger(v) ? 0 : 1)}
+          formatValue={(v) => (v === null ? '–' : `${f.n(v, 2)} ${f.metricUnit('price')}`)}
+        />
       ) : null}
-      <Row>
-        <StatTile size="sm" label={t('stats.avgPrice')} value={f.price(s.avgPrice)} sub={t('stats.weighted')} />
-        <StatTile size="sm" label={t('stats.minPrice')} value={f.price(s.minPrice?.value)} sub={s.minPrice ? `${f.date(s.minPrice.date)}${s.minPrice.station ? ` · ${s.minPrice.station}` : ''}` : null} accent={colors.positive} icon="arrow-down" />
-        <StatTile size="sm" label={t('stats.maxPrice')} value={f.price(s.maxPrice?.value)} sub={s.maxPrice ? `${f.date(s.maxPrice.date)}${s.maxPrice.station ? ` · ${s.maxPrice.station}` : ''}` : null} accent={colors.negative} icon="arrow-up" />
-        <StatTile
-          size="sm"
-          label={t('stats.trend')}
-          value={trend === null ? '–' : `${trend > 0 ? '+' : trend < 0 ? '−' : ''}${f.n(Math.abs(f.units.formatPricePerVolume(trend) ?? 0), 2)}`}
-          sub={trend === null ? t('stats.trendNeed') : t('stats.trendSub', { unit: f.metricUnit('price') })}
-          accent={trend === null ? undefined : trend > 0 ? colors.negative : colors.positive}
-          icon={trend !== null && trend > 0 ? 'line-chart' : 'level-down'}
-        />
-      </Row>
-      {trend !== null && Math.abs(trend) > 0.01 && (
-        <Insight
-          icon={trend > 0 ? 'arrow-circle-up' : 'arrow-circle-down'}
-          text={t(trend > 0 ? 'stats.trendUp' : 'stats.trendDown', { value: f.price(Math.abs(trend)) })}
-        />
-      )}
+      <StatTable
+        rows={[
+          { label: t('stats.avgPrice'), value: f.price(s.avgPrice), sub: t('stats.weighted') },
+          { label: t('stats.minPrice'), value: f.price(s.minPrice?.value), sub: s.minPrice ? withStation(s.minPrice.date, s.minPrice.station) : null },
+          { label: t('stats.maxPrice'), value: f.price(s.maxPrice?.value), sub: s.maxPrice ? withStation(s.maxPrice.date, s.maxPrice.station) : null },
+          {
+            label: t('stats.trend'),
+            value: trend === null ? '–' : `${trend > 0 ? '+' : trend < 0 ? '−' : ''}${f.n(Math.abs(f.units.formatPricePerVolume(trend) ?? 0), 2)}`,
+            sub: trend === null ? t('stats.trendNeed') : t('stats.trendSub', { unit: f.metricUnit('price') }),
+          },
+        ]}
+      />
     </Section>
   );
 
+  const okSegments = cons.segments.filter((sg) => !sg.outlier);
   const consumption = (
-    <Section n="03" title={t('stats.sec.consumption')} caption={t('stats.sec.consumptionCaption')} delay={140}>
-      {cons.segments.filter((sg) => !sg.outlier).length >= 2 ? (
-        <Card style={{ paddingHorizontal: spacing.sm }}>
-          <TrendChart alwaysTooltip
-            kind="line"
-            height={isWide ? 240 : 200}
-            color={colors.series[2]}
-            animationKey={`c-${range}-${vehicleId}`}
-            points={cons.segments.filter((sg) => !sg.outlier).map((sg) => ({
-              label: f.date(sg.date, false),
-              longLabel: `${f.date(sg.fromDate, false)} – ${f.date(sg.date, false)} · ${f.distance(sg.km)}`,
-              value: f.metricValue('consumption', sg.l100),
-            }))}
-            formatAxis={(v) => f.n(v, 0)}
-            formatValue={(v) => (v === null ? '–' : `${f.n(v, 1)} ${f.consumptionUnit}`)}
-          />
-        </Card>
+    <Section title={t('stats.sec.consumption')}>
+      {okSegments.length >= 2 ? (
+        <TrendChart
+          alwaysTooltip
+          kind="line"
+          height={isWide ? 240 : 200}
+          animationKey={`c-${range}-${vehicleId}`}
+          points={okSegments.map((sg) => ({
+            label: f.date(sg.date, false),
+            longLabel: `${f.date(sg.fromDate, false)} – ${f.date(sg.date, false)}, ${f.distance(sg.km)}`,
+            value: f.metricValue('consumption', sg.l100),
+          }))}
+          formatAxis={(v) => f.n(v, Number.isInteger(v) ? 0 : 1)}
+          formatValue={(v) => (v === null ? '–' : `${f.n(v, 1)} ${f.consumptionUnit}`)}
+        />
       ) : (
-        <Insight icon="tachometer" text={t('stats.consumptionNeed')} />
+        <Note>{t('stats.consumptionNeed')}</Note>
       )}
-      <Row>
-        <StatTile size="sm" label={t('stats.avgConsumption')} value={f.consumption(cons.avgL100)} sub={cons.segments.length ? t('stats.fromSegments', { count: cons.segments.length }) : null} />
-        <StatTile size="sm" label={t('stats.costPerKm')} value={f.costPerKm(cons.costPerKm)} sub={cons.costPerKm ? t('stats.per100', { value: f.money((cons.costPerKm ?? 0) * 100) }) : null} />
-        <StatTile size="sm" label={t('stats.best')} value={f.consumption(cons.best?.l100)} sub={cons.best ? `${f.date(cons.best.fromDate, false)} – ${f.date(cons.best.date)}` : null} accent={colors.positive} icon="leaf" />
-        <StatTile size="sm" label={t('stats.worst')} value={f.consumption(cons.worst?.l100)} sub={cons.worst ? `${f.date(cons.worst.fromDate, false)} – ${f.date(cons.worst.date)}` : null} accent={colors.negative} icon="fire" />
-        <StatTile size="sm" label={t('stats.kmMonth')} value={f.distance(s.kmPerMonth)} sub={s.kmPerMonth ? t('stats.kmYear', { value: f.distance((s.kmPerMonth ?? 0) * 12) }) : null} />
-        <StatTile size="sm" label={t('stats.kmBetween')} value={f.distance(s.avgKmBetween)} sub={t('stats.perFill')} />
-      </Row>
+      <StatTable
+        rows={[
+          { label: t('stats.avgConsumption'), value: f.consumption(cons.avgL100), sub: cons.segments.length ? t('stats.fromSegments', { count: cons.segments.length }) : null },
+          { label: t('stats.costPerKm'), value: f.costPerKm(cons.costPerKm), sub: cons.costPerKm ? t('stats.per100', { value: f.money((cons.costPerKm ?? 0) * 100) }) : null },
+          { label: t('stats.best'), value: f.consumption(cons.best?.l100), sub: cons.best ? `${f.date(cons.best.fromDate, false)} – ${f.date(cons.best.date)}` : null },
+          { label: t('stats.worst'), value: f.consumption(cons.worst?.l100), sub: cons.worst ? `${f.date(cons.worst.fromDate, false)} – ${f.date(cons.worst.date)}` : null },
+          { label: t('stats.kmMonth'), value: f.distance(s.kmPerMonth), sub: s.kmPerMonth ? t('stats.kmYear', { value: f.distance((s.kmPerMonth ?? 0) * 12) }) : null },
+          { label: t('stats.kmBetween'), value: f.distance(s.avgKmBetween) },
+        ]}
+      />
+      {okSegments.length >= 2 ? <Note>{t('stats.sec.consumptionCaption')}</Note> : null}
     </Section>
   );
 
   const habits = (
-    <Section n="04" title={t('stats.sec.habits')} caption={t('stats.sec.habitsCaption')} delay={180}>
+    <Section title={t('stats.sec.habits')}>
       {topWd !== null && (
-        <Insight
-          tone="tint"
-          icon="calendar-check-o"
-          text={
-            topDp !== null && s.dayparts.withTime >= 3
-              ? t('stats.habitSentence', { day: weekdayIn[topWd], part: dayparts[topDp].toLowerCase() })
-              : t('stats.habitSentenceDay', { day: weekdayIn[topWd] })
-          }
-        />
+        <AppText variant="bodyBold">
+          {topDp !== null && s.dayparts.withTime >= 3
+            ? t('stats.habitSentence', { day: weekdayIn[topWd], part: dayparts[topDp].toLowerCase() })
+            : t('stats.habitSentenceDay', { day: weekdayIn[topWd] })}
+        </AppText>
       )}
-      <View style={{ flexDirection: isWide ? 'row' : 'column', gap: spacing.md }}>
-        <Card style={{ flex: 1, gap: spacing.md }}>
-          <AppText variant="label" tone="muted">
+      <View style={{ flexDirection: isWide ? 'row' : 'column', gap: isWide ? spacing.huge : spacing.xxl }}>
+        <View style={{ flex: 1, gap: spacing.md }}>
+          <AppText variant="caption" tone="secondary">
             {t('stats.byWeekday')}
           </AppText>
-          <DistributionBars labels={WEEKDAYS_SHORT[f.lang]} values={s.weekday.counts} highlight={topWd} format={(v) => (v ? `${v}×` : '·')} />
-        </Card>
-        <Card style={{ flex: 1, gap: spacing.md }}>
-          <AppText variant="label" tone="muted">
+          <DistributionBars labels={WEEKDAYS_SHORT[f.lang]} values={s.weekday.counts} highlight={topWd} height={96} format={(v) => (v ? `${v}` : '')} />
+        </View>
+        <View style={{ flex: 1, gap: spacing.md }}>
+          <AppText variant="caption" tone="secondary">
             {t('stats.byDaypart')}
+            {s.topHour !== null ? `, ${t('stats.topHour', { from: `${s.topHour}:00`, to: `${s.topHour + 1}:00` }).toLowerCase()}` : ''}
           </AppText>
           {s.dayparts.withTime > 0 ? (
-            <DistributionBars labels={t('stats.daypartsShort', { returnObjects: true }) as string[]} values={s.dayparts.counts} highlight={topDp} format={(v) => (v ? `${v}×` : '·')} />
+            <DistributionBars labels={t('stats.daypartsShort', { returnObjects: true }) as string[]} values={s.dayparts.counts} highlight={topDp} height={96} format={(v) => (v ? `${v}` : '')} />
           ) : (
             <AppText tone="secondary">{t('stats.noTimes')}</AppText>
           )}
-          {s.topHour !== null && (
-            <AppText variant="caption" tone="secondary">
-              {t('stats.topHour', { from: `${s.topHour}:00`, to: `${s.topHour + 1}:00` })}
-            </AppText>
-          )}
-        </Card>
+        </View>
       </View>
-      <Row>
-        <StatTile size="sm" label={t('stats.interval')} value={s.avgIntervalDays ? `${f.n(s.avgIntervalDays, 1)} ${daysWord(Math.round(s.avgIntervalDays))}` : '–'} sub={s.medianIntervalDays !== null ? t('stats.median', { value: f.n(s.medianIntervalDays, 0) }) : null} />
-        <StatTile size="sm" label={t('stats.longestGap')} value={s.longestGap ? `${s.longestGap.days} ${daysWord(s.longestGap.days)}` : '–'} sub={s.longestGap ? `${f.date(s.longestGap.from, false)} – ${f.date(s.longestGap.to)}` : null} />
-        <StatTile size="sm" label={t('stats.shortestGap')} value={s.shortestGap ? `${s.shortestGap.days} ${daysWord(s.shortestGap.days)}` : '–'} sub={s.shortestGap ? `${f.date(s.shortestGap.from, false)} – ${f.date(s.shortestGap.to)}` : null} />
-        <StatTile size="sm" label={t('stats.busiestMonth')} value={s.busiestMonth ? `${s.busiestMonth.count}×` : '–'} sub={s.busiestMonth ? f.month(s.busiestMonth.key) : null} />
-      </Row>
+      <StatTable
+        rows={[
+          { label: t('stats.interval'), value: s.avgIntervalDays ? `${f.n(s.avgIntervalDays, 1)} ${daysWord(Math.round(s.avgIntervalDays))}` : '–', sub: s.medianIntervalDays !== null ? t('stats.median', { value: f.n(s.medianIntervalDays, 0) }) : null },
+          { label: t('stats.longestGap'), value: s.longestGap ? `${s.longestGap.days} ${daysWord(s.longestGap.days)}` : '–', sub: s.longestGap ? `${f.date(s.longestGap.from, false)} – ${f.date(s.longestGap.to)}` : null },
+          { label: t('stats.shortestGap'), value: s.shortestGap ? `${s.shortestGap.days} ${daysWord(s.shortestGap.days)}` : '–', sub: s.shortestGap ? `${f.date(s.shortestGap.from, false)} – ${f.date(s.shortestGap.to)}` : null },
+          { label: t('stats.busiestMonth'), value: s.busiestMonth ? `${s.busiestMonth.count}×` : '–', sub: s.busiestMonth ? f.month(s.busiestMonth.key) : null },
+        ]}
+      />
     </Section>
   );
 
   const top = s.stations.slice(0, 6);
   const stations = (
-    <Section n="05" title={t('stats.sec.stations')} caption={t('stats.sec.stationsCaption', { count: s.stations.length })} delay={220}>
+    <Section
+      title={t('stats.sec.stations')}
+      right={
+        <AppText variant="caption" tone="muted">
+          {t('stats.sec.stationsCaption', { count: s.stations.length })}
+        </AppText>
+      }
+    >
       {top.length ? (
-        <Card>
-          <RankList
-            rows={top.map((st) => ({
-              key: st.key,
-              title: st.name,
-              right: `${st.count}×`,
-              value: st.count,
-              sub: `${f.money(st.totalCost)} · ø ${f.price(st.avgPrice)} · ${f.percent(st.share, false)}`,
-            }))}
-          />
-        </Card>
+        <RankList
+          rows={top.map((st) => ({
+            key: st.key,
+            title: st.name,
+            right: `${st.count}×`,
+            value: st.count,
+            color: stationColors(st.name, colors).fill,
+            sub: `${f.money(st.totalCost)} ø ${f.price(st.avgPrice)} ${f.percent(st.share, false)}`,
+          }))}
+        />
       ) : (
-        <Insight icon="map-marker" text={t('stats.noStations')} />
+        <Note>{t('stats.noStations')}</Note>
       )}
-      <Row>
-        <StatTile size="sm" label={t('stats.cheapestStation')} value={s.cheapestStation?.name ?? '–'} sub={s.cheapestStation ? `ø ${f.price(s.cheapestStation.avgPrice)} · ${s.cheapestStation.count}×` : null} accent={colors.positive} icon="thumbs-o-up" />
-        <StatTile size="sm" label={t('stats.priciestStation')} value={s.priciestStation?.name ?? '–'} sub={s.priciestStation ? `ø ${f.price(s.priciestStation.avgPrice)} · ${s.priciestStation.count}×` : null} accent={colors.negative} icon="thumbs-o-down" />
-      </Row>
-      {s.potentialSavings !== null && s.potentialSavings > 1 && s.cheapestStation && (
-        <Insight icon="lightbulb-o" tone="tint" text={t('stats.savings', { station: s.cheapestStation.name, value: f.money(s.potentialSavings) })} />
-      )}
+      <StatTable
+        rows={[
+          {
+            label: t('stats.cheapestStation'),
+            value: s.cheapestStation ? f.price(s.cheapestStation.avgPrice) : '–',
+            sub: s.cheapestStation ? `${s.cheapestStation.name}, ${s.cheapestStation.count}×` : null,
+            lead: s.cheapestStation ? <StationMark name={s.cheapestStation.name} height={36} /> : undefined,
+          },
+          {
+            label: t('stats.priciestStation'),
+            value: s.priciestStation ? f.price(s.priciestStation.avgPrice) : '–',
+            sub: s.priciestStation ? `${s.priciestStation.name}, ${s.priciestStation.count}×` : null,
+            lead: s.priciestStation ? <StationMark name={s.priciestStation.name} height={36} /> : undefined,
+          },
+          s.potentialSavings !== null && s.potentialSavings > 1
+            ? { label: t('stats.savingsLabel'), value: `~${f.money(s.potentialSavings)}`, sub: t('stats.savingsSub') }
+            : null,
+        ]}
+      />
     </Section>
   );
 
   const tank = (
-    <Section n="06" title={t('stats.sec.tank')} caption={t('stats.sec.tankCaption')} delay={260}>
-      <Row>
-        <StatTile size="sm" label={t('stats.avgFill')} value={f.volume(s.avgLiters)} sub={t('stats.avgPerFill', { value: f.money(s.avgCost) })} />
-        <StatTile size="sm" label={t('stats.typicalFill')} value={f.volume(s.medianLiters)} sub={t('stats.medianNote')} />
-        <StatTile size="sm" label={t('stats.maxFill')} value={f.volume(s.maxLiters)} sub={s.biggestFill ? f.date(s.biggestFill.date) : null} />
-        <StatTile size="sm" label={t('stats.tankSize')} value={s.estimatedTank ? `~${f.volume(s.estimatedTank, 0)}` : '–'} sub={t('stats.tankNote')} />
-      </Row>
+    <Section title={t('stats.sec.tank')}>
+      <StatTable
+        rows={[
+          { label: t('stats.avgFill'), value: f.volume(s.avgLiters), sub: t('stats.avgPerFill', { value: f.money(s.avgCost) }) },
+          { label: t('stats.typicalFill'), value: f.volume(s.medianLiters), sub: t('stats.medianNote') },
+          { label: t('stats.maxFill'), value: f.volume(s.maxLiters), sub: s.biggestFill ? f.date(s.biggestFill.date) : null },
+          { label: t('stats.tankSize'), value: s.estimatedTank ? `~${f.volume(s.estimatedTank, 0)}` : '–', sub: t('stats.tankNote') },
+        ]}
+      />
     </Section>
   );
 
-  const recs: { label: string; value: string; sub?: string | null }[] = [];
-  if (s.mostExpensiveFill) recs.push({ label: t('stats.rec.mostExpensive'), value: f.money(s.mostExpensiveFill.cost), sub: `${f.date(s.mostExpensiveFill.date)} · ${s.mostExpensiveFill.station ?? '—'}` });
-  if (s.biggestFill) recs.push({ label: t('stats.rec.biggest'), value: f.volume(s.biggestFill.liters), sub: `${f.date(s.biggestFill.date)} · ${s.biggestFill.station ?? '—'}` });
-  if (s.smallestFill) recs.push({ label: t('stats.rec.smallest'), value: f.volume(s.smallestFill.liters), sub: `${f.date(s.smallestFill.date)} · ${s.smallestFill.station ?? '—'}` });
-  if (s.cheapestFill) recs.push({ label: t('stats.rec.cheapest'), value: f.price(s.cheapestFill.price), sub: `${f.date(s.cheapestFill.date)} · ${s.cheapestFill.station ?? '—'}` });
-  if (s.maxPrice) recs.push({ label: t('stats.rec.priciest'), value: f.price(s.maxPrice.value), sub: `${f.date(s.maxPrice.date)} · ${s.maxPrice.station ?? '—'}` });
-  if (s.longestGap) recs.push({ label: t('stats.rec.longestGap'), value: `${s.longestGap.days} ${daysWord(s.longestGap.days)}`, sub: `${f.date(s.longestGap.from)} → ${f.date(s.longestGap.to)}` });
-  if (s.firstDate) recs.push({ label: t('stats.rec.tracking'), value: `${s.daysTracked} ${daysWord(s.daysTracked)}`, sub: t('stats.rec.since', { date: f.date(s.firstDate) }) });
+  const recs = [
+    s.mostExpensiveFill && { label: t('stats.rec.mostExpensive'), value: f.money(s.mostExpensiveFill.cost), sub: withStation(s.mostExpensiveFill.date, s.mostExpensiveFill.station) },
+    s.biggestFill && { label: t('stats.rec.biggest'), value: f.volume(s.biggestFill.liters), sub: withStation(s.biggestFill.date, s.biggestFill.station) },
+    s.smallestFill && { label: t('stats.rec.smallest'), value: f.volume(s.smallestFill.liters), sub: withStation(s.smallestFill.date, s.smallestFill.station) },
+    s.cheapestFill && { label: t('stats.rec.cheapest'), value: f.price(s.cheapestFill.price), sub: withStation(s.cheapestFill.date, s.cheapestFill.station) },
+    s.maxPrice && { label: t('stats.rec.priciest'), value: f.price(s.maxPrice.value), sub: withStation(s.maxPrice.date, s.maxPrice.station) },
+    s.firstDate && { label: t('stats.rec.tracking'), value: `${s.daysTracked} ${daysWord(s.daysTracked)}`, sub: t('stats.rec.since', { date: f.date(s.firstDate) }) },
+  ];
 
   const records = (
-    <Section n="07" title={t('stats.sec.records')} delay={300}>
-      <Card style={{ paddingVertical: spacing.xs }}>
-        {recs.map((r, i) => (
-          <RecordRow key={r.label} {...r} last={i === recs.length - 1} />
-        ))}
-      </Card>
-      {cons.totalKm > 1000 && (
-        <Insight icon="globe" text={t('stats.funEarth', { times: f.n(cons.totalKm / 40075, 2), liters: f.volume(s.totalLiters, 0), count: s.count })} />
-      )}
+    <Section title={t('stats.sec.records')}>
+      <StatTable rows={recs} />
     </Section>
   );
 
   return (
-    <Screen
-      title={t('nav.stats')}
-      subtitle={t('stats.subtitle', { count: s.count, times: timesWord(s.count) })}
-      refreshing={refreshing}
-      onRefresh={() => refresh()}
-    >
-      <View style={{ gap: spacing.lg }}>
-        {filters}
-        {summary}
-        {isWide ? (
-          <>
-            <View style={{ flexDirection: 'row', gap: spacing.xl }}>
-              <View style={{ flex: 1 }}>{spend}</View>
-              <View style={{ flex: 1 }}>{price}</View>
-            </View>
-            <View style={{ flexDirection: 'row', gap: spacing.xl }}>
-              <View style={{ flex: 1 }}>{consumption}</View>
-              <View style={{ flex: 1 }}>{stations}</View>
-            </View>
-            {habits}
-            <View style={{ flexDirection: 'row', gap: spacing.xl }}>
-              <View style={{ flex: 1 }}>{tank}</View>
-              <View style={{ flex: 1 }}>{records}</View>
-            </View>
-          </>
-        ) : (
-          <>
-            {spend}
-            {price}
-            {consumption}
-            {habits}
-            {stations}
-            {tank}
-            {records}
-          </>
-        )}
+    <Screen title={t('nav.stats')} refreshing={refreshing} onRefresh={() => refresh()}>
+      <View style={{ gap: spacing.huge }}>
+        <View style={{ gap: spacing.xxxl }}>
+          {filters}
+          {summary}
+        </View>
+        <Columns wide={isWide}>
+          {spend}
+          {price}
+        </Columns>
+        <Columns wide={isWide}>
+          {consumption}
+          {stations}
+        </Columns>
+        {habits}
+        <Columns wide={isWide}>
+          {tank}
+          {records}
+        </Columns>
       </View>
     </Screen>
   );

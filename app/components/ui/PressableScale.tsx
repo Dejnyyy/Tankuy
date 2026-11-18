@@ -1,36 +1,38 @@
 import React from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { haptics } from '@/lib/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const ease = Easing.out(Easing.quad);
 
 interface Props extends Omit<PressableProps, 'style'> {
   style?: StyleProp<ViewStyle>;
-  /** Scale while pressed (default 0.97). */
+  /** Scale while pressed (default 0.98). */
   scaleTo?: number;
   haptic?: 'tap' | 'light' | 'medium' | false;
   children?: React.ReactNode;
 }
 
-/** Pressable with a springy scale-down + dim, on the UI thread. */
-export function PressableScale({ style, scaleTo = 0.97, haptic = 'tap', onPressIn, onPressOut, onPress, children, disabled, ...rest }: Props) {
-  const s = useSharedValue(1);
-  const o = useSharedValue(1);
-  const dim = disabled ? 0.45 : 1;
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: s.value }], opacity: o.value * dim }), [dim]);
+/** Pressable with a short, flat press response (dim + tiny scale, no spring). */
+export function PressableScale({ style, scaleTo = 0.98, haptic = 'tap', onPressIn, onPressOut, onPress, children, disabled, ...rest }: Props) {
+  const p = useSharedValue(0);
+  const dim = disabled ? 0.35 : 1;
+  const target = Math.max(scaleTo, 0.96);
+  const anim = useAnimatedStyle(
+    () => ({ transform: [{ scale: 1 - (1 - target) * p.value }], opacity: (1 - 0.35 * p.value) * dim }),
+    [dim, target],
+  );
   return (
     <AnimatedPressable
       {...rest}
       disabled={disabled}
       onPressIn={(e) => {
-        s.value = withSpring(scaleTo, { damping: 20, stiffness: 400, mass: 0.6 });
-        o.value = withTiming(0.88, { duration: 90 });
+        p.value = withTiming(1, { duration: 80, easing: ease });
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        s.value = withSpring(1, { damping: 14, stiffness: 300, mass: 0.6 });
-        o.value = withTiming(1, { duration: 160 });
+        p.value = withTiming(0, { duration: 160, easing: ease });
         onPressOut?.(e);
       }}
       onPress={(e) => {

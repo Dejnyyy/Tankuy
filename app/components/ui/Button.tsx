@@ -21,6 +21,10 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
+/**
+ * primary / accent → solid ink block. secondary → hairline outline.
+ * ghost → text only. destructive → red text on outline.
+ */
 export function Button({
   title,
   onPress,
@@ -33,58 +37,45 @@ export function Button({
   fullWidth,
 }: ButtonProps) {
   const { colors } = useTheme();
-  const bg: Record<ButtonVariant, string> = {
-    primary: colors.buttonPrimary,
-    accent: colors.tint,
-    secondary: colors.surface2,
-    ghost: 'transparent',
-    destructive: colors.negativeSoft,
-  };
-  const fg: Record<ButtonVariant, string> = {
-    primary: colors.buttonPrimaryText,
-    accent: colors.onTint,
-    secondary: colors.text,
-    ghost: colors.text,
-    destructive: colors.negative,
-  };
+  const solid = variant === 'primary' || variant === 'accent';
+  const bg = solid ? colors.buttonPrimary : 'transparent';
+  const fg = solid ? colors.buttonPrimaryText : variant === 'destructive' ? colors.negative : colors.text;
+  const bordered = variant === 'secondary' || variant === 'destructive';
   const sz = {
-    lg: { h: 56, px: spacing.xxl, fs: 16, icon: 17 },
-    md: { h: 46, px: spacing.xl, fs: 15, icon: 15 },
-    sm: { h: 36, px: spacing.lg, fs: 13, icon: 13 },
+    lg: { h: 56, px: spacing.xxl, fs: 16, icon: 15 },
+    md: { h: 44, px: spacing.lg, fs: 15, icon: 13 },
+    sm: { h: 32, px: spacing.md, fs: 13, icon: 12 },
   }[size];
   const isDisabled = disabled || loading;
   const iconNode =
-    typeof icon === 'string' ? <FontAwesome name={icon as any} size={sz.icon} color={fg[variant]} /> : icon;
+    typeof icon === 'string' ? <FontAwesome name={icon as any} size={sz.icon} color={fg} /> : icon;
 
   return (
     <PressableScale
       onPress={onPress}
       disabled={isDisabled}
-      haptic={variant === 'accent' || variant === 'primary' ? 'light' : 'tap'}
+      haptic={solid ? 'light' : 'tap'}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={[
         {
           height: sz.h,
-          paddingHorizontal: sz.px,
+          paddingHorizontal: variant === 'ghost' ? spacing.sm : sz.px,
           borderRadius: radii.md,
-          backgroundColor: bg[variant],
+          backgroundColor: bg,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
           gap: spacing.sm,
-          borderWidth: variant === 'secondary' ? 1 : 0,
-          borderColor: colors.border,
+          borderWidth: bordered ? 1 : 0,
+          borderColor: variant === 'destructive' ? colors.border : colors.border,
         },
         fullWidth ? { alignSelf: 'stretch' } : null,
         style,
       ]}
     >
-      {loading ? <ActivityIndicator size="small" color={fg[variant]} /> : iconNode ? <View>{iconNode}</View> : null}
-      <Text
-        numberOfLines={1}
-        style={{ color: fg[variant], fontSize: sz.fs, fontFamily: fonts.displayBold, letterSpacing: -0.1 }}
-      >
+      {loading ? <ActivityIndicator size="small" color={fg} /> : iconNode ? <View>{iconNode}</View> : null}
+      <Text numberOfLines={1} style={{ color: fg, fontSize: sz.fs, fontFamily: fonts.semi, letterSpacing: -0.1 }}>
         {title}
       </Text>
     </PressableScale>

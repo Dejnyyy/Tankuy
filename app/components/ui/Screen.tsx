@@ -6,18 +6,19 @@ import { useTheme } from '@/context/ThemeContext';
 import { MAX_CONTENT_WIDTH, spacing } from '@/constants/Theme';
 import { AppText } from './AppText';
 
-export const TAB_BAR_SPACE = 112;
+export const TAB_BAR_SPACE = 96;
+export const SIDEBAR_WIDTH = 232;
 
 export function useLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
-  const contentWidth = Math.min(width - (isDesktop ? 240 : 0), MAX_CONTENT_WIDTH);
+  const contentWidth = Math.min(width - (isDesktop ? SIDEBAR_WIDTH : 0), MAX_CONTENT_WIDTH);
   return {
     width,
     isDesktop,
     /** Two-column layouts from ~ tablet width */
     isWide: contentWidth >= 860,
-    gutter: isDesktop ? spacing.xxxl : spacing.lg,
+    gutter: isDesktop ? spacing.huge : spacing.lg,
     contentWidth,
   };
 }
@@ -41,39 +42,41 @@ export function Screen({ title, subtitle, overline, right, children, refreshing,
   const { colors } = useTheme();
   const { isDesktop, gutter } = useLayout();
 
-  const header = title ? (
-    <Animated.View
-      entering={FadeIn.duration(350)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: spacing.md,
-        paddingTop: isDesktop ? spacing.xxxl : spacing.md,
-        paddingBottom: spacing.lg,
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        {overline ? (
-          <AppText variant="label" tone="muted" style={{ marginBottom: 4 }}>
-            {overline}
+  const header =
+    title !== undefined ? (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: spacing.md,
+          paddingTop: isDesktop ? spacing.huge : spacing.lg,
+          paddingBottom: isDesktop ? spacing.xxxl : spacing.xxl,
+          minHeight: 44,
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          {overline ? (
+            <AppText variant="caption" tone="muted" style={{ marginBottom: spacing.xs }}>
+              {overline}
+            </AppText>
+          ) : null}
+          <AppText variant="title" numberOfLines={1}>
+            {title}
           </AppText>
-        ) : null}
-        <AppText variant="title" numberOfLines={1}>
-          {title}
-        </AppText>
-        {subtitle ? (
-          <AppText variant="caption" tone="secondary" style={{ marginTop: 2 }}>
-            {subtitle}
-          </AppText>
-        ) : null}
+          {subtitle ? (
+            <AppText variant="caption" tone="secondary" style={{ marginTop: spacing.xs }}>
+              {subtitle}
+            </AppText>
+          ) : null}
+        </View>
+        {right}
       </View>
-      {right}
-    </Animated.View>
-  ) : null;
+    ) : null;
 
   const inner = (
-    <View
+    <Animated.View
+      entering={FadeIn.duration(220)}
       style={[
         { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: gutter },
         contentStyle,
@@ -81,7 +84,7 @@ export function Screen({ title, subtitle, overline, right, children, refreshing,
     >
       {header}
       {children}
-    </View>
+    </Animated.View>
   );
 
   return (
@@ -91,10 +94,10 @@ export function Screen({ title, subtitle, overline, right, children, refreshing,
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: isDesktop ? spacing.huge : TAB_BAR_SPACE }}
+          contentContainerStyle={{ paddingBottom: isDesktop ? spacing.giant : TAB_BAR_SPACE }}
           refreshControl={
             onRefresh ? (
-              <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.tint} colors={[colors.tint]} />
+              <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.text} colors={[colors.text]} />
             ) : undefined
           }
         >

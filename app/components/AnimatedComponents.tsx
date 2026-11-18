@@ -9,7 +9,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   withDelay,
   Easing,
   interpolate,
@@ -28,8 +27,8 @@ interface FadeInViewProps {
 
 export function FadeInView({
   delay = 0,
-  duration = 500,
-  translateY = 20,
+  duration = 260,
+  translateY = 6,
   style,
   children,
 }: FadeInViewProps) {
@@ -79,10 +78,7 @@ export function ScaleInView({
   useEffect(() => {
     progress.value = withDelay(
       delay,
-      withSpring(1, {
-        damping: 14,
-        stiffness: 120,
-      }),
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) }),
     );
   }, []);
 
@@ -101,7 +97,7 @@ export function ScaleInView({
 }
 
 // ─── SlideInView ───────────────────────────────────────────
-// Slides in from a direction with spring physics.
+// Slides in from a direction (short eased timing, no spring).
 type SlideDirection = "left" | "right" | "up" | "down";
 
 interface SlideInViewProps {
@@ -124,10 +120,7 @@ export function SlideInView({
   useEffect(() => {
     progress.value = withDelay(
       delay,
-      withSpring(1, {
-        damping: 16,
-        stiffness: 100,
-      }),
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) }),
     );
   }, []);
 
@@ -178,18 +171,12 @@ export function AnimatedPressable({
   }));
 
   const handlePressIn = (e: any) => {
-    scale.value = withSpring(scaleValue, {
-      damping: 15,
-      stiffness: 200,
-    });
+    scale.value = withTiming(scaleValue, { duration: 200, easing: Easing.out(Easing.cubic) });
     onPressIn?.(e);
   };
 
   const handlePressOut = (e: any) => {
-    scale.value = withSpring(1, {
-      damping: 15,
-      stiffness: 200,
-    });
+    scale.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
     onPressOut?.(e);
   };
 
