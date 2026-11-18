@@ -1,231 +1,148 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet } from "react-native";
-import { useWindowDimensions } from "react-native";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  useAnimatedProps,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-import Svg, { Path } from "react-native-svg";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "@/context/ThemeContext";
-import { AnimatedPressable } from "@/components/AnimatedComponents";
+import React, { useEffect } from 'react';
+import { Platform, Text, View, useWindowDimensions } from 'react-native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
+import { elevation, radii } from '@/constants/Theme';
+import { PressableScale } from '@/components/ui/PressableScale';
 
-// react-native-svg Path wrapped as a Reanimated animated component
-const AnimatedPath = Animated.createAnimatedComponent(Path);
+export const TAB_META: Record<string, { icon: string; label: string }> = {
+  index: { icon: 'home', label: 'nav.overview' },
+  stats: { icon: 'bar-chart', label: 'nav.stats' },
+  scan: { icon: 'camera', label: 'nav.scan' },
+  history: { icon: 'list-ul', label: 'nav.history' },
+  profile: { icon: 'user-o', label: 'nav.profile' },
+};
 
-// ─── Layout constants ──────────────────────────────────────────────────────────
-const BUMP_H  = 28;  // how far the bump rises above the flat bar
-const FAB_R   = 26;  // FAB circle radius
-const NOTCH_W = 36;  // half-width of the curve on each side of centre
-const BAR_H   = 58;  // flat bar height (without safe area)
-const PEAK_Y  = 2;   // peak of curve (small gap from container top)
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function tabCenterX(visibleIdx: number, w: number, count: number): number {
-  const tabW = w / count;
-  return tabW * visibleIdx + tabW / 2;
-}
-
-function iconForRoute(name: string): string {
-  switch (name) {
-    case "index":   return "home";
-    case "find":    return "map-marker";
-    case "scan":    return "camera";
-    case "history": return "list";
-    case "profile": return "user";
-    default:        return "circle";
-  }
-}
-
-// ─── Single tab item ──────────────────────────────────────────────────────────
-interface TabItemProps {
-  route: any;
-  isFocused: boolean;
-  options: any;
-  onPress: () => void;
-  colors: any;
-}
-
-function TabItem({ route, isFocused, options, onPress, colors }: TabItemProps) {
-  const label = options.title ?? route.name;
-  const color = isFocused ? colors.tint : colors.tabIconDefault;
-
-  // Fade icon out when focused (FAB shows it instead)
-  const iconOpacity = useSharedValue(isFocused ? 0 : 1);
-  useEffect(() => {
-    iconOpacity.value = withTiming(isFocused ? 0 : 1, { duration: 180 });
-  }, [isFocused]);
-  const iconStyle = useAnimatedStyle(() => ({ opacity: iconOpacity.value }));
-
-  return (
-    <AnimatedPressable
-      style={styles.tabItem}
-      onPress={onPress}
-      scaleValue={0.88}
-      accessibilityRole="button"
-      accessibilityLabel={label as string}
-      accessibilityState={isFocused ? { selected: true } : {}}
-    >
-      <Animated.View style={iconStyle}>
-        <FontAwesome name={iconForRoute(route.name) as any} size={21} color={color} />
-      </Animated.View>
-    </AnimatedPressable>
-  );
-}
-
-// ─── Main tab bar ─────────────────────────────────────────────────────────────
-export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function TabItem({ name, focused, onPress }: { name: string; focused: boolean; onPress: () => void }) {
   const { colors } = useTheme();
-  const { width }  = useWindowDimensions();
-  const insets     = useSafeAreaInsets();
-
-  const totalH = BUMP_H + BAR_H + insets.bottom;
-
-  // Visible routes (exclude hidden ones)
-  const visibleRoutes = state.routes.filter(
-    (r) => (descriptors[r.key].options as any).href !== null,
-  );
-  const TAB_COUNT = visibleRoutes.length; // 5
-
-  const activeVisIdx = visibleRoutes.findIndex(
-    (r) => r.key === state.routes[state.index]?.key,
-  );
-  const activeRoute = visibleRoutes[activeVisIdx];
-
-  // ── Shared values (need to be readable inside Reanimated worklets) ─────────
-  const bumpX  = useSharedValue(tabCenterX(activeVisIdx, width, TAB_COUNT));
-  const svgW   = useSharedValue(width);
-  const svgTH  = useSharedValue(totalH);
-
-  useEffect(() => { svgW.value  = width;  }, [width]);
-  useEffect(() => { svgTH.value = totalH; }, [totalH]);
-
-  // Animate bump to active tab when tab or screen width changes
+  const { t } = useTranslation();
+  const meta = TAB_META[name];
+  const p = useSharedValue(focused ? 1 : 0);
   useEffect(() => {
-    bumpX.value = withSpring(tabCenterX(activeVisIdx, width, TAB_COUNT), {
-      damping: 16,
-      stiffness: 180,
-      mass: 0.8,
-    });
-  }, [activeVisIdx, width, TAB_COUNT]);
-
-  // ── Animated SVG path (rebuilds string on every frame from bumpX) ──────────
-  const animatedPathProps = useAnimatedProps(() => {
-    const cx = bumpX.value;
-    const w  = svgW.value;
-    const tH = svgTH.value;
-    const d =
-      `M 0,${BUMP_H} ` +
-      `L ${cx - NOTCH_W},${BUMP_H} ` +
-      `C ${cx - NOTCH_W * 0.5},${BUMP_H} ` +
-      `  ${cx - NOTCH_W * 0.5},${PEAK_Y} ` +
-      `  ${cx},${PEAK_Y} ` +
-      `C ${cx + NOTCH_W * 0.5},${PEAK_Y} ` +
-      `  ${cx + NOTCH_W * 0.5},${BUMP_H} ` +
-      `  ${cx + NOTCH_W},${BUMP_H} ` +
-      `L ${w},${BUMP_H} ` +
-      `L ${w},${tH} ` +
-      `L 0,${tH} Z`;
-    return { d };
-  }) as any;
-
-  // ── Animated FAB position (follows the same spring as the bump) ───────────
-  const fabStyle = useAnimatedStyle(() => ({
-    left: bumpX.value - FAB_R,
-  }));
-
-  // ── Navigation ───────────────────────────────────────────────────────────
-  const makePress = (route: any) => () => {
-    const focused = state.routes[state.index]?.key === route.key;
-    const event = navigation.emit({
-      type: "tabPress",
-      target: route.key,
-      canPreventDefault: true,
-    });
-    if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
-  };
-
+    p.value = withTiming(focused ? 1 : 0, { duration: 220 });
+  }, [focused, p]);
+  const dot = useAnimatedStyle(() => ({ opacity: p.value, transform: [{ scaleX: 0.3 + p.value * 0.7 }] }));
+  const lift = useAnimatedStyle(() => ({ transform: [{ translateY: -p.value * 1.5 }] }));
+  const color = focused ? colors.text : colors.tabIconDefault;
   return (
-    <View style={{ height: totalH, width }}>
-      {/* ── Animated curved SVG background ── */}
-      <Svg width={width} height={totalH} style={StyleSheet.absoluteFillObject}>
-        <AnimatedPath animatedProps={animatedPathProps} fill={colors.card} />
-        <AnimatedPath
-          animatedProps={animatedPathProps}
-          fill="none"
-          stroke={colors.border}
-          strokeWidth={StyleSheet.hairlineWidth * 1.5}
-        />
-      </Svg>
+    <PressableScale
+      onPress={onPress}
+      scaleTo={0.88}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: focused }}
+      accessibilityLabel={t(meta.label)}
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8, paddingBottom: 6, gap: 3 }}
+    >
+      <Animated.View style={[{ alignItems: 'center', gap: 3 }, lift]}>
+        <FontAwesome name={meta.icon as any} size={19} color={color} />
+        <Text style={{ fontSize: 10.5, fontWeight: focused ? '700' : '500', color }} numberOfLines={1}>
+          {t(meta.label)}
+        </Text>
+      </Animated.View>
+      <Animated.View style={[{ width: 16, height: 3, borderRadius: 2, backgroundColor: colors.tint }, dot]} />
+    </PressableScale>
+  );
+}
 
-      {/* ── Tab row ── */}
-      <View style={[styles.tabRow, { top: BUMP_H, height: BAR_H }]}>
-        {visibleRoutes.map((r) => (
-          <TabItem
-            key={r.key}
-            route={r}
-            isFocused={r.key === state.routes[state.index]?.key}
-            options={descriptors[r.key].options}
-            onPress={makePress(r)}
-            colors={colors}
-          />
-        ))}
-      </View>
-
-      {/* ── Animated FAB — purely visual, pointerEvents none so taps go to TabItems ── */}
-      <Animated.View
-        style={[styles.fabWrap, { top: BUMP_H - FAB_R }, fabStyle]}
-        pointerEvents="none"
+function ScanButton({ focused, onPress }: { focused: boolean; onPress: () => void }) {
+  const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
+  const r = useSharedValue(0);
+  useEffect(() => {
+    r.value = withSpring(focused ? 1 : 0, { damping: 14, stiffness: 180 });
+  }, [focused, r]);
+  const ring = useAnimatedStyle(() => ({ transform: [{ scale: 1 + r.value * 0.06 }] }));
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <PressableScale
+        onPress={onPress}
+        haptic="medium"
+        scaleTo={0.9}
+        accessibilityRole="tab"
+        accessibilityLabel={t('nav.scan')}
+        accessibilityState={{ selected: focused }}
+        style={{ marginTop: -22 }}
       >
-        <View
+        <Animated.View
           style={[
-            styles.fabCircle,
-            { backgroundColor: colors.tint, shadowColor: colors.tint },
+            {
+              width: 58,
+              height: 58,
+              borderRadius: 20,
+              backgroundColor: colors.tint,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 4,
+              borderColor: colors.background,
+            },
+            elevation(2, colors.tint, isDark),
+            ring,
           ]}
         >
-          <FontAwesome
-            name={(activeRoute ? iconForRoute(activeRoute.name) : "circle") as any}
-            size={22}
-            color={colors.white}
-          />
-        </View>
-      </Animated.View>
+          <FontAwesome name="camera" size={21} color={colors.onTint} />
+        </Animated.View>
+      </PressableScale>
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  tabRow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fabWrap: {
-    position: "absolute",
-    width: FAB_R * 2,
-    height: FAB_R * 2,
-  },
-  fabCircle: {
-    width: FAB_R * 2,
-    height: FAB_R * 2,
-    borderRadius: FAB_R,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-});
+/** Floating bottom bar with a raised scan action in the centre. */
+export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const order = ['index', 'stats', 'scan', 'history', 'profile'];
+  const routes = order
+    .map((n) => state.routes.find((r) => r.name === n))
+    .filter((r): r is (typeof state.routes)[number] => !!r);
+  const active = state.routes[state.index]?.name;
+
+  const press = (route: (typeof routes)[number]) => {
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (active !== route.name && !event.defaultPrevented) navigation.navigate(route.name as never);
+  };
+
+  const barW = Math.min(width - 24, 520);
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        paddingBottom: Math.max(insets.bottom, 10),
+      }}
+    >
+      <View
+        style={[
+          {
+            width: barW,
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderRadius: radii.xl,
+            backgroundColor: colors.tabBar,
+            borderWidth: 1,
+            borderColor: colors.border,
+            paddingHorizontal: 6,
+          },
+          Platform.OS === 'web' ? ({ backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } as any) : null,
+          elevation(3, colors.shadow, isDark),
+        ]}
+      >
+        {routes.map((r) =>
+          r.name === 'scan' ? (
+            <ScanButton key={r.key} focused={active === 'scan'} onPress={() => press(r)} />
+          ) : (
+            <TabItem key={r.key} name={r.name} focused={active === r.name} onPress={() => press(r)} />
+          ),
+        )}
+      </View>
+    </View>
+  );
+}

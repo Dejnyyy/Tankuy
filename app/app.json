@@ -11,27 +11,25 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a1a"
+      "backgroundColor": "#F3F1EC"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tankuy.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Tankuy needs camera access to scan fuel receipts",
-        "NSLocationWhenInUseUsageDescription": "Tankuy needs your location to find nearby gas stations"
+        "NSCameraUsageDescription": "Tankuy potřebuje fotoaparát ke skenování účtenek z tankování.",
+        "NSPhotoLibraryUsageDescription": "Tankuy potřebuje přístup k fotkám, abys mohl nahrát účtenku."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1a1a1a"
+        "backgroundColor": "#F3F1EC"
       },
       "package": "com.tankuy.app",
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "CAMERA",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "CAMERA"
       ]
     },
     "web": {
@@ -41,8 +39,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-camera",
-      "expo-location",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Tankuy potřebuje fotoaparát ke skenování účtenek z tankování.",
+          "photosPermission": "Tankuy potřebuje přístup k fotkám, abys mohl nahrát účtenku."
+        }
+      ],
       [
         "@react-native-google-signin/google-signin",
         {

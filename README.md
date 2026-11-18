@@ -6,7 +6,7 @@
 
 - **📊 Interactive Dashboard**: Visualize your spending with beautiful, interactive charts. Switch between Weekly, Monthly, and Yearly views. Click on chart points to see exact costs and jump to detailed history.
 - **📷 AI Receipt Scanning**: Snap a photo of your gas receipt, and Tankuy uses advanced OCR to automatically extract the price, liters, and station name. No more manual entry!
-- **📍 Station Finder**: View nearby gas stations on an integrated map, check fuel types, and navigate to them easily.
+- **📈 Deep stats**: spend per month & yearly projection, price-per-litre trend, consumption (full-tank method, typo-tolerant odometer), cost per km, weekday / time-of-day habits, station ranking, records — per vehicle and time range. Computed client-side in `app/lib/stats.ts` (unit tests: `cd app && npm test`).
 - **📝 Comprehensive History**: specific date filtering and detailed records of every fill-up.
 - **🚗 Multi-Vehicle Support**: Track stats for multiple cars independently.
 - **📱 Cross-Platform**: Built with React Native & Expo for a seamless experience on both iOS and Android.
@@ -15,11 +15,10 @@
 
 ### Frontend (Mobile App)
 
-- **Framework**: React Native (via Expo SDK 52)
+- **Framework**: React Native (via Expo SDK 54)
 - **Routing**: Expo Router (File-based routing)
 - **UI/Styling**: StyleSheet, React Native Reanimated, Vector Icons
-- **Charts**: React Native Chart Kit
-- **Maps**: React Native Maps
+- **Charts**: custom react-native-svg + Reanimated charts (`app/components/charts`)
 - **State Management**: React Context API
 
 ### Backend (Server)

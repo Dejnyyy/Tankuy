@@ -1,247 +1,121 @@
-import React, { useEffect } from "react";
-import { Tabs, Link, usePathname, useRouter } from "expo-router";
-import { View, Text, StyleSheet, Platform, useWindowDimensions } from "react-native";
-import { ExternalLink } from "@/components/ExternalLink";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import React from 'react';
+import { Tabs, usePathname, useRouter } from 'expo-router';
+import { Platform, View, useWindowDimensions } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
+import { CustomTabBar, TAB_META } from '@/components/CustomTabBar';
+import { AppText, Button, PressableScale } from '@/components/ui';
+import { fonts, radii, spacing } from '@/constants/Theme';
 
-import { useTheme } from "@/context/ThemeContext";
-import { CustomTabBar } from "@/components/CustomTabBar";
-import { AnimatedPressable } from "@/components/AnimatedComponents";
+const ROUTES: { name: keyof typeof TAB_META; href: string }[] = [
+  { name: 'index', href: '/' },
+  { name: 'stats', href: '/stats' },
+  { name: 'history', href: '/history' },
+  { name: 'profile', href: '/profile' },
+];
 
-// ─── Desktop sidebar ──────────────────────────────────────────────────────────
-const SIDEBAR_ROUTES = [
-  { name: "index",   title: "Home",    icon: "home",       href: "/"        },
-  { name: "find",    title: "Find",    icon: "map-marker", href: "/find"    },
-  { name: "scan",    title: "Scan",    icon: "camera",     href: "/scan"    },
-  { name: "history", title: "History", icon: "list",       href: "/history" },
-  { name: "profile", title: "Profile", icon: "user",       href: "/profile" },
-] as const;
-
-function SidebarNavItem({
-  title,
-  icon,
-  href,
-  isActive,
-  colors,
-  onPress,
-}: {
-  title: string;
-  icon: string;
-  href: string;
-  isActive: boolean;
-  colors: any;
-  onPress: () => void;
-}) {
-  const bgOpacity = useSharedValue(isActive ? 1 : 0);
-  const accentOpacity = useSharedValue(isActive ? 1 : 0);
-
-  useEffect(() => {
-    bgOpacity.value = withTiming(isActive ? 1 : 0, { duration: 200 });
-    accentOpacity.value = withTiming(isActive ? 1 : 0, { duration: 200 });
-  }, [isActive]);
-
-  const bgStyle = useAnimatedStyle(() => ({ opacity: bgOpacity.value }));
-  const accentStyle = useAnimatedStyle(() => ({ opacity: accentOpacity.value }));
-
+function Logo() {
+  const { colors } = useTheme();
   return (
-    <AnimatedPressable
-      style={styles.sidebarItem}
-      onPress={onPress}
-      scaleValue={0.98}
-      accessibilityRole="button"
-    >
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          styles.sidebarItemBg,
-          { backgroundColor: colors.primaryLight },
-          bgStyle,
-        ]}
-      />
-      <Animated.View
-        style={[
-          styles.sidebarAccent,
-          { backgroundColor: colors.tint },
-          accentStyle,
-        ]}
-      />
-      <View style={styles.sidebarIconWrap}>
-        <FontAwesome
-          name={icon as any}
-          size={19}
-          color={isActive ? colors.tint : colors.tabIconDefault}
-        />
-      </View>
-      <Text
-        style={[
-          styles.sidebarLabel,
-          {
-            color: isActive ? colors.text : colors.textSecondary,
-            fontWeight: isActive ? "600" : "400",
-          },
-        ]}
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          backgroundColor: colors.tint,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
-        {title}
-      </Text>
-    </AnimatedPressable>
+        <FontAwesome name="tint" size={16} color={colors.onTint} />
+      </View>
+      <AppText style={{ fontFamily: fonts.display, fontSize: 21, letterSpacing: -0.6 }}>tankuy</AppText>
+    </View>
   );
 }
 
-function DesktopSidebar({ colors }: { colors: any }) {
+function DesktopSidebar() {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-
-  const isActive = (name: string, href: string) => {
-    if (name === "index") return pathname === "/" || pathname === "";
-    return pathname === href || pathname.startsWith(href);
-  };
+  const isActive = (href: string) => (href === '/' ? pathname === '/' || pathname === '' : pathname.startsWith(href));
 
   return (
     <View
-      style={[
-        styles.sidebar,
-        { backgroundColor: colors.card, borderRightColor: colors.border },
-      ]}
+      style={{
+        width: 240,
+        borderRightWidth: 1,
+        borderRightColor: colors.border,
+        backgroundColor: colors.card,
+        paddingTop: spacing.xxxl,
+        paddingHorizontal: spacing.md,
+        paddingBottom: spacing.lg,
+      }}
     >
-      <View style={styles.sidebarHeader}>
-        <FontAwesome name="tint" size={22} color={colors.tint} />
-        <Text style={[styles.sidebarLogoText, { color: colors.text }]}>
-          Tankuy<Text style={{ color: colors.tint }}>.</Text>
-        </Text>
+      <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.xxxl }}>
+        <Logo />
       </View>
-
-      <View style={styles.sidebarContent}>
-        {SIDEBAR_ROUTES.map((route) => (
-          <SidebarNavItem
-            key={route.name}
-            title={route.title}
-            icon={route.icon}
-            href={route.href}
-            isActive={isActive(route.name, route.href)}
-            colors={colors}
-            onPress={() => router.push(route.href as any)}
-          />
-        ))}
+      <View style={{ gap: 2, flex: 1 }}>
+        {ROUTES.map((r) => {
+          const active = isActive(r.href);
+          return (
+            <PressableScale
+              key={r.name}
+              scaleTo={0.98}
+              onPress={() => router.push(r.href as any)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.md,
+                paddingVertical: 11,
+                paddingHorizontal: spacing.md,
+                borderRadius: radii.sm,
+                backgroundColor: active ? colors.sunken : 'transparent',
+              }}
+            >
+              <View style={{ width: 20, alignItems: 'center' }}>
+                <FontAwesome name={TAB_META[r.name].icon as any} size={16} color={active ? colors.text : colors.textMuted} />
+              </View>
+              <AppText variant={active ? 'bodyBold' : 'body'} tone={active ? 'primary' : 'secondary'}>
+                {t(TAB_META[r.name].label)}
+              </AppText>
+              {active && <View style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: 3, backgroundColor: colors.tint }} />}
+            </PressableScale>
+          );
+        })}
       </View>
-
-      <View style={[styles.sidebarFooter, { borderTopColor: colors.border }]}>
-        <ExternalLink href="https://dejny.eu" style={styles.sidebarFooterLink}>
-          <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>dejny.eu</Text>
-        </ExternalLink>
-        <Link href="/(legal)/terms" style={styles.sidebarFooterLink}>
-          <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>Terms</Text>
-        </Link>
-        <Link href="/(legal)/privacy" style={styles.sidebarFooterLink}>
-          <Text style={[styles.sidebarFooterText, { color: colors.textMuted }]}>Privacy</Text>
-        </Link>
+      <View style={{ gap: spacing.sm }}>
+        <Button title={t('nav.scan')} icon="camera" variant="accent" onPress={() => router.push('/scan')} />
+        <Button title={t('nav.addManual')} icon="pencil" variant="secondary" onPress={() => router.push('/entry')} />
       </View>
     </View>
   );
 }
 
-// ─── Layout ────────────────────────────────────────────────────────────────────
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width >= 768;
+  const isDesktop = Platform.OS === 'web' && width >= 768;
 
   return (
-    <View
-      style={{
-        flex: 1,
-        flexDirection: isDesktop ? "row" : "column",
-        backgroundColor: colors.background,
-      }}
-    >
-      {/* Sidebar lives here as a proper flex sibling — no absolute/fixed needed */}
-      {isDesktop && <DesktopSidebar colors={colors} />}
-
-      {/* Content fills the remaining width */}
+    <View style={{ flex: 1, flexDirection: isDesktop ? 'row' : 'column', backgroundColor: colors.background }}>
+      {isDesktop && <DesktopSidebar />}
       <View style={{ flex: 1 }}>
         <Tabs
-          tabBar={(props) =>
-            isDesktop ? <></> : <CustomTabBar {...props} />
-          }
-          screenOptions={{ headerShown: false }}
+          tabBar={(props) => (isDesktop ? null : <CustomTabBar {...props} />)}
+          screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.background } } as any}
         >
-          <Tabs.Screen name="index"   options={{ title: "Tankuy – Fuel Expense Tracker"       }} />
-          <Tabs.Screen name="find"    options={{ title: "Tankuy – Find Nearby Gas Stations"   }} />
-          <Tabs.Screen name="scan"    options={{ title: "Tankuy – Scan Fuel Receipt"          }} />
-          <Tabs.Screen name="history" options={{ title: "Tankuy – Fuel History"               }} />
-          <Tabs.Screen name="profile" options={{ title: "Tankuy – Profile"                    }} />
+          <Tabs.Screen name="index" options={{ title: `Tankuy – ${t('nav.overview')}` }} />
+          <Tabs.Screen name="stats" options={{ title: `Tankuy – ${t('nav.stats')}` }} />
+          <Tabs.Screen name="scan" options={{ title: `Tankuy – ${t('nav.scan')}` }} />
+          <Tabs.Screen name="history" options={{ title: `Tankuy – ${t('nav.history')}` }} />
+          <Tabs.Screen name="profile" options={{ title: `Tankuy – ${t('nav.profile')}` }} />
         </Tabs>
       </View>
     </View>
   );
 }
-
-// ─── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  sidebar: {
-    width: 240,
-    borderRightWidth: 1,
-    paddingTop: 36,
-  },
-  sidebarHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    marginBottom: 36,
-    gap: 10,
-  },
-  sidebarLogoText: {
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  sidebarContent: {
-    paddingHorizontal: 12,
-    flex: 1,
-  },
-  sidebarFooter: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  sidebarFooterLink: {
-    textDecorationLine: "none",
-  },
-  sidebarFooterText: {
-    fontSize: 12,
-  },
-  sidebarItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    marginBottom: 4,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  sidebarItemBg: {
-    borderRadius: 12,
-  },
-  sidebarAccent: {
-    position: "absolute",
-    left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3,
-    borderRadius: 2,
-  },
-  sidebarIconWrap: {
-    width: 32,
-    alignItems: "center",
-    marginRight: 12,
-  },
-  sidebarLabel: {
-    fontSize: 15,
-  },
-});

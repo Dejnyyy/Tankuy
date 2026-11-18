@@ -1,12 +1,12 @@
 {
-  "name": "Tankuy – Fuel Expense Tracker",
+  "name": "Tankuy – tankování pod kontrolou",
   "short_name": "Tankuy",
-  "description": "Track your fuel expenses with ease. Scan receipts, view spending charts and find nearby gas stations.",
+  "description": "Sleduj tankování, útratu, spotřebu a ceny paliva. Naskenuj účtenku a AI zbytek vyplní.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#FF9500",
-  "background_color": "#F2F2F7",
+  "theme_color": "#F3F1EC",
+  "background_color": "#F3F1EC",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },

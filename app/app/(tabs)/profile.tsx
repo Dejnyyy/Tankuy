@@ -36,7 +36,8 @@ import {
   StaggeredChildren,
 } from "@/components/AnimatedComponents";
 import { useUnits } from "@/hooks/useUnits";
-import { Card, SectionHeader, ListRow, Button } from "@/components/ui";
+import { Card, SectionHeader, ListRow, Button, Segmented } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import {
   isPushSupported,
   isIosBrowser,
@@ -62,7 +63,8 @@ const FUEL_TYPES: { value: FuelType; label: string; icon: string }[] = [
 ];
 
 export default function ProfileScreen() {
-  const { colors, toggleTheme, isDark } = useTheme();
+  const { colors, isDark, preference, setPreference } = useTheme();
+  const { reloadVehicles } = useData();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
   const { user, signOut, isLoading: authLoading, updateUser } = useAuth();
   const { currencySymbol, distanceUnit, currency, unitSystem } = useUnits();
@@ -220,6 +222,7 @@ export default function ProfileScreen() {
         try {
           await api.deleteVehicle(vehicle.id);
           setVehicles((prev) => prev.filter((v) => v.id !== vehicle.id));
+          reloadVehicles();
         } catch (error) {
           if (Platform.OS === "web") {
             window.alert(t("profile.alerts.deleteError"));
@@ -390,6 +393,7 @@ export default function ProfileScreen() {
         const newVehicle = await api.addVehicle(vehicleData);
         setVehicles((prev) => [...prev, newVehicle]);
       }
+      reloadVehicles();
 
       setShowModal(false);
     } catch (error) {
@@ -528,22 +532,24 @@ export default function ProfileScreen() {
                 icon={
                   <View style={styles.settingsIconContainer}>
                     <FontAwesome
-                      name={isDark ? "moon-o" : "sun-o"}
+                      name={preference === "system" ? "adjust" : isDark ? "moon-o" : "sun-o"}
                       size={16}
                       color={colors.textSecondary}
                     />
                   </View>
                 }
-                title={t("profile.settings.darkMode")}
+                title={t("profile.settings.appearance")}
                 rightElement={
-                  <Switch
-                    value={isDark}
-                    onValueChange={toggleTheme}
-                    trackColor={{ false: SWITCH_TRACK_FALSE, true: colors.tint }}
-                    // @ts-expect-error react-native-web specific props
-                    activeThumbColor={colors.tint}
-                    activeTrackColor={colors.tint + "80"}
-                    thumbColor={isDark ? colors.tint : SWITCH_THUMB_FALSE}
+                  <Segmented
+                    size="sm"
+                    style={{ width: 210 }}
+                    value={preference}
+                    onChange={setPreference}
+                    options={[
+                      { value: "system", label: t("profile.settings.themeSystem") },
+                      { value: "light", label: t("profile.settings.themeLight") },
+                      { value: "dark", label: t("profile.settings.themeDark") },
+                    ]}
                   />
                 }
               />
@@ -562,46 +568,16 @@ export default function ProfileScreen() {
                 }
                 title={t("profile.settings.language")}
                 rightElement={
-                  <View style={styles.pillGroup}>
-                    <TouchableOpacity
-                      onPress={() => changeLanguage("cs")}
-                      style={[
-                        styles.pill,
-                        i18n.language === "cs" && { backgroundColor: colors.tint },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          {
-                            color:
-                              i18n.language === "cs" ? colors.white : colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        CS
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => changeLanguage("en")}
-                      style={[
-                        styles.pill,
-                        i18n.language === "en" && { backgroundColor: colors.tint },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          {
-                            color:
-                              i18n.language === "en" ? colors.white : colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        EN
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Segmented
+                    size="sm"
+                    style={{ width: 150 }}
+                    value={i18n.language?.startsWith("en") ? "en" : "cs"}
+                    onChange={(v) => changeLanguage(v)}
+                    options={[
+                      { value: "cs", label: "CZ" },
+                      { value: "en", label: "EN" },
+                    ]}
+                  />
                 }
               />
             </View>
@@ -652,40 +628,16 @@ export default function ProfileScreen() {
                 }
                 title={t("profile.settings.currency")}
                 rightElement={
-                  <View style={styles.pillGroup}>
-                    <TouchableOpacity
-                      onPress={() => updateUser({ currency: "CZK" })}
-                      style={[
-                        styles.pill,
-                        currency === "CZK" && { backgroundColor: colors.tint },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          { color: currency === "CZK" ? colors.white : colors.textSecondary },
-                        ]}
-                      >
-                        CZK
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => updateUser({ currency: "USD" })}
-                      style={[
-                        styles.pill,
-                        currency === "USD" && { backgroundColor: colors.tint },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          { color: currency === "USD" ? colors.white : colors.textSecondary },
-                        ]}
-                      >
-                        USD
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Segmented
+                    size="sm"
+                    style={{ width: 150 }}
+                    value={currency}
+                    onChange={(v) => updateUser({ currency: v })}
+                    options={[
+                      { value: "CZK", label: "CZK" },
+                      { value: "USD", label: "USD" },
+                    ]}
+                  />
                 }
               />
             </View>
@@ -703,46 +655,16 @@ export default function ProfileScreen() {
                 }
                 title={t("profile.settings.unitSystem")}
                 rightElement={
-                  <View style={styles.pillGroup}>
-                    <TouchableOpacity
-                      onPress={() => updateUser({ unitSystem: "metric" })}
-                      style={[
-                        styles.pill,
-                        unitSystem === "metric" && { backgroundColor: colors.tint },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          {
-                            color:
-                              unitSystem === "metric" ? colors.white : colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        Metric
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => updateUser({ unitSystem: "imperial" })}
-                      style={[
-                        styles.pill,
-                        unitSystem === "imperial" && { backgroundColor: colors.tint },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          {
-                            color:
-                              unitSystem === "imperial" ? colors.white : colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        Imperial
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Segmented
+                    size="sm"
+                    style={{ width: 150 }}
+                    value={unitSystem}
+                    onChange={(v) => updateUser({ unitSystem: v })}
+                    options={[
+                      { value: "metric", label: "km · L" },
+                      { value: "imperial", label: "mi · gal" },
+                    ]}
+                  />
                 }
               />
             </View>
@@ -768,7 +690,7 @@ export default function ProfileScreen() {
                 title={t("profile.about.version")}
                 // rightElement (not value): keeps the original secondary value color;
                 // ListRow's value slot hardcodes colors.text
-                rightElement={<Text style={styles.settingsValue}>1.0.3</Text>}
+                rightElement={<Text style={styles.settingsValue}>2.0.0</Text>}
               />
             </View>
             <View style={styles.settingsRowBorder}>

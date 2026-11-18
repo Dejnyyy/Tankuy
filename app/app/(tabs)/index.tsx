@@ -1,594 +1,317 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useMemo, useState } from 'react';
+import { View } from 'react-native';
+import { router } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
+import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
+import { useFormat } from '@/hooks/useFormat';
+import { AppText, Button, Card, Delta, PressableScale, Screen, Segmented, Skeleton, StatTile, useLayout } from '@/components/ui';
+import { TrendChart, type ChartPoint } from '@/components/charts/TrendChart';
+import { SparkBars } from '@/components/charts/MiniCharts';
+import { EntryRow } from '@/components/EntryRow';
+import { radii, spacing } from '@/constants/Theme';
+import { bucketLabel, plural, WEEKDAYS } from '@/lib/format';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
-  Pressable,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import SpendingChart from "@/components/SpendingChart";
-import { useTheme } from "@/context/ThemeContext";
-import api, { Stats, FuelEntry } from "@/services/api";
-import { router } from "expo-router";
-import { useTranslation } from "react-i18next";
-import { FadeInView, ScaleInView } from "@/components/AnimatedComponents";
-import { useUnits } from "@/hooks/useUnits";
-import { Card, EmptyState, Button, AnimatedNumber } from "@/components/ui";
-import { spacing, radii, typography } from "@/constants/Theme";
+  buildSeries,
+  computeStats,
+  daysSinceLast,
+  monthComparison,
+  ymd,
+  type Granularity,
+  type Metric,
+} from '@/lib/stats';
 
-// Helper function to safely format numbers
-const formatNumber = (value: any, decimals: number = 2): string => {
-  const num = Number(value);
-  if (isNaN(num) || value === null || value === undefined) {
-    return "0";
-  }
-  return num.toFixed(decimals);
-};
-
-type ScrubPoint = { index: number; value: number; label: string };
-
-export default function HomeScreen() {
+export default function DashboardScreen() {
   const { colors } = useTheme();
-  const styles = useMemo(() => getStyles(colors), [colors]);
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const { entries, loading, refreshing, refresh, loaded } = useData();
+  const f = useFormat();
+  const { isWide } = useLayout();
+  const [metric, setMetric] = useState<Metric>('cost');
+  const [gran, setGran] = useState<Granularity>('month');
+  const [selIdx, setSelIdx] = useState<number | null>(null);
 
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [recentEntries, setRecentEntries] = useState<FuelEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [period, setPeriod] = useState<"week" | "month" | "year" | "all">(
-    "month",
+  const now = useMemo(() => new Date(), [entries]);
+  const stats = useMemo(() => computeStats(entries, now), [entries, now]);
+  const month = useMemo(() => monthComparison(entries, now), [entries, now]);
+  const sinceLast = daysSinceLast(entries, now);
+  const last = entries.length ? entries[entries.length - 1] : null;
+  const recent = useMemo(() => [...entries].reverse().slice(0, 4), [entries]);
+
+  const series = useMemo(() => buildSeries(entries, metric, gran, now), [entries, metric, gran, now]);
+  const points: ChartPoint[] = useMemo(
+    () =>
+      series.map((p) => ({
+        label: bucketLabel(p.start, gran, f.lang),
+        longLabel: bucketLabel(p.start, gran, f.lang, true),
+        value: metric === 'cost' || metric === 'liters' ? (p.count ? f.metricValue(metric, p.value) : 0) : f.metricValue(metric, p.value),
+      })),
+    [series, gran, metric, f],
   );
-  const [currentDate, setCurrentDate] = useState(new Date());
-  // Scrub state for the chart: while the user drags across the chart, the
-  // hero number and the caption beneath it track the scrubbed point instead
-  // of the period total.
-  const [scrubPoint, setScrubPoint] = useState<ScrubPoint | null>(null);
+  const monthSpark = useMemo(() => buildSeries(entries, 'cost', 'month', now, 6).map((p) => p.value), [entries, now]);
 
-  const {
-    currencySymbol,
-    volumeUnit,
-    volumeUnitLabel,
-    formatVolume,
-    formatPricePerVolume,
-    convertCurrency,
-    isImperial,
-  } = useUnits();
+  const sel = selIdx ?? null;
+  const selVal = sel !== null ? points[sel]?.value ?? null : null;
+  let prevVal: number | null = null;
+  if (sel !== null) for (let i = sel - 1; i >= 0; i--) if (points[i].value !== null && (metric === 'cost' || metric === 'liters' || points[i].value)) { prevVal = points[i].value; break; }
+  const heroDelta = selVal !== null && prevVal ? selVal / prevVal - 1 : null;
+  const upIsBad = metric === 'consumption' ? f.consumptionHigherIsWorse : metric !== 'liters';
 
-  const loadData = useCallback(async () => {
-    try {
-      const [statsData, entriesData] = await Promise.all([
-        api.getStats(period, currentDate.toISOString()),
-        api.getEntries({ limit: 5 }),
-      ]);
-      setStats(statsData);
-      setRecentEntries(entriesData);
-    } catch (error) {
-      console.error("Failed to load home data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [period, currentDate]);
+  const metricOpts = [
+    { value: 'cost' as const, label: t('dash.metric.cost') },
+    { value: 'liters' as const, label: t('dash.metric.liters') },
+    { value: 'price' as const, label: t('dash.metric.price') },
+    { value: 'consumption' as const, label: t('dash.metric.consumption') },
+  ];
+  const granOpts = [
+    { value: 'week' as const, label: t('dash.gran.week') },
+    { value: 'month' as const, label: t('dash.gran.month') },
+    { value: 'year' as const, label: t('dash.gran.year') },
+  ];
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const firstName = (user?.name ?? '').split(' ')[0];
+  const today = new Date();
+  const overline = `${WEEKDAYS[f.lang][(today.getDay() + 6) % 7]} ${f.dateLong(ymd(today))}`;
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
+  const daysWord = (n: number) => plural(n, [t('units.day1'), t('units.day2'), t('units.day5')], f.lang);
 
-  const changeDate = (amount: number) => {
-    const newDate = new Date(currentDate);
-    if (period === "week") {
-      newDate.setDate(newDate.getDate() + amount * 7);
-    } else if (period === "month") {
-      newDate.setMonth(newDate.getMonth() + amount);
-    } else {
-      newDate.setFullYear(newDate.getFullYear() + amount);
-    }
-    setCurrentDate(newDate);
-  };
+  if (loading && !loaded) return <DashboardSkeleton />;
 
-  const formattedPeriod = () => {
-    if (period === "all") {
-      return t("home.allTime");
-    } else if (period === "year") {
-      return currentDate.getFullYear().toString();
-    } else if (period === "month") {
-      return currentDate.toLocaleDateString(
-        i18n.language === "cs" ? "cs-CZ" : "en-US",
-        { month: "long", year: "numeric" },
-      );
-    } else {
-      const startOfWeek = new Date(currentDate);
-      const day = startOfWeek.getDay();
-      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-      startOfWeek.setDate(diff);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      return `${startOfWeek.getDate()}.${startOfWeek.getMonth() + 1}. - ${endOfWeek.getDate()}.${endOfWeek.getMonth() + 1}.`;
-    }
-  };
+  if (loaded && entries.length === 0) {
+    return (
+      <Screen title={firstName ? t('dash.hello', { name: firstName }) : t('nav.overview')} overline={overline}>
+        <EmptyHero />
+      </Screen>
+    );
+  }
 
-  const chartData = {
-    labels:
-      stats?.chart?.labels && stats.chart.labels.length > 0
-        ? stats.chart.labels
-        : ["No Data"],
-    datasets: [
-      {
-        data:
-          stats?.chart?.data && stats.chart.data.length > 0
-            ? stats.chart.data.map((val) => convertCurrency(val) || 0)
-            : [0],
-        strokeWidth: 2,
-      },
-    ],
-  };
-
-  const hasData = (stats?.summary?.total_tanks ?? 0) > 0;
-
-  // Hero value: the scrubbed chart point while dragging, otherwise the
-  // period total. Both are already run through convertCurrency, so the
-  // number displayed by AnimatedNumber is always in the user's currency.
-  const totalSpent = convertCurrency(stats?.summary?.total_spent) ?? 0;
-  const heroValue = scrubPoint ? scrubPoint.value : totalSpent;
-
-  // fmtCurrency must be a stable reference — AnimatedNumber resubscribes its
-  // animated reaction whenever `format` changes identity.
-  const fmtCurrency = useCallback(
-    (n: number) => `${formatNumber(n, 0)} ${currencySymbol}`,
-    [currencySymbol],
+  const chartCard = (
+    <Animated.View entering={FadeInDown.duration(450)}>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <View style={{ padding: spacing.lg, paddingBottom: spacing.sm, gap: spacing.md }}>
+          <Segmented options={metricOpts} value={metric} onChange={(m) => setMetric(m)} />
+          <View style={{ gap: 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }}>
+              <AppText variant="label" tone="muted" numberOfLines={1} style={{ flex: 1 }}>
+                {sel !== null && points[sel] ? points[sel].longLabel : '–'}
+              </AppText>
+              <Segmented options={granOpts} value={gran} onChange={setGran} size="sm" style={{ width: 168 }} />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+              <AppText variant="hero" numberOfLines={1}>
+                {selVal === null ? '–' : f.metricFormat(metric, selVal)}
+              </AppText>
+              {metric === 'price' || metric === 'consumption' ? (
+                <AppText variant="bodyBold" tone="muted">
+                  {f.metricUnit(metric)}
+                </AppText>
+              ) : null}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Delta value={heroDelta} label={f.percent(heroDelta)} upIsBad={upIsBad} />
+              <AppText variant="caption" tone="muted">
+                {[heroDelta !== null ? t(`dash.vsPrev.${gran}`) : null, sel !== null && series[sel]?.count ? `${series[sel].count}× ${t('dash.fillups')}` : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </AppText>
+            </View>
+          </View>
+        </View>
+        <View style={{ paddingHorizontal: spacing.sm, paddingBottom: spacing.md }}>
+          <TrendChart
+            points={points}
+            kind={metric === 'cost' || metric === 'liters' ? 'bar' : 'line'}
+            height={isWide ? 300 : 230}
+            animationKey={`${metric}-${gran}`}
+            onSelect={setSelIdx}
+            formatAxis={(v) => (metric === 'cost' && v >= 1000 ? `${f.n(v / 1000, v % 1000 ? 1 : 0)}k` : f.n(v, metric === 'price' || metric === 'consumption' ? 0 : 0))}
+            formatValue={(v) => (v === null ? '–' : metric === 'price' || metric === 'consumption' ? `${f.metricFormat(metric, v)} ${f.metricUnit(metric)}` : f.metricFormat(metric, v))}
+            formatMeta={(i) => (series[i]?.count ? `${series[i].count}× ${t('dash.fillups')}` : null)}
+            averageLabel="ø"
+          />
+        </View>
+      </Card>
+    </Animated.View>
   );
 
-  // The Stats payload (services/api.ts) carries no previous-period
-  // comparison field, so the trend arrows described in the brief have
-  // nothing to compare against — sanctioned fallback: hide that line when
-  // not scrubbing, and use the slot only to show the scrubbed point's label.
-  const heroCaption = scrubPoint ? scrubPoint.label : "";
-
-  // Stat strip — three entries ported from the 9-tile array that now lives
-  // in app/stats.tsx (Task 5); same formatting, just a smaller subset.
-  const statStripCards = [
+  const nextIn = stats.nextFillEstimate?.inDays ?? null;
+  const kpis = [
     {
-      key: "volume",
-      label: t("home.stats.totalVolume", { unit: volumeUnitLabel }),
-      value: `${formatNumber(formatVolume(stats?.summary?.total_liters), 1)}${volumeUnit}`,
-      color: colors.stats.green,
+      key: 'month',
+      label: t('dash.kpi.thisMonth'),
+      value: f.money(month.thisMonth.cost),
+      sub: t('dash.kpi.lastMonth', { value: f.money(month.lastMonth.cost) }),
+      icon: 'calendar',
+      footer: (
+        <View style={{ gap: 8 }}>
+          <Delta value={month.change} label={f.percent(month.change)} />
+          <SparkBars values={monthSpark} />
+        </View>
+      ),
     },
     {
-      key: "avgConsumption",
-      label: t("home.stats.avgConsumption"),
-      value: (() => {
-        const c = stats?.summary?.avg_consumption;
-        if (c == null) return "N/A";
-        if (isImperial) {
-          const mpg = 235.214 / c;
-          return `${formatNumber(mpg, 1)} mpg`;
-        }
-        return `${formatNumber(c, 1)} L/100km`;
-      })(),
-      // Duplicate of stats.green — collapses to the palette success color.
-      color: colors.success,
+      key: 'since',
+      label: t('dash.kpi.sinceLast'),
+      value: sinceLast === null ? '–' : sinceLast === 0 ? t('common.today') : `${sinceLast} ${daysWord(sinceLast)}`,
+      sub: last ? `${f.date(last.date)} · ${last.station ?? t('entry.unknownStation')}` : null,
+      icon: 'clock-o',
     },
     {
-      key: "avgPrice",
-      label: t("home.stats.avgPrice", { unit: volumeUnit }),
-      value: `${formatNumber(formatPricePerVolume(stats?.summary?.avg_price_per_liter), 2)} ${currencySymbol}`,
-      color: colors.stats.teal,
+      key: 'price',
+      label: t('dash.kpi.avgPrice'),
+      value: f.price(stats.avgPrice),
+      sub: stats.minPrice ? t('dash.kpi.priceRange', { min: f.price(stats.minPrice.value), max: f.price(stats.maxPrice?.value) }) : null,
+      icon: 'tag',
+      footer: stats.priceChangeRecent !== null ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Delta value={stats.priceChangeRecent} label={f.percent(stats.priceChangeRecent)} />
+          <AppText variant="caption" tone="muted">{t('dash.kpi.last90')}</AppText>
+        </View>
+      ) : null,
+    },
+    {
+      key: 'cons',
+      label: t('dash.kpi.consumption'),
+      value: f.consumption(stats.consumption.avgL100),
+      sub: stats.consumption.segments.length
+        ? t('dash.kpi.consumptionSub', { km: f.distance(stats.consumption.totalKm) })
+        : t('dash.kpi.needMileage'),
+      icon: 'tachometer',
+    },
+    {
+      key: 'cpk',
+      label: t('dash.kpi.costPerKm'),
+      value: f.costPerKm(stats.consumption.costPerKm),
+      sub: stats.kmPerMonth ? t('dash.kpi.kmPerMonth', { km: f.distance(stats.kmPerMonth) }) : null,
+      icon: 'road',
+    },
+    {
+      key: 'next',
+      label: t('dash.kpi.nextFill'),
+      value:
+        nextIn === null ? '–' : nextIn <= 0 ? t('dash.kpi.anyDay') : `${t('dash.kpi.in')} ${nextIn} ${daysWord(nextIn)}`,
+      sub: stats.nextFillEstimate ? t('dash.kpi.nextFillSub', { days: f.n(stats.medianIntervalDays ?? stats.avgIntervalDays, 0) }) : null,
+      icon: 'bell-o',
     },
   ];
 
-  const lastEntry = recentEntries[0];
-  const lastEntryDaysAgo = lastEntry
-    ? Math.floor(
-        (Date.now() - new Date(lastEntry.date).getTime()) / 86400000,
-      )
-    : null;
-  const lastEntryRelative =
-    lastEntryDaysAgo == null
-      ? ""
-      : lastEntryDaysAgo <= 0
-        ? t("home.insights.lastFillUpToday")
-        : lastEntryDaysAgo === 1
-          ? t("home.insights.lastFillUpYesterday")
-          : t("home.insights.lastFillUpDays", { days: lastEntryDaysAgo });
+  const kpiGrid = (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+      {kpis.map((k, i) => (
+        <Animated.View
+          key={k.key}
+          entering={FadeInDown.delay(80 + i * 45).duration(420)}
+          style={{ flexBasis: isWide ? '47%' : '46%', flexGrow: 1 }}
+        >
+          <StatTile label={k.label} value={k.value} sub={k.sub} icon={k.icon} footer={k.footer} onPress={() => router.push('/stats')} style={{ height: '100%' }} />
+        </Animated.View>
+      ))}
+    </View>
+  );
+
+  const actions = (
+    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+      <Button title={t('dash.scan')} icon="camera" variant="accent" size="lg" onPress={() => router.push('/scan')} style={{ flex: 1 }} />
+      <Button title={t('dash.manual')} icon="pencil" variant="secondary" size="lg" onPress={() => router.push('/entry')} />
+    </View>
+  );
+
+  const recentCard = (
+    <Animated.View entering={FadeInDown.delay(200).duration(450)}>
+      <Card padded={false} style={{ paddingVertical: spacing.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
+          <AppText variant="heading">{t('dash.recent')}</AppText>
+          <PressableScale onPress={() => router.push('/history')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 6 }}>
+            <AppText variant="captionBold" tone="tint">
+              {t('dash.seeAll')}
+            </AppText>
+            <FontAwesome name="angle-right" size={14} color={colors.tint} />
+          </PressableScale>
+        </View>
+        {recent.map((e) => (
+          <EntryRow key={e.id} entry={e} f={f} onPress={() => router.push({ pathname: '/entry', params: { id: e.id } })} />
+        ))}
+      </Card>
+    </Animated.View>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.tint}
-          />
-        }
-      >
-        {/* ── Header: period caption + pills ─────────────────── */}
-        <FadeInView delay={0} translateY={12}>
-          <View style={styles.header}>
-            <View style={styles.dateNav}>
-              {period !== "all" && (
-                <Pressable
-                  onPress={() => changeDate(-1)}
-                  hitSlop={spacing.sm}
-                  accessibilityRole="button"
-                >
-                  <FontAwesome
-                    name="chevron-left"
-                    size={12}
-                    color={colors.textSecondary}
-                  />
-                </Pressable>
-              )}
-              <Text style={styles.headerCaption}>{formattedPeriod()}</Text>
-              {period !== "all" && (
-                <Pressable
-                  onPress={() => changeDate(1)}
-                  hitSlop={spacing.sm}
-                  accessibilityRole="button"
-                >
-                  <FontAwesome
-                    name="chevron-right"
-                    size={12}
-                    color={colors.textSecondary}
-                  />
-                </Pressable>
-              )}
+    <Screen
+      title={firstName ? t('dash.hello', { name: firstName }) : t('nav.overview')}
+      overline={overline}
+      refreshing={refreshing}
+      onRefresh={() => refresh()}
+    >
+      {isWide ? (
+        <View style={{ gap: spacing.lg }}>
+          <View style={{ flexDirection: 'row', gap: spacing.lg, alignItems: 'flex-start' }}>
+            <View style={{ flex: 3, gap: spacing.lg }}>
+              {chartCard}
+              {recentCard}
             </View>
-            <View style={styles.periodPills}>
-              {(["week", "month", "year", "all"] as const).map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  style={[
-                    styles.periodPill,
-                    period === p && styles.periodPillActive,
-                  ]}
-                  onPress={() => {
-                    setPeriod(p);
-                    setCurrentDate(new Date());
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.periodPillText,
-                      period === p && styles.periodPillTextActive,
-                    ]}
-                  >
-                    {t(`home.periods.${p}`)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={{ flex: 2, gap: spacing.lg }}>
+              {actions}
+              {kpiGrid}
             </View>
           </View>
-        </FadeInView>
-
-        {/* ── Hero ─────────────────────────────────────────────── */}
-        <View style={styles.heroSection}>
-          {loading && !stats ? (
-            <View style={styles.skeletonHero} />
-          ) : (
-            <>
-              <AnimatedNumber
-                value={heroValue}
-                format={fmtCurrency}
-                style={[typography.hero, { color: colors.text }]}
-                from={0}
-              />
-              <Text style={styles.heroCaption}>{heroCaption}</Text>
-            </>
-          )}
         </View>
-
-        {/* ── Chart / empty state ──────────────────────────────── */}
-        <ScaleInView delay={120}>
-          {loading && !stats ? (
-            <View style={styles.skeletonChart} />
-          ) : hasData ? (
-            <Card padded={false} style={styles.chartCard}>
-              <SpendingChart
-                labels={chartData.labels}
-                data={chartData.datasets[0].data}
-                period={period}
-                currency={currencySymbol}
-                onScrub={setScrubPoint}
-              />
-            </Card>
-          ) : recentEntries.length > 0 ? (
-            // User has data overall, just not in this period — period-neutral
-            // copy, no CTA (the last-entry row below stays visible and isn't
-            // contradictory with this wording).
-            <EmptyState
-              icon={<FontAwesome name="tint" size={48} color={colors.tint} />}
-              title={t("home.emptyPeriod.title")}
-              message={t("home.emptyPeriod.message")}
-            />
-          ) : (
-            <EmptyState
-              icon={<FontAwesome name="tint" size={48} color={colors.tint} />}
-              title={t("home.empty.title")}
-              message={t("home.empty.message")}
-              ctaLabel={t("home.scanReceipt")}
-              onCta={() => router.push("/(tabs)/scan")}
-            />
-          )}
-        </ScaleInView>
-
-        {/* ── Stat strip ────────────────────────────────────────── */}
-        {hasData && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.statStrip}
-            contentContainerStyle={styles.statStripContent}
-          >
-            {statStripCards.map((card) => (
-              <TouchableOpacity
-                key={card.key}
-                activeOpacity={0.8}
-                onPress={() =>
-                  router.push({ pathname: "/stats", params: { period } })
-                }
-              >
-                <Card style={styles.statStripCard}>
-                  <View style={styles.statStripHeader}>
-                    <View
-                      style={[styles.statDot, { backgroundColor: card.color }]}
-                    />
-                    <Text style={styles.statStripLabel} numberOfLines={1}>
-                      {card.label}
-                    </Text>
-                  </View>
-                  <Text style={styles.statStripValue}>{card.value}</Text>
-                </Card>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* ── Last entry ───────────────────────────────────────── */}
-        {lastEntry && (
-          <TouchableOpacity
-            style={styles.lastEntryRow}
-            activeOpacity={0.7}
-            onPress={() => router.push("/(tabs)/history")}
-          >
-            <Text style={styles.lastEntryText} numberOfLines={1}>
-              <Text style={styles.lastEntryLabel}>
-                {t("home.lastEntry")}:{" "}
-              </Text>
-              {lastEntry.stationName || "Gas Station"} ·{" "}
-              {formatNumber(convertCurrency(lastEntry.totalCost), 0)}{" "}
-              {currencySymbol} · {lastEntryRelative}
-            </Text>
-            <FontAwesome
-              name="chevron-right"
-              size={12}
-              color={colors.textMuted}
-            />
-          </TouchableOpacity>
-        )}
-      </ScrollView>
-
-      {/* ── Actions row — fixed above the tab bar ───────────────── */}
-      <View style={styles.actionsRow}>
-        <Button
-          title={t("home.scanReceipt")}
-          icon={<FontAwesome name="camera" size={18} color={colors.buttonPrimaryText} />}
-          onPress={() =>
-            router.push({
-              pathname: "/(tabs)/scan",
-              params: { mode: "camera", ts: String(Date.now()) },
-            })
-          }
-          style={styles.scanButton}
-        />
-        <Button
-          title={t("home.enterManually")}
-          variant="ghost"
-          size="sm"
-          onPress={() =>
-            router.push({
-              pathname: "/(tabs)/scan",
-              params: { mode: "manual", ts: String(Date.now()) },
-            })
-          }
-        />
-      </View>
-    </SafeAreaView>
+      ) : (
+        <View style={{ gap: spacing.lg }}>
+          {actions}
+          {chartCard}
+          {kpiGrid}
+          {recentCard}
+        </View>
+      )}
+    </Screen>
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
-//
-// Note: values that sit exactly between two spacing/radii tokens (e.g. 10 between
-// spacing.sm=8/md=12) are kept as explicit literals rather than force a directional
-// rounding — same convention used in the login screen migration.
+function EmptyHero() {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  return (
+    <Animated.View entering={FadeInDown.duration(500)}>
+      <Card style={{ alignItems: 'center', paddingVertical: spacing.huge, gap: spacing.lg }}>
+        <View style={{ width: 84, height: 84, borderRadius: 28, backgroundColor: colors.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
+          <FontAwesome name="tint" size={36} color={colors.tint} />
+        </View>
+        <View style={{ gap: 6, alignItems: 'center', maxWidth: 360 }}>
+          <AppText variant="title" align="center" style={{ fontSize: 24, lineHeight: 30 }}>
+            {t('dash.empty.title')}
+          </AppText>
+          <AppText tone="secondary" align="center">
+            {t('dash.empty.message')}
+          </AppText>
+        </View>
+        <View style={{ gap: spacing.sm, alignSelf: 'stretch', maxWidth: 360, width: '100%', marginHorizontal: 'auto' }}>
+          <Button title={t('dash.scan')} icon="camera" variant="accent" size="lg" onPress={() => router.push('/scan')} />
+          <Button title={t('dash.manual')} icon="pencil" variant="secondary" size="lg" onPress={() => router.push('/entry')} />
+        </View>
+      </Card>
+    </Animated.View>
+  );
+}
 
-const getStyles = (colors: any) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    scrollContent: {
-      maxWidth: 800, // page max-width, not a spacing value
-      width: "100%",
-      alignSelf: "center",
-      paddingBottom: spacing.xxl,
-    },
-
-    // ── Header ─────────────────────────────────────────────
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.lg,
-      paddingBottom: spacing.sm,
-    },
-    dateNav: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      // Keeps the pills from crowding the label + chevrons on narrow screens.
-      flexShrink: 1,
-      marginRight: spacing.sm,
-    },
-    headerCaption: {
-      ...typography.caption,
-      color: colors.textSecondary,
-    },
-    periodPills: {
-      flexDirection: "row",
-      gap: spacing.xs,
-    },
-    periodPill: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      borderRadius: radii.full,
-      backgroundColor: colors.inputBackground,
-    },
-    periodPillActive: {
-      backgroundColor: colors.buttonPrimary,
-    },
-    periodPillText: {
-      // Kept literal (not typography.label): label is uppercase/letter-spaced,
-      // which doesn't fit a compact pill; size/weight are a one-off here.
-      fontSize: 12,
-      fontWeight: "600",
-      color: colors.textSecondary,
-    },
-    periodPillTextActive: {
-      color: colors.buttonPrimaryText,
-    },
-
-    // ── Hero ───────────────────────────────────────────────
-    heroSection: {
-      paddingHorizontal: spacing.xl,
-      marginTop: spacing.md,
-    },
-    heroCaption: {
-      ...typography.caption,
-      color: colors.textSecondary,
-      marginTop: spacing.xs,
-      // Reserves the line's height so toggling the scrub label on/off
-      // doesn't shift the chart below.
-      minHeight: 18,
-    },
-
-    // ── Chart ──────────────────────────────────────────────
-    // Background/radius now come from the Card component (radii.lg matches the old 16 exactly).
-    chartCard: {
-      marginHorizontal: spacing.xl,
-      marginTop: spacing.xl,
-      paddingVertical: spacing.lg,
-      overflow: "hidden",
-    },
-
-    // ── Skeleton (loading) ───────────────────────────────────
-    // Same pattern as app/stats.tsx: rounded rects on colors.inputBackground,
-    // no spinner. Roughly hero-height / chart-card-height placeholders.
-    skeletonHero: {
-      width: "60%",
-      height: 40,
-      borderRadius: radii.sm,
-      backgroundColor: colors.inputBackground,
-    },
-    skeletonChart: {
-      height: 180,
-      marginHorizontal: spacing.xl,
-      marginTop: spacing.xl,
-      borderRadius: radii.lg,
-      backgroundColor: colors.inputBackground,
-    },
-
-    // ── Stat strip ─────────────────────────────────────────
-    statStrip: {
-      marginTop: spacing.xl,
-    },
-    statStripContent: {
-      paddingHorizontal: spacing.xl,
-      gap: spacing.sm,
-    },
-    statStripCard: {
-      width: 132, // fixed tile width for horizontal scroll, not on the spacing scale
-    },
-    statStripHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-      marginBottom: spacing.xs,
-    },
-    statDot: {
-      width: 8, // accent dot, not on the spacing scale
-      height: 8,
-      borderRadius: radii.full,
-    },
-    statStripLabel: {
-      ...typography.caption,
-      color: colors.textSecondary,
-      flexShrink: 1,
-    },
-    statStripValue: {
-      // 16/700 tabular — one step bolder than typography.bodyBold (16/600);
-      // written literal (not spread+override) since the rule reserves
-      // spread+override for fontSize-preserving tweaks only.
-      fontSize: 16,
-      fontWeight: "700",
-      lineHeight: 22,
-      fontVariant: ["tabular-nums"],
-      color: colors.text,
-    },
-
-    // ── Last entry ─────────────────────────────────────────
-    lastEntryRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginTop: spacing.xl,
-      marginHorizontal: spacing.xl,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.lg,
-      backgroundColor: colors.card,
-      borderRadius: radii.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    lastEntryText: {
-      ...typography.caption,
-      color: colors.textSecondary,
-      flex: 1,
-      marginRight: spacing.sm,
-    },
-    lastEntryLabel: {
-      color: colors.text,
-      fontWeight: "600",
-    },
-
-    // ── Actions row (fixed footer) ───────────────────────────
-    actionsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-      paddingHorizontal: spacing.xl,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.sm,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
-    },
-    scanButton: {
-      flex: 1,
-    },
-  });
+function DashboardSkeleton() {
+  return (
+    <Screen title=" ">
+      <View style={{ gap: spacing.lg }}>
+        <Skeleton height={56} radius={radii.md} />
+        <Skeleton height={330} radius={radii.lg} />
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          <Skeleton height={120} radius={radii.lg} style={{ flex: 1 }} width="auto" />
+          <Skeleton height={120} radius={radii.lg} style={{ flex: 1 }} width="auto" />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          <Skeleton height={120} radius={radii.lg} style={{ flex: 1 }} width="auto" />
+          <Skeleton height={120} radius={radii.lg} style={{ flex: 1 }} width="auto" />
+        </View>
+      </View>
+    </Screen>
+  );
+}

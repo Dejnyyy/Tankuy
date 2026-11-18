@@ -29,8 +29,8 @@ export default function LoginScreen() {
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const gradientColors = isDark
-    ? (['rgba(255,149,0,0.13)', 'rgba(255,149,0,0.04)', colors.background] as const)
-    : (['rgba(255,149,0,0.07)', 'rgba(255,149,0,0.02)', colors.background] as const);
+    ? (['rgba(255,106,19,0.13)', 'rgba(255,106,19,0.04)', colors.background] as const)
+    : (['rgba(255,106,19,0.07)', 'rgba(255,106,19,0.02)', colors.background] as const);
 
   const handleGoogleSignIn = async () => {
     try {

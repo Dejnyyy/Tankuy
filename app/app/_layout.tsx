@@ -7,6 +7,12 @@ import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { DataProvider } from "@/context/DataContext";
+import { ToastProvider } from "@/components/ui/Toast";
+import { Archivo_600SemiBold } from "@expo-google-fonts/archivo/600SemiBold";
+import { Archivo_700Bold } from "@expo-google-fonts/archivo/700Bold";
+import { Archivo_800ExtraBold } from "@expo-google-fonts/archivo/800ExtraBold";
+import { JetBrainsMono_500Medium } from "@expo-google-fonts/jetbrains-mono/500Medium";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 
 import {
@@ -67,7 +73,7 @@ function RootLayoutNav() {
 
   return (
     <NavigationThemeProvider value={navigationTheme}>
-      <Stack>
+      <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
@@ -80,10 +86,9 @@ function RootLayoutNav() {
             animation: "slide_from_right",
           }}
         />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
         <Stack.Screen
-          name="stats"
-          options={{ presentation: "modal", headerShown: false }}
+          name="entry"
+          options={{ presentation: "modal", headerShown: false, animation: "slide_from_bottom" }}
         />
       </Stack>
     </NavigationThemeProvider>
@@ -95,7 +100,10 @@ import { initI18n } from "@/i18n";
 export default function RootLayout() {
   // ... (fonts loading logic same as before)
   const [loaded, error] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    Archivo_600SemiBold,
+    Archivo_700Bold,
+    Archivo_800ExtraBold,
+    JetBrainsMono_500Medium,
     ...FontAwesome.font,
   });
   const [i18nInitialized, setI18nInitialized] = useState(false);
@@ -130,11 +138,20 @@ export default function RootLayout() {
   return (
     <CustomThemeProvider>
       <AuthProvider>
-        <StatusBar style="auto" translucent backgroundColor="transparent" />
-        <RootLayoutNav />
+        <DataProvider>
+          <ToastProvider>
+            <ThemedStatusBar />
+            <RootLayoutNav />
+          </ToastProvider>
+        </DataProvider>
       </AuthProvider>
     </CustomThemeProvider>
   );
+}
+
+function ThemedStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? "light" : "dark"} translucent backgroundColor="transparent" />;
 }
 
 const styles = StyleSheet.create({
