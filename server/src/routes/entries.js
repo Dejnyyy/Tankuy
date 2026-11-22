@@ -164,13 +164,16 @@ router.get("/stats", async (req, res) => {
 
     // Chart Data
     // Chart Data
+    // Year / all-time: group by month. Label and ORDER BY use MIN(date) so the
+    // query is valid under MySQL's default ONLY_FULL_GROUP_BY mode (using the
+    // bare `date` column there makes MySQL reject the query -> HTTP 500).
     let chartQuery = `
-      SELECT ${period === "year" ? `DATE_FORMAT(date, '%b')` : `DATE_FORMAT(date, '${labelFormat}')`} as label, 
+      SELECT DATE_FORMAT(MIN(date), '${labelFormat}') as label,
              SUM(total_cost) as value
       FROM fuel_entries
       WHERE user_id = ? AND date >= ? AND date <= ?
       GROUP BY ${groupByFormat}
-      ORDER BY date ASC
+      ORDER BY MIN(date) ASC
     `;
 
     // Special handling for week/month labels
@@ -198,8 +201,8 @@ router.get("/stats", async (req, res) => {
     ]);
 
     let chartData = {
-      labels: chartRows.map((r) => r.label),
-      data: chartRows.map((r) => parseFloat(r.value)),
+      labels: chartRows.map((r) => String(r.label ?? "")),
+      data: chartRows.map((r) => parseFloat(r.value) || 0),
     };
 
     // Mileage-based stats

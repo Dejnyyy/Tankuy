@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import SpendingChart from "@/components/SpendingChart";
+import ChartErrorBoundary from "@/components/ChartErrorBoundary";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import api, { Stats, FuelEntry } from "@/services/api";
@@ -130,13 +131,16 @@ export default function HomeScreen() {
   const chartData = {
     labels:
       stats?.chart?.labels && stats.chart.labels.length > 0
-        ? stats.chart.labels
+        ? stats.chart.labels.map((l) => String(l ?? ""))
         : ["No Data"],
     datasets: [
       {
         data:
           stats?.chart?.data && stats.chart.data.length > 0
-            ? stats.chart.data.map((val) => convertCurrency(val) || 0)
+            ? stats.chart.data.map((val) => {
+                const n = Number(convertCurrency(Number(val)));
+                return Number.isFinite(n) ? n : 0;
+              })
             : [0],
         strokeWidth: 2,
       },
@@ -323,12 +327,14 @@ export default function HomeScreen() {
           <Card padded={false} style={styles.chartCard}>
             <Text style={styles.chartTitle}>{t("home.chart.title")}</Text>
             {hasData ? (
-              <SpendingChart
-                labels={chartData.labels}
-                data={chartData.datasets[0].data}
-                period={period}
-                currency={currencySymbol}
-              />
+              <ChartErrorBoundary resetKey={`${period}-${currentDate.getTime()}`}>
+                <SpendingChart
+                  labels={chartData.labels}
+                  data={chartData.datasets[0].data}
+                  period={period}
+                  currency={currencySymbol}
+                />
+              </ChartErrorBoundary>
             ) : (
               <LinearGradient
                 colors={
